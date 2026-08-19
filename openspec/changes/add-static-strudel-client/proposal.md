@@ -35,10 +35,18 @@ single global editor for one user.
 
 ## Impact
 
-- New files: `nuxt.config.ts`, `pages/jam.vue`, `components/TrackEditor.vue`,
-  `composables/useJamSession.ts`, `lib/audioEngine.ts`,
-  `lib/jamEditorTheme.ts`, `wrangler.jsonc`
-- New dependencies: Nuxt 3, NuxtUI, `@strudel/codemirror`, `@strudel/webaudio`
+- New files: `nuxt.config.ts`, `app/pages/jam.vue`,
+  `app/components/TrackEditor.vue`, `app/composables/useJamSession.ts`,
+  `app/lib/audioEngine.ts`, `app/assets/css/main.css`,
+  `app/types/strudel-codemirror.d.ts`, `app/types/strudel.d.ts`,
+  `wrangler.jsonc`
+- New dependencies: Nuxt 4, `@nuxt/ui`, `@strudel/codemirror`,
+  `@strudel/core`, `@strudel/mini`, `@strudel/transpiler`,
+  `@strudel/webaudio`, `wrangler` — no separate `jamEditorTheme.ts`;
+  `@strudel/codemirror`'s bundled theme covers that (see design.md)
 - New deploy target: a real `*.workers.dev` URL via `wrangler deploy`
 - No backend/Durable Object impact yet — this change is entirely frontend
   and deploy-config
+- `nuxt.config.ts` aliases `@kabelsalat/web` to work around an upstream
+  packaging bug in a `@strudel/core` transitive dependency (see design.md
+  Risks) — worth rechecking on future `@strudel/*` upgrades
