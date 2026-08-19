@@ -11,7 +11,10 @@ export default defineNuxtConfig({
     '/jam': { ssr: false }
   },
   nitro: {
-    preset: 'cloudflare-module'
+    preset: 'cloudflare-durable',
+    experimental: {
+      websocket: true
+    }
   },
   alias: {
     // @kabelsalat/web (a @strudel/core dependency) has no "exports" map,

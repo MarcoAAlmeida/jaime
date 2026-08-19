@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "nuxt build && vitest run"
   },
   "dependencies": {
     "@codemirror/state": "^6.7.1",
@@ -41,8 +42,10 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@types/node": "^26.2.0",
     "typescript": "^6.0.3",
+    "vitest": "^4.1.11",
     "vue-tsc": "^3.3.10",
     "wrangler": "^4.124.0"
   }

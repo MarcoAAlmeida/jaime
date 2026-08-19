@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { evaluate, primeAudio, stop } from '~/lib/audioEngine'
+import { sendPatternUpdate } from '~/plugins/websocket.client'
 
 const { code } = useJamSession()
 const error = ref<string | null>(null)
@@ -7,6 +8,11 @@ const error = ref<string | null>(null)
 onMounted(() => {
   primeAudio()
 })
+
+function onCodeUpdate(newCode: string) {
+  code.value = newCode
+  sendPatternUpdate(newCode)
+}
 
 async function onEvaluate() {
   error.value = await evaluate(code.value)
@@ -30,8 +36,9 @@ async function onStop() {
       :description="error"
     />
     <TrackEditor
-      v-model:code="code"
+      :code="code"
       class="flex-1"
+      @update:code="onCodeUpdate"
       @evaluate="onEvaluate"
       @stop="onStop"
     />

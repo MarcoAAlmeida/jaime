@@ -14,13 +14,14 @@ const emit = defineEmits<{
 
 const editorEl = ref<HTMLDivElement>()
 let editorView: EditorView | undefined
+let isApplyingExternalUpdate = false
 
 onMounted(() => {
   editorView = initEditor({
     root: editorEl.value,
     initialCode: props.code,
     onChange: (update) => {
-      if (update.docChanged) {
+      if (update.docChanged && !isApplyingExternalUpdate) {
         emit('update:code', update.state.doc.toString())
       }
     },
@@ -31,6 +32,25 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   editorView?.destroy()
+})
+
+// Applies code changes that came from outside this editor (e.g. a
+// WebSocket relay update) without re-triggering onChange above — which
+// would otherwise emit('update:code') right back out and echo the
+// update, or fight the user's own cursor if they're mid-edit.
+watch(() => props.code, (newCode) => {
+  if (!editorView) {
+    return
+  }
+  const currentDoc = editorView.state.doc.toString()
+  if (newCode === currentDoc) {
+    return
+  }
+  isApplyingExternalUpdate = true
+  editorView.dispatch({
+    changes: { from: 0, to: editorView.state.doc.length, insert: newCode },
+  })
+  isApplyingExternalUpdate = false
 })
 </script>
 
