@@ -2,27 +2,51 @@
 import type { TrackName } from '#shared/tracks'
 import { TRACK_NAMES } from '#shared/tracks'
 import { evaluate, primeAudio, stop } from '~/lib/audioEngine'
-import { sendClaimTrack, sendPatternUpdate, sendReleaseTrack } from '~/plugins/websocket.client'
+import {
+  sendClaimTrack,
+  sendPatternUpdate,
+  sendPlayTrack,
+  sendReleaseTrack,
+  sendStopTrack,
+} from '~/plugins/websocket.client'
 
-const { clientId, tracks } = useJamSession()
+const { clientId, tracks, playRequestSeq } = useJamSession()
 const errors = ref<Partial<Record<TrackName, string | null>>>({})
+// Local-only, never broadcast: a personal listening preference, not
+// shared room state. Muting doesn't tell anyone else anything.
+const muted = ref<Record<TrackName, boolean>>(
+  Object.fromEntries(TRACK_NAMES.map(name => [name, false])) as Record<TrackName, boolean>,
+)
 
 onMounted(() => {
   primeAudio()
 })
 
+// The single place that decides whether a track should actually be
+// making sound for THIS client: shared playback state (broadcast, so
+// everyone hears every track, per docs/01) combined with this client's
+// own local mute. playRequestSeq (not just isPlaying) is in the watch
+// list so re-pressing Play on an already-playing track still triggers a
+// fresh evaluate() with the current code — see its comment in
+// useJamSession.ts.
+for (const track of TRACK_NAMES) {
+  watch(
+    [() => tracks.value[track].isPlaying, () => playRequestSeq.value[track], () => muted.value[track]],
+    async ([isPlaying, , isMuted]) => {
+      if (isPlaying && !isMuted) {
+        errors.value[track] = await evaluate(track, tracks.value[track].code)
+      }
+      else {
+        errors.value[track] = null
+        await stop(track)
+      }
+    },
+  )
+}
+
 function onCodeUpdate(track: TrackName, newCode: string) {
   tracks.value[track].code = newCode
   sendPatternUpdate(track, newCode)
-}
-
-async function onEvaluate(track: TrackName) {
-  errors.value[track] = await evaluate(track, tracks.value[track].code)
-}
-
-async function onStop(track: TrackName) {
-  errors.value[track] = null
-  await stop(track)
 }
 
 function isOwnedByMe(track: TrackName) {
@@ -45,7 +69,7 @@ function isUnowned(track: TrackName) {
       class="flex min-h-0 flex-1 flex-col gap-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
       :data-testid="`track-${track}`"
     >
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="font-medium capitalize">{{ track }}</span>
         <UBadge v-if="isOwnedByMe(track)" color="primary" data-testid="owner-badge">
           You
@@ -55,6 +79,14 @@ function isUnowned(track: TrackName) {
         </UBadge>
         <UBadge v-else color="neutral" variant="subtle" data-testid="owner-badge">
           Unclaimed
+        </UBadge>
+        <UBadge
+          v-if="tracks[track].isPlaying"
+          color="success"
+          variant="subtle"
+          data-testid="playing-badge"
+        >
+          Playing
         </UBadge>
         <UButton
           v-if="isUnowned(track)"
@@ -78,7 +110,7 @@ function isUnowned(track: TrackName) {
             size="xs"
             color="success"
             data-testid="play-button"
-            @click="onEvaluate(track)"
+            @click="sendPlayTrack(track)"
           >
             Play
           </UButton>
@@ -87,11 +119,15 @@ function isUnowned(track: TrackName) {
             color="neutral"
             variant="outline"
             data-testid="stop-button"
-            @click="onStop(track)"
+            @click="sendStopTrack(track)"
           >
             Stop
           </UButton>
         </template>
+        <div class="ml-auto flex items-center gap-1.5">
+          <span class="text-xs text-neutral-500">Mute</span>
+          <USwitch v-model="muted[track]" data-testid="mute-switch" />
+        </div>
       </div>
       <UAlert
         v-if="errors[track]"
@@ -104,8 +140,8 @@ function isUnowned(track: TrackName) {
         :editable="isOwnedByMe(track)"
         class="min-h-0 flex-1"
         @update:code="(code) => onCodeUpdate(track, code)"
-        @evaluate="() => onEvaluate(track)"
-        @stop="() => onStop(track)"
+        @evaluate="() => sendPlayTrack(track)"
+        @stop="() => sendStopTrack(track)"
       />
     </div>
   </div>

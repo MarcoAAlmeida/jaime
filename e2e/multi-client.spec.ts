@@ -44,6 +44,38 @@ test('claiming a track propagates ownership and pattern updates, rejects a non-o
   await contextB.close()
 })
 
+test('play/stop is broadcast to every client, and local mute is independent per client', async ({ browser }) => {
+  const contextA = await browser.newContext()
+  const contextB = await browser.newContext()
+  const pageA = await contextA.newPage()
+  const pageB = await contextB.newPage()
+
+  await pageA.goto('/jam')
+  await pageB.goto('/jam')
+
+  await pageA.locator('[data-testid="track-drums"] [data-testid="claim-button"]').click()
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="owner-badge"]')).toHaveText('Owned')
+
+  // B never owns drums, but the play/stop broadcast still reaches it —
+  // this is the core fix: everyone hears every track, not just the owner.
+  await pageA.locator('[data-testid="track-drums"] [data-testid="play-button"]').click()
+  await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
+
+  // B's local mute is a personal listening preference — it must not
+  // affect A's (or the room's) shared isPlaying state.
+  await pageB.locator('[data-testid="track-drums"] [data-testid="mute-switch"]').click()
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
+  await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
+
+  await pageA.locator('[data-testid="track-drums"] [data-testid="stop-button"]').click()
+  await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toHaveCount(0)
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toHaveCount(0)
+
+  await contextA.close()
+  await contextB.close()
+})
+
 test('clock offsets from two contexts stay within tolerance after correction', async ({ browser }) => {
   const contextA = await browser.newContext()
   const contextB = await browser.newContext()

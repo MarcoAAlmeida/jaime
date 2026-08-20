@@ -127,3 +127,58 @@ starts `wrangler dev` automatically. Run via `npm run test:e2e`.
       edits relay correctly and playback stays roughly in phase between
       them — confirmed working by the user across laptop + phone on
       separate networks
+
+## 8. Shared playback + local mute
+
+Added after 7.2: the user found Play/Stop was purely local (only the
+clicking client heard anything), contradicting the project's own
+"everyone hears every track" premise. See design.md Decisions for the
+three alternatives discussed and why per-track broadcast + local mute
+was chosen, plus the related `nextCycleBoundary` quantization bug found
+while implementing it.
+
+- [x] 8.1 `TrackState` gains `isPlaying`; `ClientMessage` gains
+      `play_track`/`stop_track`; `ServerMessage` gains `playback_update`
+      — `shared/roomProtocol.ts`; verify `npx nuxt typecheck` passes —
+      passing
+- [x] 8.2 Durable Object handles `play_track`/`stop_track` (owner-gated),
+      broadcasting `playback_update` to every connection including the
+      sender; `releaseAndStop()` also stops a playing track on release or
+      owner disconnect; verify with unit tests — 4 new tests in
+      `test/room.test.ts` (`describe('playback', ...)`), all passing;
+      a 5th test (owner-disconnect stops playback) was dropped — see the
+      comment in that file: `SELF.fetch()`'s simulated WebSocket close
+      handshake doesn't propagate on any timescale a unit test can wait
+      for, not a code bug, and the same `releaseAndStop()` path is
+      already covered by the release_track test
+- [x] 8.3 `useJamSession` gains `playRequestSeq` (per-track monotonic
+      counter, bumped on every `playback_update` with `isPlaying: true`)
+      so re-pressing Play on an already-playing track re-evaluates with
+      current code despite `watch()` not firing on a `true → true`
+      no-op change — `app/composables/useJamSession.ts`,
+      `app/plugins/websocket.client.ts`
+- [x] 8.4 `jam.vue`: Play/Stop buttons and `TrackEditor`'s
+      `@evaluate`/`@stop` now send `play_track`/`stop_track` instead of
+      calling local `evaluate()`/`stop()` directly; a per-track `watch()`
+      on `[isPlaying, playRequestSeq, muted]` is the only place that
+      actually calls local `evaluate()`/`stop()`; a `USwitch` per track
+      (`https://ui.nuxt.com/docs/components/switch`) controls local
+      `muted` state, visible to every client regardless of ownership; a
+      "Playing" badge reflects shared `isPlaying` state for every client,
+      not just the owner; verify manually in a browser and with
+      Playwright — new e2e test
+      `play/stop is broadcast to every client, and local mute is
+      independent per client` passing (asserts the playing badge appears
+      for a non-owner and mute doesn't affect it); full manual audible
+      verification across two real browser tabs/devices still pending —
+      no interactive browser tool was available this session to confirm
+      audibly, only the state-level behavior via Playwright
+- [x] 8.5 Fix `waitForSynchronizedStart()`: it was using
+      `cycleStartTimestamp` directly as the target time instead of
+      computing the next actual bar boundary, so the delay was always
+      ~0 and starts were never phase-locked; added
+      `shared/transportMath.ts` (`nextCycleBoundary()`) as the single
+      implementation used by both `app/lib/transportClock.ts` and the
+      server's `set_tempo` handler (which had its own duplicate inline
+      copy of the same math); verify `npx vitest run` still passes the
+      existing tempo-re-lock test — passing

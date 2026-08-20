@@ -3,25 +3,18 @@ import type { ClientMessage, ServerMessage, TrackState } from '#shared/roomProto
 import type { TrackName } from '#shared/tracks'
 import { defineWebSocketHandler } from 'h3'
 import { DEFAULT_CODE, isTrackName, TRACK_NAMES } from '#shared/tracks'
+import { nextCycleBoundary } from '#shared/transportMath'
 
 const DEFAULT_BPM = 120
-// 1 Strudel cycle = 1 bar of 4 beats. Not specified in any project doc —
-// an assumption, standard for 4/4 time but worth revisiting if patterns
-// turn out to use a different cycle/beat relationship.
-const BEATS_PER_CYCLE = 4
 
 const tracks: Record<TrackName, TrackState> = {
-  drums: { owner: null, code: DEFAULT_CODE.drums },
-  bass: { owner: null, code: DEFAULT_CODE.bass },
-  lead: { owner: null, code: DEFAULT_CODE.lead },
-  pad: { owner: null, code: DEFAULT_CODE.pad },
+  drums: { owner: null, code: DEFAULT_CODE.drums, isPlaying: false },
+  bass: { owner: null, code: DEFAULT_CODE.bass, isPlaying: false },
+  lead: { owner: null, code: DEFAULT_CODE.lead, isPlaying: false },
+  pad: { owner: null, code: DEFAULT_CODE.pad, isPlaying: false },
 }
 let bpm = DEFAULT_BPM
 let cycleStartTimestamp = Date.now()
-
-function cycleDurationMs(currentBpm: number): number {
-  return (60000 / currentBpm) * BEATS_PER_CYCLE
-}
 
 // All 4 keys are always present (initialized above, never deleted), so
 // this indexed access is safe despite noUncheckedIndexedAccess.
@@ -41,6 +34,20 @@ function broadcastToAll(peer: Peer, message: ServerMessage) {
 
 function broadcastToOthers(peer: Peer, message: ServerMessage) {
   peer.publish('room', JSON.stringify(message))
+}
+
+// Stops a track (playback) and clears ownership, broadcasting both. Used
+// by release_track and by close() so a track never ends up ownerless but
+// still marked as playing — with no owner left, nothing could ever send
+// stop_track for it again.
+function releaseAndStop(peer: Peer, name: TrackName) {
+  const track = getTrack(name)
+  track.owner = null
+  broadcastToAll(peer, { type: 'ownership_update', track: name, owner: null })
+  if (track.isPlaying) {
+    track.isPlaying = false
+    broadcastToAll(peer, { type: 'playback_update', track: name, isPlaying: false })
+  }
 }
 
 export default defineWebSocketHandler({
@@ -80,12 +87,10 @@ export default defineWebSocketHandler({
       if (!isTrackName(data.track)) {
         return
       }
-      const track = getTrack(data.track)
-      if (track.owner !== peer.id) {
+      if (getTrack(data.track).owner !== peer.id) {
         return
       }
-      track.owner = null
-      broadcastToAll(peer, { type: 'ownership_update', track: data.track, owner: null })
+      releaseAndStop(peer, data.track)
       return
     }
 
@@ -102,6 +107,32 @@ export default defineWebSocketHandler({
       return
     }
 
+    if (data.type === 'play_track') {
+      if (!isTrackName(data.track)) {
+        return
+      }
+      const track = getTrack(data.track)
+      if (track.owner !== peer.id) {
+        return
+      }
+      track.isPlaying = true
+      broadcastToAll(peer, { type: 'playback_update', track: data.track, isPlaying: true })
+      return
+    }
+
+    if (data.type === 'stop_track') {
+      if (!isTrackName(data.track)) {
+        return
+      }
+      const track = getTrack(data.track)
+      if (track.owner !== peer.id) {
+        return
+      }
+      track.isPlaying = false
+      broadcastToAll(peer, { type: 'playback_update', track: data.track, isPlaying: false })
+      return
+    }
+
     if (data.type === 'clock_ping') {
       if (typeof data.clientSendTime !== 'number') {
         return
@@ -114,23 +145,18 @@ export default defineWebSocketHandler({
       if (typeof data.bpm !== 'number' || data.bpm <= 0) {
         return
       }
-      const now = Date.now()
-      const currentCycleDuration = cycleDurationMs(bpm)
-      const elapsed = now - cycleStartTimestamp
-      const cyclesElapsed = Math.floor(elapsed / currentCycleDuration) + 1
-      cycleStartTimestamp = cycleStartTimestamp + cyclesElapsed * currentCycleDuration
+      cycleStartTimestamp = nextCycleBoundary(cycleStartTimestamp, bpm, Date.now())
       bpm = data.bpm
       broadcastToAll(peer, { type: 'tempo_update', bpm, cycleStartTimestamp })
     }
   },
-  // Releases any tracks this connection owned, so a closed tab doesn't
-  // permanently lock a track for the rest of the session.
+  // Releases any tracks this connection owned (and stops them), so a
+  // closed tab doesn't permanently lock a track for the rest of the
+  // session.
   close(peer) {
     for (const name of TRACK_NAMES) {
-      const track = getTrack(name)
-      if (track.owner === peer.id) {
-        track.owner = null
-        broadcastToOthers(peer, { type: 'ownership_update', track: name, owner: null })
+      if (getTrack(name).owner === peer.id) {
+        releaseAndStop(peer, name)
       }
     }
   },

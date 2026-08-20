@@ -29,6 +29,14 @@ export function sendSetTempo(bpm: number) {
   send({ type: 'set_tempo', bpm })
 }
 
+export function sendPlayTrack(track: TrackName) {
+  send({ type: 'play_track', track })
+}
+
+export function sendStopTrack(track: TrackName) {
+  send({ type: 'stop_track', track })
+}
+
 /**
  * Sends a clock_ping and resolves with the matching clock_pong. Only one
  * ping is ever in flight at a time in this design, so no correlation ID
@@ -64,7 +72,7 @@ export function hasEstimatedOffsetOnce(): boolean {
 }
 
 export default defineNuxtPlugin(() => {
-  const { clientId, tracks, bpm, cycleStartTimestamp } = useJamSession()
+  const { clientId, tracks, bpm, cycleStartTimestamp, playRequestSeq } = useJamSession()
 
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
   ws = new WebSocket(`${protocol}://${location.host}/room`)
@@ -106,6 +114,18 @@ export default defineNuxtPlugin(() => {
         const track = tracks.value[data.track]
         if (track) {
           track.owner = data.owner
+        }
+        break
+      }
+      case 'playback_update': {
+        const track = tracks.value[data.track]
+        if (track) {
+          track.isPlaying = data.isPlaying
+          if (data.isPlaying) {
+            // Bump even if isPlaying was already true — see the comment
+            // on playRequestSeq in useJamSession.ts.
+            playRequestSeq.value[data.track]++
+          }
         }
         break
       }

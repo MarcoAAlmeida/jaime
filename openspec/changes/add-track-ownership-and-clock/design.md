@@ -110,6 +110,75 @@ existing scope rather than warranting a separate one:
   used for Release) — a touch-friendly equivalent to the existing
   Ctrl-Enter/Ctrl-. keybindings, not a replacement for them.
 
+### Decision: Play/Stop is shared, broadcast room state — not a local action
+The user tried the deployed app across two devices and found it silent
+on every client except the one that clicked Play: `evaluate()`/`stop()`
+were called directly from the button handlers, entirely local, which
+contradicts `01-project-overview.md`'s own premise that "each browser
+evaluates its own audio locally... hears everyone's tracks mixed
+together." Discussed three alternatives (global room-wide play/stop,
+per-track broadcast `isPlaying` with local mute, auto-evaluate on every
+edit) before implementing, per the user's explicit request not to jump
+straight to a fix. Chose per-track broadcast:
+- `TrackState` gains `isPlaying: boolean`; the Durable Object adds
+  `play_track`/`stop_track` (owner-gated, like `pattern_update`) and
+  broadcasts `playback_update` to *every* connection including the
+  sender (`broadcastToAll`, unlike `pattern_update`'s
+  `broadcastToOthers` — every client, not just other clients, needs to
+  react to isPlaying changes by actually starting/stopping local audio).
+- `releaseAndStop()` (renamed from the prior release-only helper) also
+  clears `isPlaying` and broadcasts that, so `release_track` and the
+  owner-disconnect `close()` handler can never leave a track marked
+  playing with no owner able to ever stop it.
+- Each client's own `jam.vue` watches `tracks[track].isPlaying` and
+  calls local `evaluate()`/`stop()` in response — the only thing
+  Play/Stop ever does is tell the room "this track's state changed";
+  actually making sound is a client-local reaction to that shared state,
+  same pattern as `pattern_update`.
+
+### Decision: `playRequestSeq` — a monotonic counter alongside `isPlaying`
+A Vue `watch()` on a primitive only fires on an actual value change.
+Re-pressing Play on an already-playing track (e.g. after fixing a typo
+in the code, without stopping first) is a `true → true` "transition" —
+a no-op for `watch()`, so the edited code would never actually get
+re-evaluated. `useJamSession` adds `playRequestSeq: Record<TrackName,
+number>`, bumped in `websocket.client.ts` on every `playback_update`
+with `isPlaying: true` (whether or not it was already true).
+`jam.vue`'s watch list includes it as a third source specifically to
+force re-evaluation on repeat play requests; `stop()` itself is
+idempotent so `isPlaying` alone is sufficient on the stop side.
+
+### Decision: Mute is local-only, never sent to the server
+The user asked for a per-track mute switch
+(`https://ui.nuxt.com/docs/components/switch`) as part of the same fix.
+It's a personal listening preference, not room state — muting a track
+for yourself must never affect whether anyone else hears it, and must
+never appear in `TrackState` or any protocol message. `jam.vue` keeps
+`muted: Record<TrackName, boolean>` as local component state; the
+per-track watcher combines it with `isPlaying`/`playRequestSeq` to
+decide whether to actually call `evaluate()` for a track that's playing
+room-wide, and calls `stop()` whenever this client shouldn't currently
+be making sound for it (either the room says the track is stopped, or
+it's muted locally) — so unmuting a still-playing track resumes audio
+immediately using the reactive state already held, without re-sending
+anything to the server.
+
+### Decision: Fixed the synchronized-start delay never actually delaying
+Found while confirming the mute/broadcast design was feasible, not
+reported by the user: `waitForSynchronizedStart()` used
+`cycleStartTimestamp` directly as the target time for `beforeStart`.
+`cycleStartTimestamp` is a fixed reference phase for the tempo grid
+(`cycleStartTimestamp + n * cycleDuration` for any integer `n`), not
+literally "the next time to start" — by the time anyone actually clicks
+Play, it's almost always already in the past, so the computed delay was
+always ~0 and starts were never actually phase-locked across clients.
+Added `shared/transportMath.ts` (`nextCycleBoundary()`) as the single
+place both the server (`set_tempo`'s re-lock logic, which had its own
+inline copy of the same math) and the client
+(`waitForSynchronizedStart()`) compute the next real bar boundary from
+that reference phase — fixing the bug and removing a duplicated
+implementation at once.
+
 ## Risks / Trade-offs
 
 - [Risk] `setTimeout`-based `beforeStart` delay has real jitter (browser
