@@ -211,6 +211,28 @@ always reads "Play" as the next, obvious action. It also sidesteps
 needing to fully trust Strudel's in-place pattern hot-swap under
 broadcast latency, rather than debug it further.
 
+### Decision: A visible prompt for the browser's audio-unlock gesture requirement
+The user reported: joining a room with a track already playing produced
+no sound at all until they claimed and played a track themselves — at
+which point *both* tracks became audible together. Root cause: browsers
+create the `AudioContext` suspended until a genuine user gesture resumes
+it; `@strudel/webaudio`'s `initAudioOnFirstClick()` returns a promise
+that only resolves on the page's first `mousedown`, and `evaluate()`
+already `await`s it internally on every call — including the automatic
+one `jam.vue`'s playback watcher fires for an already-playing track the
+moment `room_state` arrives on connect, well before any click. That call
+was silently parked, not failing or retrying; the first real click
+(claiming a track) resolved the shared promise and unblocked every
+pending `evaluate()` at once, which is why both tracks started together.
+Not fixable — there's no way to play audio before a user gesture, by
+design of the platform — so the fix is making the wait visible instead
+of silent: `primeAudio()` (`audioEngine.ts`) now returns
+`initAudioOnFirstClick()`'s promise instead of discarding it; `jam.vue`
+awaits it into an `audioUnlocked` ref and shows a "Tap anywhere to
+enable audio" `UAlert` (`audio-unlock-banner`) until it resolves. Any
+click anywhere dismisses it, since the underlying listener is on
+`document`, not the banner specifically.
+
 ## Risks / Trade-offs
 
 - [Risk] `setTimeout`-based `beforeStart` delay has real jitter (browser

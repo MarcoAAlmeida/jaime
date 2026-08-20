@@ -113,6 +113,26 @@ test('editing a playing track auto-stops it for every client', async ({ browser 
   await contextB.close()
 })
 
+test('a joining client sees an audio-unlock prompt until it interacts with the page', async ({ browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+
+  await page.goto('/jam')
+
+  // Browsers block audio until a genuine user gesture, including the
+  // automatic evaluate() this page fires for a track that's already
+  // playing when it joins — the prompt is what tells the user that's
+  // why they aren't hearing anything yet, instead of leaving it silent
+  // and unexplained.
+  await expect(page.locator('[data-testid="audio-unlock-banner"]')).toBeVisible()
+
+  await page.locator('[data-testid="track-drums"] [data-testid="claim-button"]').click()
+
+  await expect(page.locator('[data-testid="audio-unlock-banner"]')).toHaveCount(0)
+
+  await context.close()
+})
+
 test('clock offsets from two contexts stay within tolerance after correction', async ({ browser }) => {
   const contextA = await browser.newContext()
   const contextB = await browser.newContext()

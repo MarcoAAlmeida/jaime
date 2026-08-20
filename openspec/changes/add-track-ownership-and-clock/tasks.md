@@ -197,3 +197,14 @@ while implementing it.
       user's report that a changed note wasn't audible on either device
       until stopping and restarting; verify with a new Playwright test —
       `editing a playing track auto-stops it for every client` passing
+- [x] 8.8 Surface the browser's audio-unlock gesture requirement instead
+      of leaving it silent: a joining client's automatic `evaluate()` for
+      an already-playing track sits blocked on `initAudioOnFirstClick()`
+      until *any* click happens on the page — previously invisible,
+      reported by the user as "I only start hearing anything when I
+      claim and play a track myself, then both tracks become audible."
+      `primeAudio()` now returns that promise instead of discarding it;
+      `jam.vue` shows a "Tap anywhere to enable audio" banner
+      (`audio-unlock-banner`) until it resolves; verify with a new
+      Playwright test — `a joining client sees an audio-unlock prompt
+      until it interacts with the page` passing

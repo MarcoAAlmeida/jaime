@@ -40,9 +40,18 @@ function ensureReady() {
  * makes to focus the editor rather than being registered too late —
  * inside evaluate() itself — and waiting on a click that never comes
  * again once interaction goes keyboard-only (Ctrl-Enter).
+ *
+ * Returns the promise that resolves once that click has happened
+ * (browsers create the AudioContext suspended until a genuine user
+ * gesture resumes it — there's no way around this). evaluate() itself
+ * already awaits this internally, so a track that's already playing
+ * when a client joins silently sits blocked on this exact promise until
+ * the user clicks anything on the page — jam.vue awaits the return
+ * value here only to show a "tap to enable audio" prompt while that's
+ * pending, not because evaluate() needs it awaited twice.
  */
-export function primeAudio() {
-  initAudioOnFirstClick()
+export function primeAudio(): Promise<void> {
+  return initAudioOnFirstClick()
 }
 
 // One webaudioRepl per track, sharing the singleton AudioContext

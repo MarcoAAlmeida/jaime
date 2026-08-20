@@ -18,8 +18,18 @@ const muted = ref<Record<TrackName, boolean>>(
   Object.fromEntries(TRACK_NAMES.map(name => [name, false])) as Record<TrackName, boolean>,
 )
 
-onMounted(() => {
-  primeAudio()
+// Browsers create the AudioContext suspended until a genuine user
+// gesture resumes it. evaluate() already awaits primeAudio() internally
+// for every call, including the automatic one this page makes when it
+// joins a room with an already-playing track — so that track's audio
+// silently sits blocked until *some* click happens, with nothing on
+// screen explaining why. audioUnlocked drives a visible prompt for that
+// wait instead of leaving it silent and unexplained.
+const audioUnlocked = ref(false)
+
+onMounted(async () => {
+  await primeAudio()
+  audioUnlocked.value = true
 })
 
 // The single place that decides whether a track should actually be
@@ -83,6 +93,14 @@ function isUnowned(track: TrackName) {
     <h1 class="text-xl font-semibold">
       jaime
     </h1>
+    <UAlert
+      v-if="!audioUnlocked"
+      data-testid="audio-unlock-banner"
+      color="warning"
+      variant="subtle"
+      title="Tap anywhere to enable audio"
+      description="Your browser blocks sound until you interact with the page — any tap or click will start audio for every already-playing track, not just the one you touch."
+    />
     <div
       v-for="track in TRACK_NAMES"
       :key="track"
