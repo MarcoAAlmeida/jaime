@@ -12,6 +12,10 @@ dist
 # playwright-cli session output
 .playwright-cli
 
+# @playwright/test output
+test-results
+playwright-report
+
 # Node dependencies
 node_modules
 

@@ -1,7 +1,9 @@
+import type { TrackName } from '#shared/tracks'
 import { evalScope } from '@strudel/core'
 import { miniAllStrings } from '@strudel/mini'
 import { transpiler } from '@strudel/transpiler'
 import { initAudioOnFirstClick, registerSynthSounds, webaudioRepl } from '@strudel/webaudio'
+import { waitForSynchronizedStart } from '~/lib/transportClock'
 
 interface StrudelRepl {
   evaluate: (code: string, autostart?: boolean) => Promise<unknown>
@@ -9,8 +11,8 @@ interface StrudelRepl {
 }
 
 let ready: Promise<void> | undefined
-let repl: StrudelRepl | undefined
-let lastError: string | null = null
+const repls = new Map<TrackName, StrudelRepl>()
+const lastErrors = new Map<TrackName, string | null>()
 
 async function bootstrap() {
   // @strudel/mini must be evalScope'd too: the transpiler statically
@@ -22,15 +24,9 @@ async function bootstrap() {
   // Registers built-in oscillator waveforms (sawtooth, sine, square,
   // triangle) as usable .s(...) sounds. Sample-bank sounds (drum hits
   // etc.) need a separate samples() call with a source URL — not needed
-  // for Phase 1's synth-only manual test, deliberately avoiding a
+  // for the manual synth-only tests so far, deliberately avoiding a
   // network dependency this early.
   registerSynthSounds()
-  repl = webaudioRepl({
-    transpiler,
-    onEvalError: (error: Error) => {
-      lastError = error.message
-    },
-  }) as StrudelRepl
 }
 
 function ensureReady() {
@@ -49,20 +45,42 @@ export function primeAudio() {
   initAudioOnFirstClick()
 }
 
-/**
- * Evaluates Strudel pattern code and starts playback. Errors in the
- * pattern are caught internally by the Strudel repl (the scheduler stays
- * usable for the next evaluation) and returned here instead of thrown.
- */
-export async function evaluate(code: string): Promise<string | null> {
-  await ensureReady()
-  await initAudioOnFirstClick()
-  lastError = null
-  await repl!.evaluate(code)
-  return lastError
+// One webaudioRepl per track, sharing the singleton AudioContext
+// (getAudioContext() returns the same instance regardless of how many
+// repls call it — no explicit sharing logic needed). beforeStart is
+// passed once, here, at construction: it's a stable function reference
+// that reads live transport-clock state each time Strudel actually
+// calls it, not a snapshot from construction time.
+function getRepl(track: TrackName): StrudelRepl {
+  let repl = repls.get(track)
+  if (!repl) {
+    repl = webaudioRepl({
+      transpiler,
+      beforeStart: waitForSynchronizedStart,
+      onEvalError: (error: Error) => {
+        lastErrors.set(track, error.message)
+      },
+    }) as StrudelRepl
+    repls.set(track, repl)
+  }
+  return repl
 }
 
-export async function stop() {
+/**
+ * Evaluates a track's Strudel pattern code and starts its playback.
+ * Errors in the pattern are caught internally by the Strudel repl (the
+ * scheduler stays usable for the next evaluation) and returned here
+ * instead of thrown.
+ */
+export async function evaluate(track: TrackName, code: string): Promise<string | null> {
   await ensureReady()
-  repl!.stop()
+  await initAudioOnFirstClick()
+  lastErrors.set(track, null)
+  await getRepl(track).evaluate(code)
+  return lastErrors.get(track) ?? null
+}
+
+export async function stop(track: TrackName) {
+  await ensureReady()
+  repls.get(track)?.stop()
 }

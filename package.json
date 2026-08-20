@@ -8,7 +8,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "test": "nuxt build && vitest run"
+    "test": "nuxt build && vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@codemirror/state": "^6.7.1",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^26.2.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",

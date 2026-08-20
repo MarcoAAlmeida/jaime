@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import type { EditorView } from '@codemirror/view'
+import type { EditorView as EditorViewInstance } from '@codemirror/view'
+import { Compartment, StateEffect } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { initEditor } from '@strudel/codemirror'
 
 const props = defineProps<{
   code: string
+  editable: boolean
 }>()
 
 const emit = defineEmits<{
@@ -13,8 +16,9 @@ const emit = defineEmits<{
 }>()
 
 const editorEl = ref<HTMLDivElement>()
-let editorView: EditorView | undefined
+let editorView: EditorViewInstance | undefined
 let isApplyingExternalUpdate = false
+const editableCompartment = new Compartment()
 
 onMounted(() => {
   editorView = initEditor({
@@ -27,6 +31,9 @@ onMounted(() => {
     },
     onEvaluate: () => emit('evaluate'),
     onStop: () => emit('stop'),
+  })
+  editorView.dispatch({
+    effects: StateEffect.appendConfig.of(editableCompartment.of(EditorView.editable.of(props.editable))),
   })
 })
 
@@ -52,10 +59,19 @@ watch(() => props.code, (newCode) => {
   })
   isApplyingExternalUpdate = false
 })
+
+watch(() => props.editable, (editable) => {
+  if (!editorView) {
+    return
+  }
+  editorView.dispatch({
+    effects: editableCompartment.reconfigure(EditorView.editable.of(editable)),
+  })
+})
 </script>
 
 <template>
-  <div ref="editorEl" class="h-full w-full" />
+  <div ref="editorEl" class="h-full w-full" :class="{ 'opacity-50': !editable }" />
 </template>
 
 <style scoped>
