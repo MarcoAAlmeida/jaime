@@ -172,7 +172,10 @@ while implementing it.
       for a non-owner and mute doesn't affect it); full manual audible
       verification across two real browser tabs/devices still pending —
       no interactive browser tool was available this session to confirm
-      audibly, only the state-level behavior via Playwright
+      audibly, only the state-level behavior via Playwright. The user's
+      own manual verification (two real devices) confirmed broadcast
+      play/stop and mute work, and surfaced two follow-up UX issues —
+      see 8.6 and 8.7
 - [x] 8.5 Fix `waitForSynchronizedStart()`: it was using
       `cycleStartTimestamp` directly as the target time instead of
       computing the next actual bar boundary, so the delay was always
@@ -182,3 +185,15 @@ while implementing it.
       server's `set_tempo` handler (which had its own duplicate inline
       copy of the same math); verify `npx vitest run` still passes the
       existing tempo-re-lock test — passing
+- [x] 8.6 Combine Play/Stop into a single toggle button per track
+      (`play-stop-button`), label/color reflecting current `isPlaying`;
+      verify with Playwright that clicking it toggles both the label and
+      the shared playing badge — updated the 8.4 e2e test to use the new
+      single locator, passing
+- [x] 8.7 Editing a playing track's code now auto-sends `stop_track`
+      (before `pattern_update`) so the track goes silent for every client
+      until Play is explicitly pressed again, instead of relying on
+      re-evaluation to silently hot-swap the running pattern — fixes the
+      user's report that a changed note wasn't audible on either device
+      until stopping and restarting; verify with a new Playwright test —
+      `editing a playing track auto-stops it for every client` passing

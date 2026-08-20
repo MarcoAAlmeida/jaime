@@ -44,9 +44,29 @@ for (const track of TRACK_NAMES) {
   )
 }
 
+// Editing a playing track auto-stops it (broadcast, so every client goes
+// silent together) instead of trying to hot-swap the running pattern in
+// place. This makes visible and audible state always agree: if a track
+// shows "Playing", it's audibly playing exactly the code shown; editing
+// it flips that to stopped until Play is explicitly pressed again. The
+// alternative — leaving it playing and relying on re-evaluation to
+// silently pick up the new code — is what produced the original
+// "I changed a note but didn't hear it" confusion.
 function onCodeUpdate(track: TrackName, newCode: string) {
   tracks.value[track].code = newCode
+  if (tracks.value[track].isPlaying) {
+    sendStopTrack(track)
+  }
   sendPatternUpdate(track, newCode)
+}
+
+function togglePlayback(track: TrackName) {
+  if (tracks.value[track].isPlaying) {
+    sendStopTrack(track)
+  }
+  else {
+    sendPlayTrack(track)
+  }
 }
 
 function isOwnedByMe(track: TrackName) {
@@ -105,25 +125,16 @@ function isUnowned(track: TrackName) {
         >
           Release
         </UButton>
-        <template v-if="isOwnedByMe(track)">
-          <UButton
-            size="xs"
-            color="success"
-            data-testid="play-button"
-            @click="sendPlayTrack(track)"
-          >
-            Play
-          </UButton>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="outline"
-            data-testid="stop-button"
-            @click="sendStopTrack(track)"
-          >
-            Stop
-          </UButton>
-        </template>
+        <UButton
+          v-if="isOwnedByMe(track)"
+          size="xs"
+          :color="tracks[track].isPlaying ? 'neutral' : 'success'"
+          :variant="tracks[track].isPlaying ? 'outline' : 'solid'"
+          data-testid="play-stop-button"
+          @click="togglePlayback(track)"
+        >
+          {{ tracks[track].isPlaying ? 'Stop' : 'Play' }}
+        </UButton>
         <div class="ml-auto flex items-center gap-1.5">
           <span class="text-xs text-neutral-500">Mute</span>
           <USwitch v-model="muted[track]" data-testid="mute-switch" />

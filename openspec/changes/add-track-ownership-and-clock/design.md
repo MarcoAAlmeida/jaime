@@ -179,6 +179,38 @@ inline copy of the same math) and the client
 that reference phase — fixing the bug and removing a duplicated
 implementation at once.
 
+### Decision: A single Play/Stop toggle button, not two buttons
+The user reported this directly: with separate Play and Stop buttons
+always shown together, nothing signals that re-pressing Play while
+already playing is a meaningful action (needed to hear an edit — see the
+next decision). One `UButton` per track now reflects `isPlaying` in its
+own label/color (`Play`/success when stopped, `Stop`/neutral-outline
+when playing) and toggles via a single `togglePlayback()` handler.
+`TrackEditor`'s Ctrl-Enter/Ctrl-. keybindings are unaffected — they still
+map to fixed play/stop actions, not a toggle, since a keyboard shortcut
+doesn't need the same "what does this button do right now" affordance a
+click target does.
+
+### Decision: Editing a playing track auto-stops it, instead of hot-swapping in place
+The user tried editing a note on a playing track across two devices:
+the code visibly updated on both, but neither device's audio changed —
+only stopping and restarting picked up the edit. The underlying
+mechanism for hearing an edit without stopping already existed
+(re-sending `play_track` bumps `playRequestSeq`, forcing
+`jam.vue`'s watcher to re-`evaluate()` with the current code even though
+`isPlaying` stays `true`), but nothing in the UI prompted a user to
+re-press Play while already playing, so this path was effectively
+undiscoverable. Rather than trying to make that path more discoverable,
+the user proposed the simpler fix directly: pause the track whenever its
+code is edited. `jam.vue`'s `onCodeUpdate` now sends `stop_track` before
+`pattern_update` whenever the track being edited is currently playing.
+This makes visible and audible state always agree — a track shown
+"Playing" is always audibly playing exactly the code shown; editing it
+is always audible as "it went quiet," and the single toggle button
+always reads "Play" as the next, obvious action. It also sidesteps
+needing to fully trust Strudel's in-place pattern hot-swap under
+broadcast latency, rather than debug it further.
+
 ## Risks / Trade-offs
 
 - [Risk] `setTimeout`-based `beforeStart` delay has real jitter (browser

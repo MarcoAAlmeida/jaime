@@ -56,9 +56,12 @@ test('play/stop is broadcast to every client, and local mute is independent per 
   await pageA.locator('[data-testid="track-drums"] [data-testid="claim-button"]').click()
   await expect(pageB.locator('[data-testid="track-drums"] [data-testid="owner-badge"]')).toHaveText('Owned')
 
+  const playStopButton = pageA.locator('[data-testid="track-drums"] [data-testid="play-stop-button"]')
+
   // B never owns drums, but the play/stop broadcast still reaches it —
   // this is the core fix: everyone hears every track, not just the owner.
-  await pageA.locator('[data-testid="track-drums"] [data-testid="play-button"]').click()
+  await playStopButton.click()
+  await expect(playStopButton).toHaveText('Stop')
   await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
   await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
 
@@ -68,9 +71,43 @@ test('play/stop is broadcast to every client, and local mute is independent per 
   await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
   await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
 
-  await pageA.locator('[data-testid="track-drums"] [data-testid="stop-button"]').click()
+  await playStopButton.click()
+  await expect(playStopButton).toHaveText('Play')
   await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toHaveCount(0)
   await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toHaveCount(0)
+
+  await contextA.close()
+  await contextB.close()
+})
+
+test('editing a playing track auto-stops it for every client', async ({ browser }) => {
+  const contextA = await browser.newContext()
+  const contextB = await browser.newContext()
+  const pageA = await contextA.newPage()
+  const pageB = await contextB.newPage()
+
+  await pageA.goto('/jam')
+  await pageB.goto('/jam')
+
+  await pageA.locator('[data-testid="track-drums"] [data-testid="claim-button"]').click()
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="owner-badge"]')).toHaveText('Owned')
+
+  await pageA.locator('[data-testid="track-drums"] [data-testid="play-stop-button"]').click()
+  await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toBeVisible()
+
+  await pageA.locator('[data-testid="track-drums"] .cm-content').click()
+  await pageA.keyboard.press('ControlOrMeta+a')
+  await pageA.keyboard.type('s("hh*8")')
+
+  // Editing while playing auto-stops the track for everyone, rather than
+  // silently hot-swapping the running pattern — so the visible code and
+  // the audible (or in this test, the badge-reported) state never
+  // disagree about what's actually playing.
+  await expect(pageA.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toHaveCount(0)
+  await expect(pageB.locator('[data-testid="track-drums"] [data-testid="playing-badge"]')).toHaveCount(0)
+  await expect(pageA.locator('[data-testid="track-drums"] [data-testid="play-stop-button"]')).toHaveText('Play')
+  await expect(pageB.locator('[data-testid="track-drums"] .cm-content')).toHaveText('s("hh*8")')
 
   await contextA.close()
   await contextB.close()
