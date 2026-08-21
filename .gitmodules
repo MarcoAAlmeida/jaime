@@ -1,0 +1,14 @@
+[submodule "refers_to/strudel"]
+	path = refers_to/strudel
+	url = https://codeberg.org/uzu/strudel.git
+	update = none
+
+[submodule "refers_to/hydra"]
+	path = refers_to/hydra
+	url = https://github.com/hydra-synth/hydra.git
+	update = none
+
+[submodule "refers_to/airton"]
+	path = refers_to/airton
+	url = https://github.com/MarcoAAlmeida/airton.git
+	update = none
