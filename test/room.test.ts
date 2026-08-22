@@ -2,6 +2,15 @@ import { SELF } from 'cloudflare:test'
 import { afterEach, describe, expect, it } from 'vitest'
 
 let openSockets: WebSocket[] = []
+let roomCounter = 0
+
+// Each test gets its own room (rooms are fully isolated by ID now — see
+// server/routes/room.ts), so tests never share state and no longer need
+// to pick different track names from each other just to avoid collision.
+function freshRoomId(): string {
+  roomCounter += 1
+  return `test-room-${roomCounter}`
+}
 
 function nextMessage(ws: WebSocket): Promise<any> {
   return new Promise((resolve) => {
@@ -41,15 +50,15 @@ function messageQueue(ws: WebSocket): () => Promise<any> {
 }
 
 /**
- * Connects and returns both the socket and a promise for its initial
- * room_state message. The listener for that first message is attached
- * before accept() is called, so there's no window where the server's
- * open-handler send could arrive before anything is listening — a
- * WebSocket message sent before a listener is attached is dropped, not
+ * Connects to a given room and returns both the socket and a promise for
+ * its initial room_state message. The listener for that first message is
+ * attached before accept() is called, so there's no window where the
+ * server's open-handler send could arrive before anything is listening —
+ * a WebSocket message sent before a listener is attached is dropped, not
  * buffered.
  */
-async function connect(): Promise<{ ws: WebSocket, initial: Promise<any> }> {
-  const response = await SELF.fetch('http://example.com/room', {
+async function connect(roomId: string): Promise<{ ws: WebSocket, initial: Promise<any> }> {
+  const response = await SELF.fetch(`http://example.com/room?id=${encodeURIComponent(roomId)}`, {
     headers: { Upgrade: 'websocket' },
   })
   const ws = response.webSocket
@@ -69,74 +78,134 @@ afterEach(() => {
   openSockets = []
 })
 
+describe('multi-room', () => {
+  it('rejects a connection with no room id', async () => {
+    const response = await SELF.fetch('http://example.com/room', {
+      headers: { Upgrade: 'websocket' },
+    })
+    const ws = response.webSocket
+    if (!ws) {
+      throw new Error('Expected a WebSocket in the response')
+    }
+    let received: any
+    ws.addEventListener('message', (event) => {
+      received = JSON.parse(event.data as string)
+    })
+    ws.accept()
+    openSockets.push(ws)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(received).toBeUndefined()
+  })
+
+  it('isolates rooms: a client in one room never receives another room\'s broadcasts', async () => {
+    const roomA = freshRoomId()
+    const roomB = freshRoomId()
+    const a = await connect(roomA)
+    await a.initial
+    const b = await connect(roomB)
+    await b.initial
+
+    let aReceived = false
+    a.ws.addEventListener('message', () => {
+      aReceived = true
+    })
+
+    b.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    expect(aReceived).toBe(false)
+  })
+})
+
+describe('presence', () => {
+  it('shows an existing peer to a newly joining peer, and notifies the existing peer of the join', async () => {
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
+    const aState = await a.initial
+
+    const aReceived = nextMessage(a.ws)
+    const b = await connect(roomId)
+    const bState = await b.initial
+
+    expect(bState.presence.sort()).toEqual([aState.clientId, bState.clientId].sort())
+    await expect(aReceived).resolves.toEqual({ type: 'presence_update', clientId: bState.clientId, joined: true })
+  })
+})
+
 describe('realtime-room', () => {
   it('relays a pattern update from the owner to other connected clients', async () => {
-    const a = await connect()
-    const b = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
+    const b = await connect(roomId)
     await a.initial
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'drums' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws) // ownership_update to self
     await nextMessage(b.ws) // ownership_update broadcast to b
 
     const received = nextMessage(b.ws)
-    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'drums', code: 's("bd sd")' }))
+    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'a', code: 's("bd sd")' }))
 
-    await expect(received).resolves.toEqual({ type: 'pattern_update', track: 'drums', code: 's("bd sd")' })
+    await expect(received).resolves.toEqual({ type: 'pattern_update', track: 'a', code: 's("bd sd")' })
   })
 
   it('does not echo a pattern update back to the sender', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'drums' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws)
 
     let echoed = false
     a.ws.addEventListener('message', () => {
       echoed = true
     })
-    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'drums', code: 'note("c")' }))
+    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'a', code: 'note("c")' }))
     await new Promise(resolve => setTimeout(resolve, 50))
 
     expect(echoed).toBe(false)
   })
 
   it('sends a newly connecting client the current room state, including a distinct clientId', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     const aState = await a.initial
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'drums' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws)
-    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'drums', code: 'n(0)' }))
+    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'a', code: 'n(0)' }))
     await new Promise(resolve => setTimeout(resolve, 50))
 
-    const b = await connect()
+    const b = await connect(roomId)
     const bState = await b.initial
 
     expect(bState.clientId).not.toBe(aState.clientId)
-    expect(bState.tracks.drums).toEqual({ owner: aState.clientId, code: 'n(0)', isPlaying: false })
+    expect(bState.tracks.a).toEqual({ owner: aState.clientId, code: 'n(0)', isPlaying: false })
   })
 })
 
 describe('track-ownership', () => {
   it('lets a client claim an unowned track', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     const state = await a.initial
-    expect(state.tracks.bass.owner).toBeNull()
+    expect(state.tracks.b.owner).toBeNull()
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'bass' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'b' }))
     const update = await nextMessage(a.ws)
 
-    expect(update).toEqual({ type: 'ownership_update', track: 'bass', owner: state.clientId })
+    expect(update).toEqual({ type: 'ownership_update', track: 'b', owner: state.clientId })
   })
 
   it('rejects claiming an already-owned track', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'lead' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws) // broadcast of a's claim
 
@@ -144,19 +213,20 @@ describe('track-ownership', () => {
     b.ws.addEventListener('message', () => {
       bReceived = true
     })
-    b.ws.send(JSON.stringify({ type: 'claim_track', track: 'lead' }))
+    b.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await new Promise(resolve => setTimeout(resolve, 50))
 
     expect(bReceived).toBe(false)
   })
 
   it('lets the owner release a track, and rejects release from a non-owner', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'pad' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'b' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
 
@@ -165,23 +235,24 @@ describe('track-ownership', () => {
     b.ws.addEventListener('message', () => {
       bReceived = true
     })
-    b.ws.send(JSON.stringify({ type: 'release_track', track: 'pad' }))
+    b.ws.send(JSON.stringify({ type: 'release_track', track: 'b' }))
     await new Promise(resolve => setTimeout(resolve, 50))
     expect(bReceived).toBe(false)
 
     // owner release: succeeds
     const released = nextMessage(a.ws)
-    a.ws.send(JSON.stringify({ type: 'release_track', track: 'pad' }))
-    await expect(released).resolves.toEqual({ type: 'ownership_update', track: 'pad', owner: null })
+    a.ws.send(JSON.stringify({ type: 'release_track', track: 'b' }))
+    await expect(released).resolves.toEqual({ type: 'ownership_update', track: 'b', owner: null })
   })
 
   it('rejects a pattern update for a track the sender does not own', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'drums' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
 
@@ -189,8 +260,8 @@ describe('track-ownership', () => {
     b.ws.addEventListener('message', () => {
       bReceived = true
     })
-    // b does not own drums
-    b.ws.send(JSON.stringify({ type: 'pattern_update', track: 'drums', code: 's("hh*8")' }))
+    // b does not own 'a'
+    b.ws.send(JSON.stringify({ type: 'pattern_update', track: 'a', code: 's("hh*8")' }))
     await new Promise(resolve => setTimeout(resolve, 50))
 
     expect(bReceived).toBe(false)
@@ -199,53 +270,56 @@ describe('track-ownership', () => {
 
 describe('playback', () => {
   it('broadcasts a play_track update to the owner and other clients, including the sender', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'drums' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
 
     const aReceived = nextMessage(a.ws)
     const bReceived = nextMessage(b.ws)
-    a.ws.send(JSON.stringify({ type: 'play_track', track: 'drums' }))
+    a.ws.send(JSON.stringify({ type: 'play_track', track: 'a' }))
 
-    const expected = { type: 'playback_update', track: 'drums', isPlaying: true }
+    const expected = { type: 'playback_update', track: 'a', isPlaying: true }
     await expect(aReceived).resolves.toEqual(expected)
     await expect(bReceived).resolves.toEqual(expected)
   })
 
   it('broadcasts a stop_track update the same way', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'bass' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'b' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
-    a.ws.send(JSON.stringify({ type: 'play_track', track: 'bass' }))
+    a.ws.send(JSON.stringify({ type: 'play_track', track: 'b' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
 
     const aReceived = nextMessage(a.ws)
     const bReceived = nextMessage(b.ws)
-    a.ws.send(JSON.stringify({ type: 'stop_track', track: 'bass' }))
+    a.ws.send(JSON.stringify({ type: 'stop_track', track: 'b' }))
 
-    const expected = { type: 'playback_update', track: 'bass', isPlaying: false }
+    const expected = { type: 'playback_update', track: 'b', isPlaying: false }
     await expect(aReceived).resolves.toEqual(expected)
     await expect(bReceived).resolves.toEqual(expected)
   })
 
   it('rejects play_track and stop_track from a non-owner', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'lead' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
 
@@ -253,31 +327,32 @@ describe('playback', () => {
     b.ws.addEventListener('message', () => {
       bReceived = true
     })
-    b.ws.send(JSON.stringify({ type: 'play_track', track: 'lead' }))
-    b.ws.send(JSON.stringify({ type: 'stop_track', track: 'lead' }))
+    b.ws.send(JSON.stringify({ type: 'play_track', track: 'a' }))
+    b.ws.send(JSON.stringify({ type: 'stop_track', track: 'a' }))
     await new Promise(resolve => setTimeout(resolve, 50))
 
     expect(bReceived).toBe(false)
   })
 
   it('stops a playing track when its owner releases it', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
-    const b = await connect()
+    const b = await connect(roomId)
     await b.initial
 
-    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'pad' }))
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'b' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
-    a.ws.send(JSON.stringify({ type: 'play_track', track: 'pad' }))
+    a.ws.send(JSON.stringify({ type: 'play_track', track: 'b' }))
     await nextMessage(a.ws)
     await nextMessage(b.ws)
 
     const nextB = messageQueue(b.ws)
-    a.ws.send(JSON.stringify({ type: 'release_track', track: 'pad' }))
+    a.ws.send(JSON.stringify({ type: 'release_track', track: 'b' }))
 
-    await expect(nextB()).resolves.toEqual({ type: 'ownership_update', track: 'pad', owner: null })
-    await expect(nextB()).resolves.toEqual({ type: 'playback_update', track: 'pad', isPlaying: false })
+    await expect(nextB()).resolves.toEqual({ type: 'ownership_update', track: 'b', owner: null })
+    await expect(nextB()).resolves.toEqual({ type: 'playback_update', track: 'b', isPlaying: false })
   })
 
   // Owner-disconnect-releases-and-stops (the close() handler in room.ts,
@@ -286,12 +361,14 @@ describe('playback', () => {
   // test can wait for (observed 10s+, not a quick frame exchange), so
   // this is left to manual/e2e verification instead. It exercises the
   // same releaseAndStop() path already covered by the release_track test
-  // above.
+  // above. The same limitation applies to presence's leave notification
+  // on close — covered by Playwright instead (04-roadmap.md).
 })
 
 describe('transport-clock', () => {
   it('echoes a clock_ping as a clock_pong with a server timestamp', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     await a.initial
 
     const before = Date.now()
@@ -307,7 +384,8 @@ describe('transport-clock', () => {
   })
 
   it('re-locks tempo changes at the next bar boundary, not immediately', async () => {
-    const a = await connect()
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
     const state = await a.initial
 
     const update = nextMessage(a.ws)

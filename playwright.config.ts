@@ -7,7 +7,7 @@ export default defineConfig({
   reporter: 'list',
   webServer: {
     command: 'npm run build && npx wrangler dev --port 8788',
-    url: 'http://127.0.0.1:8788/jam',
+    url: 'http://127.0.0.1:8788/',
     reuseExistingServer: false,
     timeout: 120_000,
   },

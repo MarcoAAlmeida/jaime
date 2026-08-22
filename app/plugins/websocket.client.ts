@@ -72,10 +72,8 @@ export function hasEstimatedOffsetOnce(): boolean {
 }
 
 export default defineNuxtPlugin(() => {
-  const { clientId, tracks, bpm, cycleStartTimestamp, playRequestSeq } = useJamSession()
-
-  const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-  ws = new WebSocket(`${protocol}://${location.host}/room`)
+  const { clientId, tracks, bpm, cycleStartTimestamp, playRequestSeq, presence } = useJamSession()
+  const route = useRoute()
 
   // Read-only test hook: exposes the computed offset for the Playwright
   // clock-drift assertion (04-roadmap.md Phase 3) to read from each
@@ -86,7 +84,7 @@ export default defineNuxtPlugin(() => {
     __jaimeClock: { getOffset: () => number, hasEstimatedOnce: () => boolean }
   }).__jaimeClock = { getOffset, hasEstimatedOnce: hasEstimatedOffsetOnce }
 
-  ws.addEventListener('message', (event) => {
+  function handleMessage(event: MessageEvent) {
     let data: ServerMessage
     try {
       data = JSON.parse(event.data)
@@ -101,6 +99,7 @@ export default defineNuxtPlugin(() => {
         tracks.value = data.tracks
         bpm.value = data.bpm
         cycleStartTimestamp.value = data.cycleStartTimestamp
+        presence.value = data.presence
         estimateOffset()
         break
       case 'pattern_update': {
@@ -133,10 +132,41 @@ export default defineNuxtPlugin(() => {
         bpm.value = data.bpm
         cycleStartTimestamp.value = data.cycleStartTimestamp
         break
+      case 'presence_update':
+        if (data.joined) {
+          if (!presence.value.includes(data.clientId)) {
+            presence.value = [...presence.value, data.clientId]
+          }
+        }
+        else {
+          presence.value = presence.value.filter(id => id !== data.clientId)
+        }
+        break
       case 'clock_pong':
         pendingPong?.(data)
         pendingPong = undefined
         break
     }
-  })
+  }
+
+  // Rooms are dynamic (Phase 4): the plugin connects only once a room ID
+  // is present in the route, and reconnects if that ID changes — e.g.
+  // navigating client-side from the landing page straight into a room,
+  // with no full page reload in between.
+  watch(
+    () => route.params.id,
+    (id) => {
+      ws?.close()
+      hasEstimatedOffset = false
+      offset = 0
+      if (typeof id !== 'string' || !id) {
+        ws = undefined
+        return
+      }
+      const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
+      ws = new WebSocket(`${protocol}://${location.host}/room?id=${encodeURIComponent(id)}`)
+      ws.addEventListener('message', handleMessage)
+    },
+    { immediate: true },
+  )
 })

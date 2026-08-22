@@ -26,6 +26,9 @@ export function useJamSession() {
   // with the current code, but a plain watch() on the isPlaying boolean
   // wouldn't refire on a true->true "change". Consumed by jam.vue.
   const playRequestSeq = useState<Record<TrackName, number>>('jam-session-play-seq', zeroPerTrack)
+  // Connection IDs currently in the room, not people — no display-name
+  // system exists yet (Phase 6). See presence_update in websocket.client.ts.
+  const presence = useState<string[]>('jam-session-presence', () => [])
 
   return {
     clientId,
@@ -33,5 +36,6 @@ export function useJamSession() {
     bpm,
     cycleStartTimestamp,
     playRequestSeq,
+    presence,
   }
 }

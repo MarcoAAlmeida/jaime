@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TrackName } from '#shared/tracks'
-import { TRACK_NAMES } from '#shared/tracks'
+import { TRACK_LABELS, TRACK_NAMES } from '#shared/tracks'
 import { evaluate, primeAudio, stop } from '~/lib/audioEngine'
 import {
   sendClaimTrack,
@@ -10,13 +10,14 @@ import {
   sendStopTrack,
 } from '~/plugins/websocket.client'
 
-const { clientId, tracks, playRequestSeq } = useJamSession()
+const { clientId, tracks, playRequestSeq, presence } = useJamSession()
 const errors = ref<Partial<Record<TrackName, string | null>>>({})
 // Local-only, never broadcast: a personal listening preference, not
 // shared room state. Muting doesn't tell anyone else anything.
 const muted = ref<Record<TrackName, boolean>>(
   Object.fromEntries(TRACK_NAMES.map(name => [name, false])) as Record<TrackName, boolean>,
 )
+const linkCopied = ref(false)
 
 // Browsers create the AudioContext suspended until a genuine user
 // gesture resumes it. evaluate() already awaits primeAudio() internally
@@ -86,13 +87,37 @@ function isOwnedByMe(track: TrackName) {
 function isUnowned(track: TrackName) {
   return tracks.value[track].owner === null
 }
+
+async function copyInviteLink() {
+  await navigator.clipboard.writeText(window.location.href)
+  linkCopied.value = true
+  setTimeout(() => {
+    linkCopied.value = false
+  }, 1500)
+}
 </script>
 
 <template>
   <div class="flex h-screen flex-col gap-4 overflow-y-auto p-4">
-    <h1 class="text-xl font-semibold">
-      jaime
-    </h1>
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h1 class="text-xl font-semibold">
+        jaime
+      </h1>
+      <div class="flex items-center gap-2">
+        <UBadge color="neutral" variant="subtle" data-testid="presence-count">
+          {{ presence.length }} here
+        </UBadge>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="outline"
+          data-testid="copy-invite-button"
+          @click="copyInviteLink"
+        >
+          {{ linkCopied ? 'Copied!' : 'Copy invite link' }}
+        </UButton>
+      </div>
+    </div>
     <UAlert
       v-if="!audioUnlocked"
       data-testid="audio-unlock-banner"
@@ -108,7 +133,7 @@ function isUnowned(track: TrackName) {
       :data-testid="`track-${track}`"
     >
       <div class="flex flex-wrap items-center gap-2">
-        <span class="font-medium capitalize">{{ track }}</span>
+        <span class="font-medium">{{ TRACK_LABELS[track] }}</span>
         <UBadge v-if="isOwnedByMe(track)" color="primary" data-testid="owner-badge">
           You
         </UBadge>

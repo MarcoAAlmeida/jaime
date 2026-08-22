@@ -7,8 +7,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui'],
   css: ['~/assets/css/main.css'],
   routeRules: {
-    '/': { redirect: '/jam' },
-    '/jam': { ssr: false }
+    '/room/**': { ssr: false }
   },
   nitro: {
     preset: 'cloudflare-durable',
