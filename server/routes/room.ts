@@ -14,6 +14,17 @@ interface RoomState {
   presence: Set<string>
 }
 
+// What actually gets written to durable storage — deliberately excludes
+// presence. A restored presence list would go stale the instant a
+// connection that was open before the restart actually drops; presence
+// is always rebuilt from whichever WebSockets are still connected (see
+// design.md in add-room-persistence).
+interface PersistedRoomState {
+  tracks: Record<TrackName, TrackState>
+  bpm: number
+  cycleStartTimestamp: number
+}
+
 // One Durable Object instance serves the entire Worker — Nitro's
 // cloudflare-durable preset always addresses a single hardcoded
 // instance (see design.md in add-multi-room-presence), so there's no
@@ -21,6 +32,15 @@ interface RoomState {
 // keying this map by room ID and scoping every crossws topic to that
 // ID, not by separate DO instances.
 const rooms = new Map<string, RoomState>()
+// In-flight loads from storage, keyed by room ID — ensures concurrent
+// callers for the same not-yet-cached room (e.g. two clients' open()
+// calls arriving close together right after a restart) converge on one
+// storage read instead of racing to populate `rooms` independently.
+const loading = new Map<string, Promise<RoomState>>()
+
+function storageKey(roomId: string): string {
+  return `room:${roomId}`
+}
 
 function createRoomState(): RoomState {
   return {
@@ -34,13 +54,42 @@ function createRoomState(): RoomState {
   }
 }
 
-function getRoom(roomId: string): RoomState {
-  let room = rooms.get(roomId)
-  if (!room) {
-    room = createRoomState()
-    rooms.set(roomId, room)
+async function loadRoom(roomId: string): Promise<RoomState> {
+  const stored = await getDurableStorage().get<PersistedRoomState>(storageKey(roomId))
+  if (stored) {
+    return { ...stored, presence: new Set() }
   }
-  return room
+  return createRoomState()
+}
+
+async function getRoom(roomId: string): Promise<RoomState> {
+  const cached = rooms.get(roomId)
+  if (cached) {
+    return cached
+  }
+  let pending = loading.get(roomId)
+  if (!pending) {
+    pending = loadRoom(roomId).then((room) => {
+      rooms.set(roomId, room)
+      loading.delete(roomId)
+      return room
+    })
+    loading.set(roomId, pending)
+  }
+  return pending
+}
+
+// Writes the room's entire current in-memory state as one snapshot, not
+// a per-field diff — see design.md's "Whole-room snapshot writes"
+// decision for why that's what makes this safe under Durable Objects'
+// interleaved async execution, not just simpler.
+async function persistRoom(roomId: string, room: RoomState): Promise<void> {
+  const persisted: PersistedRoomState = {
+    tracks: room.tracks,
+    bpm: room.bpm,
+    cycleStartTimestamp: room.cycleStartTimestamp,
+  }
+  await getDurableStorage().put(storageKey(roomId), persisted)
 }
 
 // peer.request.url is part of crossws's public Peer API and persists
@@ -79,25 +128,28 @@ function broadcastToOthers(peer: Peer, roomId: string, message: ServerMessage) {
 // Stops a track (playback) and clears ownership, broadcasting both. Used
 // by release_track and by close() so a track never ends up ownerless but
 // still marked as playing — with no owner left, nothing could ever send
-// stop_track for it again.
-function releaseAndStop(peer: Peer, roomId: string, room: RoomState, name: TrackName) {
+// stop_track for it again. Persists before broadcasting (see design.md)
+// so a restart right after can never lose a change others already saw.
+async function releaseAndStop(peer: Peer, roomId: string, room: RoomState, name: TrackName): Promise<void> {
   const track = getTrack(room, name)
   track.owner = null
+  const wasPlaying = track.isPlaying
+  track.isPlaying = false
+  await persistRoom(roomId, room)
   broadcastToAll(peer, roomId, { type: 'ownership_update', track: name, owner: null })
-  if (track.isPlaying) {
-    track.isPlaying = false
+  if (wasPlaying) {
     broadcastToAll(peer, roomId, { type: 'playback_update', track: name, isPlaying: false })
   }
 }
 
 export default defineWebSocketHandler({
-  open(peer) {
+  async open(peer) {
     const roomId = getRoomIdFromPeer(peer)
     if (!roomId) {
       peer.close(4000, 'Missing room id')
       return
     }
-    const room = getRoom(roomId)
+    const room = await getRoom(roomId)
 
     peer.subscribe(roomTopic(roomId))
     room.presence.add(peer.id)
@@ -112,12 +164,12 @@ export default defineWebSocketHandler({
       presence: [...room.presence],
     })
   },
-  message(peer, message) {
+  async message(peer, message) {
     const roomId = getRoomIdFromPeer(peer)
     if (!roomId) {
       return
     }
-    const room = getRoom(roomId)
+    const room = await getRoom(roomId)
 
     let data: ClientMessage
     try {
@@ -136,6 +188,7 @@ export default defineWebSocketHandler({
         return
       }
       track.owner = peer.id
+      await persistRoom(roomId, room)
       broadcastToAll(peer, roomId, { type: 'ownership_update', track: data.track, owner: peer.id })
       return
     }
@@ -147,7 +200,7 @@ export default defineWebSocketHandler({
       if (getTrack(room, data.track).owner !== peer.id) {
         return
       }
-      releaseAndStop(peer, roomId, room, data.track)
+      await releaseAndStop(peer, roomId, room, data.track)
       return
     }
 
@@ -160,6 +213,7 @@ export default defineWebSocketHandler({
         return
       }
       track.code = data.code
+      await persistRoom(roomId, room)
       broadcastToOthers(peer, roomId, { type: 'pattern_update', track: data.track, code: data.code })
       return
     }
@@ -173,6 +227,7 @@ export default defineWebSocketHandler({
         return
       }
       track.isPlaying = true
+      await persistRoom(roomId, room)
       broadcastToAll(peer, roomId, { type: 'playback_update', track: data.track, isPlaying: true })
       return
     }
@@ -186,6 +241,7 @@ export default defineWebSocketHandler({
         return
       }
       track.isPlaying = false
+      await persistRoom(roomId, room)
       broadcastToAll(peer, roomId, { type: 'playback_update', track: data.track, isPlaying: false })
       return
     }
@@ -204,13 +260,14 @@ export default defineWebSocketHandler({
       }
       room.cycleStartTimestamp = nextCycleBoundary(room.cycleStartTimestamp, room.bpm, Date.now())
       room.bpm = data.bpm
+      await persistRoom(roomId, room)
       broadcastToAll(peer, roomId, { type: 'tempo_update', bpm: room.bpm, cycleStartTimestamp: room.cycleStartTimestamp })
     }
   },
   // Releases any tracks this connection owned (and stops them) and
   // removes it from presence, so a closed tab doesn't permanently lock a
   // track or linger in the roster for the rest of the room's session.
-  close(peer) {
+  async close(peer) {
     const roomId = getRoomIdFromPeer(peer)
     if (!roomId) {
       return
@@ -225,7 +282,7 @@ export default defineWebSocketHandler({
 
     for (const name of TRACK_NAMES) {
       if (getTrack(room, name).owner === peer.id) {
-        releaseAndStop(peer, roomId, room, name)
+        await releaseAndStop(peer, roomId, room, name)
       }
     }
   },

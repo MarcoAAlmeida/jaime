@@ -1,5 +1,17 @@
-import { SELF } from 'cloudflare:test'
+import { evictDurableObject, runInDurableObject, SELF } from 'cloudflare:test'
+import { env } from 'cloudflare:workers'
 import { afterEach, describe, expect, it } from 'vitest'
+import { DEFAULT_CODE } from '../shared/tracks'
+
+// The Nitro cloudflare-durable preset always addresses one hardcoded
+// instance name ("server") for the whole Worker — see design.md in
+// add-multi-room-presence. Tests that need to reach the Durable
+// Object's storage directly (bypassing the app's own in-memory cache)
+// use this same stub.
+function getDurableObjectStub() {
+  const id = env.$DurableObject.idFromName('server')
+  return env.$DurableObject.get(id)
+}
 
 let openSockets: WebSocket[] = []
 let roomCounter = 0
@@ -400,5 +412,56 @@ describe('transport-clock', () => {
     const diff = result.cycleStartTimestamp - state.cycleStartTimestamp
     expect(diff % oldCycleDurationMs).toBeCloseTo(0, 0)
     expect(diff).toBeGreaterThan(0)
+  })
+})
+
+describe('persistence', () => {
+  it('persists a mutation to storage as a whole-room snapshot, excluding presence', async () => {
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
+    const aState = await a.initial
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
+    await nextMessage(a.ws)
+    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'a', code: 's("bd sd")' }))
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    const stub = getDurableObjectStub()
+    const stored = await runInDurableObject(stub, (_instance, state) =>
+      state.storage.get(`room:${roomId}`))
+
+    expect(stored).toEqual({
+      tracks: {
+        a: { owner: aState.clientId, code: 's("bd sd")', isPlaying: false },
+        b: { owner: null, code: DEFAULT_CODE.b, isPlaying: false },
+      },
+      bpm: 120,
+      cycleStartTimestamp: expect.any(Number),
+    })
+    // The persisted shape has no `presence` key at all — not an empty
+    // array, absent entirely (see design.md's "never persisted" decision).
+    expect(stored).not.toHaveProperty('presence')
+  })
+
+  it('survives a Durable Object eviction: reconnecting after eviction sees the prior state, not a fresh room', async () => {
+    const roomId = freshRoomId()
+    const a = await connect(roomId)
+    const aState = await a.initial
+    a.ws.send(JSON.stringify({ type: 'claim_track', track: 'a' }))
+    await nextMessage(a.ws)
+    a.ws.send(JSON.stringify({ type: 'pattern_update', track: 'a', code: 'note("e")' }))
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    // Tears down the Durable Object's in-memory state (including our
+    // module-level `rooms`/`loading` caches, which live inside its own
+    // isolate) while preserving durable storage — genuinely exercising
+    // the rehydrate-from-storage path, not just a stand-in for it.
+    const stub = getDurableObjectStub()
+    await evictDurableObject(stub)
+
+    const b = await connect(roomId)
+    const bState = await b.initial
+
+    expect(bState.tracks.a).toEqual({ owner: aState.clientId, code: 'note("e")', isPlaying: false })
+    expect(bState.bpm).toBe(120)
   })
 })

@@ -13,6 +13,14 @@ export default defineNuxtConfig({
     preset: 'cloudflare-durable',
     experimental: {
       websocket: true
+    },
+    typescript: {
+      tsConfig: {
+        // wrangler types' generated ambient types (DurableObjectState,
+        // DurableObjectStorage, ...) aren't under server/ or shared/, so
+        // Nitro's generated tsconfig doesn't pick them up by default.
+        include: ['../worker-configuration.d.ts']
+      }
     }
   },
   alias: {
