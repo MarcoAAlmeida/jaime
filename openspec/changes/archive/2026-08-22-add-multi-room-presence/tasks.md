@@ -144,7 +144,7 @@
       live URL — no interactive browser tool was available this
       session, same limitation as Phase 3's deploy. Worth a quick look
       when you do 6.2
-- [ ] 6.2 Manual two-device smoke test: one device creates a room and
+- [x] 6.2 Manual two-device smoke test: one device creates a room and
       shares the link, the other joins via that link — confirm both see
       each other in presence and can independently claim/play their own
-      track
+      track — confirmed working by the user across two real devices
