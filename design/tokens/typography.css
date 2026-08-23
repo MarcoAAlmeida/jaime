@@ -1,0 +1,13 @@
+/* Type scale — font-size / line-height pairs verbatim from the .fig "4 - Font" collection. */
+:root{
+--text-xs:12px;--text-xs-lh:16px;
+--text-sm:14px;--text-sm-lh:20px;
+--text-base:16px;--text-base-lh:24px;
+--text-lg:18px;--text-lg-lh:28px;
+--text-xl:20px;--text-xl-lh:28px;
+--text-2xl:24px;--text-2xl-lh:32px;
+--text-3xl:30px;--text-3xl-lh:36px;
+--text-4xl:36px;--text-4xl-lh:40px;
+--text-5xl:48px;--text-6xl:60px;--text-7xl:72px;--text-8xl:96px;--text-9xl:128px;
+--font-normal:400;--font-medium:500;--font-semibold:600;--font-bold:700;--font-black:800
+}

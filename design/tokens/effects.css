@@ -1,0 +1,16 @@
+/* Shadows, rings and motion — measured off the .fig's button/switch/tabs/tooltip layers. */
+:root{
+--shadow-xs:0px 1px 2px 0px rgba(0,0,0,0.05);
+--shadow-sm:0px 1px 3px 0px rgba(0,0,0,0.1),0px 1px 2px -1px rgba(0,0,0,0.1);
+--shadow-md:0px 4px 6px -1px rgba(0,0,0,0.1),0px 2px 4px -2px rgba(0,0,0,0.1);
+--shadow-lg:0px 10px 15px -3px rgba(0,0,0,0.1),0px 4px 6px -4px rgba(0,0,0,0.1);
+--shadow-thumb:0px 11.429px 17.143px -3.429px rgba(0,0,0,0.1),0px 4.571px 6.857px -2.286px rgba(0,0,0,0.05);
+--shadow-tabs-indicator:0px 2px 2px 0px rgba(0,0,0,0.05);
+--shadow-overlay:0px 4px 4px 0px rgba(0,0,0,0.25);
+--ring-inset:inset 0 0 0 1px;
+--focus-ring:0px 0px 0px 2px var(--ui-bg),0px 0px 0px 4px var(--color-primary);
+--overlay-scrim:rgba(25,24,23,0.65);
+--disabled-opacity:0.75;/* @kind other */
+--ease-out:cubic-bezier(0.16,1,0.3,1);/* @kind other */--ease-standard:cubic-bezier(0.4,0,0.2,1);/* @kind other */
+--duration-fast:120ms;/* @kind other */--duration:200ms;/* @kind other */--duration-slow:320ms;/* @kind other */
+}

@@ -1,0 +1,8 @@
+/* JAiMe type stack — DM Sans (UI), Inter (dense UI labels), DM Mono (patterns/code).
+   The .fig references these families by name but ships no binaries, so they are
+   loaded from Google Fonts. Swap these @import lines for local @font-face rules
+   if licensed files become available. */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+:root{--font-sans:"DM Sans","DM Sans Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-ui:"Inter","DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-mono:"DM Mono","SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace}

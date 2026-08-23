@@ -1,0 +1,7 @@
+/* Minimal global baseline. Consumers get brand type + link colors for free. */
+:root{color-scheme:light}
+body{font-family:var(--font-sans);font-size:var(--text-sm);line-height:var(--text-sm-lh);color:var(--ui-text);background:var(--ui-bg);-webkit-font-smoothing:antialiased}
+a{color:var(--color-primary);text-decoration:none}
+a:hover{color:var(--color-primary-hover);text-decoration:underline}
+code,kbd,pre,samp{font-family:var(--font-mono)}
+::selection{background:var(--primary-100);color:var(--primary-900)}

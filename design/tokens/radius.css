@@ -1,0 +1,8 @@
+/* Radii — the .fig "Rounded" / "6 - Radius" collections. --ui-radius is the
+   themeable base (0.25rem/4px in the file's default mode). */
+:root{
+--ui-radius:4px;
+--rounded-xs:2px;--rounded-sm:4px;--rounded-md:6px;--rounded-lg:8px;--rounded-xl:12px;--rounded-2xl:16px;--rounded-3xl:24px;--rounded-4xl:32px;--rounded-full:999px;
+/* the derived steps components actually use */
+--radius-control:6px;--radius-card:8px;--radius-panel:12px;--radius-chip:999px
+}

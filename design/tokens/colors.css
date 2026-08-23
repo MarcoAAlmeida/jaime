@@ -1,0 +1,54 @@
+/* JAiMe semantic colors. Structure and neutral ramp come from the .fig
+   ("3 - Tokens"); the brand hues are chosen from the JAiMe logo:
+   blue = primary, orange = secondary, lime = accent, slate = neutral.
+   The .fig's own default primary is green — that stays available as --green-*
+   and is what --color-success uses. Light theme is the default. */
+:root{
+/* brand ramps (aliases onto the raw palette) */
+--primary-50:var(--blue-50);--primary-100:var(--blue-100);--primary-200:var(--blue-200);--primary-300:var(--blue-300);--primary-400:var(--blue-400);--primary-500:var(--blue-500);--primary-600:var(--blue-600);--primary-700:var(--blue-700);--primary-800:var(--blue-800);--primary-900:var(--blue-900);--primary-950:var(--blue-950);
+--secondary-50:var(--orange-50);--secondary-100:var(--orange-100);--secondary-200:var(--orange-200);--secondary-300:var(--orange-300);--secondary-400:var(--orange-400);--secondary-500:var(--orange-500);--secondary-600:var(--orange-600);--secondary-700:var(--orange-700);--secondary-800:var(--orange-800);--secondary-900:var(--orange-900);--secondary-950:var(--orange-950);
+--accent-50:var(--lime-50);--accent-100:var(--lime-100);--accent-200:var(--lime-200);--accent-300:var(--lime-300);--accent-400:var(--lime-400);--accent-500:var(--lime-500);--accent-600:var(--lime-600);--accent-700:var(--lime-700);--accent-800:var(--lime-800);--accent-900:var(--lime-900);
+--neutral-50:var(--graphite-50);--neutral-100:var(--graphite-100);--neutral-200:var(--graphite-200);--neutral-300:var(--graphite-300);--neutral-400:var(--graphite-400);--neutral-500:var(--graphite-500);--neutral-600:var(--graphite-600);--neutral-700:var(--graphite-700);--neutral-800:var(--graphite-800);--neutral-900:var(--graphite-900);--neutral-950:var(--graphite-950);
+/* the .fig element collections reference --gray-* directly; remap them onto graphite so fields, tables and kbd track the same neutral */
+--gray-50:var(--graphite-50);--gray-100:var(--graphite-100);--gray-200:var(--graphite-200);--gray-300:var(--graphite-300);--gray-400:var(--graphite-400);--gray-500:var(--graphite-500);--gray-600:var(--graphite-600);--gray-700:var(--graphite-700);--gray-800:var(--graphite-800);--gray-900:var(--graphite-900);--gray-950:var(--graphite-950);
+--success-500:var(--green-500);--success-600:var(--green-600);--success-50:var(--green-50);--success-100:var(--green-100);--success-400:var(--green-400);
+--error-500:var(--red-500);--error-600:var(--red-600);--error-50:var(--red-50);--error-100:var(--red-100);--error-400:var(--red-400);
+--warning-500:var(--yellow-500);--warning-600:var(--yellow-600);--warning-50:var(--yellow-50);--warning-100:var(--yellow-100);--warning-400:var(--yellow-400);
+--info-500:var(--sky-500);--info-600:var(--sky-600);--info-50:var(--sky-50);--info-100:var(--sky-100);--info-400:var(--sky-400);
+
+/* role colors */
+--color-primary:var(--primary-500);--color-primary-hover:var(--primary-600);
+--color-secondary:var(--secondary-500);--color-secondary-hover:var(--secondary-600);
+--color-accent:var(--accent-500);
+--color-success:var(--success-500);--color-error:var(--error-500);--color-warning:var(--warning-500);--color-info:var(--info-500);--color-neutral:var(--neutral-900);
+
+/* surfaces */
+--ui-bg:var(--white);--ui-bg-muted:var(--neutral-50);--ui-bg-elevated:var(--neutral-100);--ui-bg-accented:var(--neutral-200);--ui-bg-inverted:var(--neutral-900);
+/* borders */
+--ui-border:var(--neutral-200);--ui-border-muted:var(--neutral-200);--ui-border-accented:var(--neutral-300);--ui-border-inverted:var(--neutral-900);
+/* text */
+--ui-text-dimmed:var(--neutral-400);--ui-text-muted:var(--neutral-500);--ui-text-toned:var(--neutral-600);--ui-text:var(--neutral-700);--ui-text-highlighted:var(--neutral-900);--ui-text-inverted:var(--white);
+/* component-level aliases carried over from the .fig element collections */
+--field-bg:var(--white);--field-border:var(--gray-300);--field-border-focus:var(--color-primary);--field-placeholder:var(--gray-400);--field-text:var(--gray-900);
+--card-border:var(--gray-200);
+--tabs-bg:var(--gray-100);--tabs-text:var(--gray-500);--tabs-active-indicator:var(--white);--tabs-active-text:var(--gray-900);
+--tooltip-bg:var(--white);--tooltip-border:var(--gray-200);
+--dropdown-border:var(--gray-200);--dropdown-divider:var(--gray-200);--dropdown-item-active-bg:var(--gray-100);--dropdown-item-text:var(--gray-700);--dropdown-item-icon:var(--gray-400);
+--table-divider:var(--gray-200);--table-th-divider:var(--gray-300);--table-head-text:var(--gray-700);--table-body-text:var(--gray-500);--table-head-bg-hover:var(--gray-50);
+--kbd-bg:var(--gray-100);--kbd-border:var(--gray-300);--kbd-text:var(--gray-900);
+--toast-bg:var(--white);--toast-border:var(--gray-200);--toast-label:var(--gray-900);--toast-description:var(--gray-500);
+/* editor / pattern surface (JAiMe-specific, built from the neutral ramp) */
+--editor-bg:var(--neutral-50);--editor-gutter:var(--neutral-400);--editor-caret:var(--color-primary);--editor-string:var(--secondary-600);--editor-number:var(--info-600);--editor-fn:var(--primary-600);--editor-comment:var(--neutral-400)
+}
+:root[data-theme="dark"],.dark{
+--ui-bg:var(--neutral-900);--ui-bg-muted:var(--neutral-800);--ui-bg-elevated:var(--neutral-800);--ui-bg-accented:var(--neutral-700);--ui-bg-inverted:var(--white);
+--ui-border:var(--neutral-800);--ui-border-muted:var(--neutral-800);--ui-border-accented:var(--neutral-700);--ui-border-inverted:var(--white);
+--ui-text-dimmed:var(--neutral-500);--ui-text-muted:var(--neutral-400);--ui-text-toned:var(--neutral-300);--ui-text:var(--neutral-200);--ui-text-highlighted:var(--white);--ui-text-inverted:var(--neutral-900);
+--color-primary:var(--primary-400);--color-primary-hover:var(--primary-300);
+--field-bg:var(--neutral-900);--field-border:var(--neutral-700);--field-text:var(--neutral-100);--field-placeholder:var(--neutral-500);
+--card-border:var(--neutral-800);--tabs-bg:var(--neutral-800);--tabs-active-indicator:var(--neutral-700);--tabs-active-text:var(--white);--tabs-text:var(--neutral-400);
+--tooltip-bg:var(--neutral-800);--tooltip-border:var(--neutral-700);--kbd-bg:var(--neutral-800);--kbd-border:var(--neutral-700);--kbd-text:var(--neutral-100);
+--table-divider:var(--neutral-800);--table-th-divider:var(--neutral-700);--table-head-text:var(--neutral-200);--table-body-text:var(--neutral-400);--table-head-bg-hover:var(--neutral-800);
+--toast-bg:var(--neutral-900);--toast-border:var(--neutral-800);--toast-label:var(--white);--toast-description:var(--neutral-400);
+--editor-bg:var(--neutral-950);--editor-gutter:var(--neutral-600)
+}
