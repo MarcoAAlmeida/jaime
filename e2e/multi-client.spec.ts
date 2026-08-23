@@ -11,12 +11,26 @@ async function waitForOffsetEstimate(page: Page) {
   await page.waitForFunction(() => window.__jaimeClock?.hasEstimatedOnce() === true, { timeout: 15_000 })
 }
 
-/** Creates a fresh room via the real landing-page UI and returns its ID. */
-async function createRoom(page: Page): Promise<string> {
+/** Submits the room page's name-entry gate, revealing the room UI. */
+async function joinWithName(page: Page, name: string) {
+  await page.locator('[data-testid="display-name-input"]').fill(name)
+  await page.locator('[data-testid="submit-name-button"]').click()
+  await expect(page.locator('[data-testid="display-name-input"]')).toHaveCount(0)
+}
+
+/** Creates a fresh room via the real landing-page UI, sets a display name, and returns the room's ID. */
+async function createRoom(page: Page, name = 'Player'): Promise<string> {
   await page.goto('/')
   await page.locator('[data-testid="create-room-button"]').click()
   await page.waitForURL(/\/room\//)
+  await joinWithName(page, name)
   return new URL(page.url()).pathname.split('/').pop()!
+}
+
+/** Navigates directly to an existing room's URL and sets a display name. */
+async function joinRoomById(page: Page, roomId: string, name: string) {
+  await page.goto(`/room/${roomId}`)
+  await joinWithName(page, name)
 }
 
 test('creating a room and joining it by pasting the link land two clients in the same room', async ({ browser }) => {
@@ -29,6 +43,7 @@ test('creating a room and joining it by pasting the link land two clients in the
   await pageA.locator('[data-testid="create-room-button"]').click()
   await pageA.waitForURL(/\/room\//)
   const roomUrl = pageA.url()
+  await joinWithName(pageA, 'Alice')
 
   // B joins through the actual join UI (pasting the link), not by
   // navigating straight to the URL — this is the one test that exercises
@@ -38,11 +53,12 @@ test('creating a room and joining it by pasting the link land two clients in the
   await pageB.locator('[data-testid="join-code-input"]').fill(roomUrl)
   await pageB.locator('[data-testid="join-room-button"]').click()
   await pageB.waitForURL(/\/room\//)
+  await joinWithName(pageB, 'Bob')
 
   expect(pageB.url()).toBe(roomUrl)
 
   await pageA.locator('[data-testid="track-a"] [data-testid="claim-button"]').click()
-  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Owned')
+  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Alice')
 
   await contextA.close()
   await contextB.close()
@@ -77,7 +93,7 @@ test('presence count updates as a second client joins and leaves the same room',
   const roomId = await createRoom(pageA)
   await expect(pageA.locator('[data-testid="presence-count"]')).toHaveText('1 here')
 
-  await pageB.goto(`/room/${roomId}`)
+  await joinRoomById(pageB, roomId, 'Bob')
   await expect(pageA.locator('[data-testid="presence-count"]')).toHaveText('2 here')
   await expect(pageB.locator('[data-testid="presence-count"]')).toHaveText('2 here')
 
@@ -87,19 +103,60 @@ test('presence count updates as a second client joins and leaves the same room',
   await contextA.close()
 })
 
-test('claiming a track propagates ownership and pattern updates, rejects a non-owner edit', async ({ browser }) => {
+test('presence and track ownership show each client\'s display name', async ({ browser }) => {
+  const contextA = await browser.newContext()
+  const contextB = await browser.newContext()
+  const pageA = await contextA.newPage()
+  const pageB = await contextB.newPage()
+
+  const roomId = await createRoom(pageA, 'Alice')
+  await joinRoomById(pageB, roomId, 'Bob')
+
+  await expect(pageA.locator('[data-testid="presence-names"]')).toHaveText('Alice, Bob')
+  await expect(pageB.locator('[data-testid="presence-names"]')).toHaveText('Alice, Bob')
+
+  await pageB.locator('[data-testid="track-b"] [data-testid="claim-button"]').click()
+  await expect(pageA.locator('[data-testid="track-b"] [data-testid="owner-badge"]')).toHaveText('Bob')
+  await expect(pageB.locator('[data-testid="track-b"] [data-testid="owner-badge"]')).toHaveText('You')
+
+  await contextA.close()
+  await contextB.close()
+})
+
+test('changing tempo updates the displayed BPM for every client', async ({ browser }) => {
   const contextA = await browser.newContext()
   const contextB = await browser.newContext()
   const pageA = await contextA.newPage()
   const pageB = await contextB.newPage()
 
   const roomId = await createRoom(pageA)
-  await pageB.goto(`/room/${roomId}`)
+  await joinRoomById(pageB, roomId, 'Bob')
+
+  await expect(pageA.locator('[data-testid="bpm-input"]')).toHaveValue('120')
+  await expect(pageB.locator('[data-testid="bpm-input"]')).toHaveValue('120')
+
+  await pageA.locator('[data-testid="bpm-input"]').fill('140')
+  await pageA.locator('[data-testid="set-tempo-button"]').click()
+
+  await expect(pageB.locator('[data-testid="bpm-input"]')).toHaveValue('140')
+
+  await contextA.close()
+  await contextB.close()
+})
+
+test('claiming a track propagates ownership and pattern updates, rejects a non-owner edit', async ({ browser }) => {
+  const contextA = await browser.newContext()
+  const contextB = await browser.newContext()
+  const pageA = await contextA.newPage()
+  const pageB = await contextB.newPage()
+
+  const roomId = await createRoom(pageA, 'Alice')
+  await joinRoomById(pageB, roomId, 'Bob')
 
   await pageA.locator('[data-testid="track-a"] [data-testid="claim-button"]').click()
 
   // B sees track A as owned by someone else, with no claim control offered
-  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Owned')
+  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Alice')
   await expect(pageB.locator('[data-testid="track-a"] [data-testid="claim-button"]')).toHaveCount(0)
 
   // Tracks start with a non-empty starter pattern — clear it first, or
@@ -128,10 +185,10 @@ test('play/stop is broadcast to every client, and local mute is independent per 
   const pageB = await contextB.newPage()
 
   const roomId = await createRoom(pageA)
-  await pageB.goto(`/room/${roomId}`)
+  await joinRoomById(pageB, roomId, 'Bob')
 
   await pageA.locator('[data-testid="track-a"] [data-testid="claim-button"]').click()
-  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Owned')
+  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Player')
 
   const playStopButton = pageA.locator('[data-testid="track-a"] [data-testid="play-stop-button"]')
 
@@ -164,10 +221,10 @@ test('editing a playing track auto-stops it for every client', async ({ browser 
   const pageB = await contextB.newPage()
 
   const roomId = await createRoom(pageA)
-  await pageB.goto(`/room/${roomId}`)
+  await joinRoomById(pageB, roomId, 'Bob')
 
   await pageA.locator('[data-testid="track-a"] [data-testid="claim-button"]').click()
-  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Owned')
+  await expect(pageB.locator('[data-testid="track-a"] [data-testid="owner-badge"]')).toHaveText('Player')
 
   await pageA.locator('[data-testid="track-a"] [data-testid="play-stop-button"]').click()
   await expect(pageA.locator('[data-testid="track-a"] [data-testid="playing-badge"]')).toBeVisible()
@@ -194,7 +251,17 @@ test('a joining client sees an audio-unlock prompt until it interacts with the p
   const context = await browser.newContext()
   const page = await context.newPage()
 
-  await createRoom(page)
+  // The join gate's own "Join" click now satisfies the browser's
+  // audio-unlock gesture requirement before the room ever renders, so
+  // the banner can't appear right after going through that gate anymore
+  // — it only still matters on a page load where no click has happened
+  // yet. Seed a display name via a first room (so its gate is behind
+  // us), then do a genuine fresh navigation (page.goto, not an in-app
+  // link) to a second room: the gate is skipped since a name already
+  // exists in sessionStorage, so this page load's first click is
+  // whatever the test does next, not one already spent on the gate.
+  const firstRoomId = await createRoom(page)
+  await page.goto(`/room/${firstRoomId}-2`)
 
   // Browsers block audio until a genuine user gesture, including the
   // automatic evaluate() this page fires for a track that's already
@@ -217,7 +284,7 @@ test('clock offsets from two contexts stay within tolerance after correction', a
   const pageB = await contextB.newPage()
 
   const roomId = await createRoom(pageA)
-  await pageB.goto(`/room/${roomId}`)
+  await joinRoomById(pageB, roomId, 'Bob')
 
   // estimateOffset() runs automatically on room_state (connect) but is
   // async — wait for it to actually resolve rather than guessing a delay.
@@ -263,7 +330,7 @@ test('clock offset correction holds under simulated network jitter', async ({ br
   })
 
   const roomId = await createRoom(pageA)
-  await pageB.goto(`/room/${roomId}`)
+  await joinRoomById(pageB, roomId, 'Bob')
 
   await waitForOffsetEstimate(pageA)
   await waitForOffsetEstimate(pageB)

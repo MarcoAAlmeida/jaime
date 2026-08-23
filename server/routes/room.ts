@@ -11,7 +11,10 @@ interface RoomState {
   tracks: Record<TrackName, TrackState>
   bpm: number
   cycleStartTimestamp: number
-  presence: Set<string>
+  // clientId -> display name. Never persisted — same reasoning as
+  // presence itself already documented below: rebuilt from whichever
+  // connections are actually live, never restored stale.
+  presence: Map<string, string>
 }
 
 // What actually gets written to durable storage — deliberately excludes
@@ -50,14 +53,14 @@ function createRoomState(): RoomState {
     },
     bpm: DEFAULT_BPM,
     cycleStartTimestamp: Date.now(),
-    presence: new Set(),
+    presence: new Map(),
   }
 }
 
 async function loadRoom(roomId: string): Promise<RoomState> {
   const stored = await getDurableStorage().get<PersistedRoomState>(storageKey(roomId))
   if (stored) {
-    return { ...stored, presence: new Set() }
+    return { ...stored, presence: new Map() }
   }
   return createRoomState()
 }
@@ -99,6 +102,16 @@ async function persistRoom(roomId: string, room: RoomState): Promise<void> {
 // peer-to-room side table.
 function getRoomIdFromPeer(peer: Peer): string | null {
   return new URL(peer.request.url).searchParams.get('id')
+}
+
+// The join screen is supposed to guarantee a name always exists before a
+// connection is ever attempted (see design.md in
+// add-identity-and-transport-ui) — trimmed to a real, non-empty string
+// here so the server stays the actual enforcement point rather than
+// trusting client UI alone, same posture as room ID and ownership.
+function getNameFromPeer(peer: Peer): string | null {
+  const name = new URL(peer.request.url).searchParams.get('name')?.trim()
+  return name || null
 }
 
 function roomTopic(roomId: string): string {
@@ -149,11 +162,16 @@ export default defineWebSocketHandler({
       peer.close(4000, 'Missing room id')
       return
     }
+    const name = getNameFromPeer(peer)
+    if (!name) {
+      peer.close(4000, 'Missing display name')
+      return
+    }
     const room = await getRoom(roomId)
 
     peer.subscribe(roomTopic(roomId))
-    room.presence.add(peer.id)
-    broadcastToOthers(peer, roomId, { type: 'presence_update', clientId: peer.id, joined: true })
+    room.presence.set(peer.id, name)
+    broadcastToOthers(peer, roomId, { type: 'presence_update', clientId: peer.id, joined: true, name })
 
     send(peer, {
       type: 'room_state',
@@ -161,7 +179,7 @@ export default defineWebSocketHandler({
       tracks: { ...room.tracks },
       bpm: room.bpm,
       cycleStartTimestamp: room.cycleStartTimestamp,
-      presence: [...room.presence],
+      presence: [...room.presence].map(([clientId, name]) => ({ clientId, name })),
     })
   },
   async message(peer, message) {

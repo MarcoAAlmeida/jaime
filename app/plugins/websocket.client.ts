@@ -73,6 +73,7 @@ export function hasEstimatedOffsetOnce(): boolean {
 
 export default defineNuxtPlugin(() => {
   const { clientId, tracks, bpm, cycleStartTimestamp, playRequestSeq, presence } = useJamSession()
+  const { displayName } = useDisplayName()
   const route = useRoute()
 
   // Read-only test hook: exposes the computed offset for the Playwright
@@ -134,12 +135,12 @@ export default defineNuxtPlugin(() => {
         break
       case 'presence_update':
         if (data.joined) {
-          if (!presence.value.includes(data.clientId)) {
-            presence.value = [...presence.value, data.clientId]
+          if (!presence.value.some(entry => entry.clientId === data.clientId)) {
+            presence.value = [...presence.value, { clientId: data.clientId, name: data.name }]
           }
         }
         else {
-          presence.value = presence.value.filter(id => id !== data.clientId)
+          presence.value = presence.value.filter(entry => entry.clientId !== data.clientId)
         }
         break
       case 'clock_pong':
@@ -152,19 +153,22 @@ export default defineNuxtPlugin(() => {
   // Rooms are dynamic (Phase 4): the plugin connects only once a room ID
   // is present in the route, and reconnects if that ID changes — e.g.
   // navigating client-side from the landing page straight into a room,
-  // with no full page reload in between.
+  // with no full page reload in between. Phase 6 adds a second
+  // dependency: the display name, gated by the room page's own join
+  // screen — the WebSocket doesn't open at all until both a room ID and
+  // a display name exist (see design.md in add-identity-and-transport-ui).
   watch(
-    () => route.params.id,
-    (id) => {
+    [() => route.params.id, () => displayName.value],
+    ([id, name]) => {
       ws?.close()
       hasEstimatedOffset = false
       offset = 0
-      if (typeof id !== 'string' || !id) {
+      if (typeof id !== 'string' || !id || !name) {
         ws = undefined
         return
       }
       const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-      ws = new WebSocket(`${protocol}://${location.host}/room?id=${encodeURIComponent(id)}`)
+      ws = new WebSocket(`${protocol}://${location.host}/room?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`)
       ws.addEventListener('message', handleMessage)
     },
     { immediate: true },

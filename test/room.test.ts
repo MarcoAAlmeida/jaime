@@ -69,8 +69,8 @@ function messageQueue(ws: WebSocket): () => Promise<any> {
  * a WebSocket message sent before a listener is attached is dropped, not
  * buffered.
  */
-async function connect(roomId: string): Promise<{ ws: WebSocket, initial: Promise<any> }> {
-  const response = await SELF.fetch(`http://example.com/room?id=${encodeURIComponent(roomId)}`, {
+async function connect(roomId: string, name = 'Test User'): Promise<{ ws: WebSocket, initial: Promise<any> }> {
+  const response = await SELF.fetch(`http://example.com/room?id=${encodeURIComponent(roomId)}&name=${encodeURIComponent(name)}`, {
     headers: { Upgrade: 'websocket' },
   })
   const ws = response.webSocket
@@ -93,6 +93,46 @@ afterEach(() => {
 describe('multi-room', () => {
   it('rejects a connection with no room id', async () => {
     const response = await SELF.fetch('http://example.com/room', {
+      headers: { Upgrade: 'websocket' },
+    })
+    const ws = response.webSocket
+    if (!ws) {
+      throw new Error('Expected a WebSocket in the response')
+    }
+    let received: any
+    ws.addEventListener('message', (event) => {
+      received = JSON.parse(event.data as string)
+    })
+    ws.accept()
+    openSockets.push(ws)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(received).toBeUndefined()
+  })
+
+  it('rejects a connection with no display name', async () => {
+    const roomId = freshRoomId()
+    const response = await SELF.fetch(`http://example.com/room?id=${encodeURIComponent(roomId)}`, {
+      headers: { Upgrade: 'websocket' },
+    })
+    const ws = response.webSocket
+    if (!ws) {
+      throw new Error('Expected a WebSocket in the response')
+    }
+    let received: any
+    ws.addEventListener('message', (event) => {
+      received = JSON.parse(event.data as string)
+    })
+    ws.accept()
+    openSockets.push(ws)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(received).toBeUndefined()
+  })
+
+  it('rejects a connection with an empty (whitespace-only) display name', async () => {
+    const roomId = freshRoomId()
+    const response = await SELF.fetch(`http://example.com/room?id=${encodeURIComponent(roomId)}&name=${encodeURIComponent('   ')}`, {
       headers: { Upgrade: 'websocket' },
     })
     const ws = response.webSocket
@@ -133,15 +173,31 @@ describe('multi-room', () => {
 describe('presence', () => {
   it('shows an existing peer to a newly joining peer, and notifies the existing peer of the join', async () => {
     const roomId = freshRoomId()
-    const a = await connect(roomId)
+    const a = await connect(roomId, 'Alice')
     const aState = await a.initial
 
     const aReceived = nextMessage(a.ws)
-    const b = await connect(roomId)
+    const b = await connect(roomId, 'Bob')
     const bState = await b.initial
 
-    expect(bState.presence.sort()).toEqual([aState.clientId, bState.clientId].sort())
-    await expect(aReceived).resolves.toEqual({ type: 'presence_update', clientId: bState.clientId, joined: true })
+    const sortByClientId = (entries: any[]) => [...entries].sort((x, y) => x.clientId.localeCompare(y.clientId))
+    expect(sortByClientId(bState.presence)).toEqual(sortByClientId([
+      { clientId: aState.clientId, name: 'Alice' },
+      { clientId: bState.clientId, name: 'Bob' },
+    ]))
+    await expect(aReceived).resolves.toEqual({ type: 'presence_update', clientId: bState.clientId, joined: true, name: 'Bob' })
+  })
+
+  it('carries the correct display name for each connected client', async () => {
+    const roomId = freshRoomId()
+    const a = await connect(roomId, 'Alice')
+    const aState = await a.initial
+    const b = await connect(roomId, 'Bob')
+    const bState = await b.initial
+
+    expect(aState.presence).toEqual([{ clientId: aState.clientId, name: 'Alice' }])
+    const names = bState.presence.map((entry: any) => entry.name).sort()
+    expect(names).toEqual(['Alice', 'Bob'])
   })
 })
 

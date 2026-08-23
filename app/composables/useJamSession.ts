@@ -1,4 +1,4 @@
-import type { TrackState } from '#shared/roomProtocol'
+import type { PresenceEntry, TrackState } from '#shared/roomProtocol'
 import type { TrackName } from '#shared/tracks'
 import { DEFAULT_CODE, TRACK_NAMES } from '#shared/tracks'
 
@@ -26,9 +26,9 @@ export function useJamSession() {
   // with the current code, but a plain watch() on the isPlaying boolean
   // wouldn't refire on a true->true "change". Consumed by jam.vue.
   const playRequestSeq = useState<Record<TrackName, number>>('jam-session-play-seq', zeroPerTrack)
-  // Connection IDs currently in the room, not people — no display-name
-  // system exists yet (Phase 6). See presence_update in websocket.client.ts.
-  const presence = useState<string[]>('jam-session-presence', () => [])
+  // Who's currently in the room, keyed by connection ID with a display
+  // name attached (Phase 6 — see presence_update in websocket.client.ts).
+  const presence = useState<PresenceEntry[]>('jam-session-presence', () => [])
 
   return {
     clientId,
