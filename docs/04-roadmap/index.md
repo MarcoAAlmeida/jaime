@@ -22,6 +22,14 @@ Design and UX only, no persistence or DDD work yet — deliberately
 first, so screens get validated before the domain model is built
 around them.
 
+- `jaime.stream` has been registered (Cloudflare Registrar) and will
+  become the production domain, replacing the `*.workers.dev` default
+  — superseding the earlier "defer custom domain until user feedback"
+  stance. It will also back Cloudflare Email Sending later, but that
+  service isn't enabled yet — deliberately left until Phase 2+, when
+  the email confirmation flow (see [user stories](../06-user-stories/index.md), Journey 1 story 5)
+  is actually implemented. Pointing the deployed Worker at the new
+  domain (custom domain / route config) is a task for this phase.
 - Fix `design/tokens/`'s light-mode background (`--ui-bg` currently
   resolves to plain white; target is a pastel light-beige, per
   `design/assets/jaime-logo.jpg`, the reference image — filename is a
@@ -32,8 +40,8 @@ around them.
 - Real (Vue/Nuxt UI, not the React design-system export) implementations
   of three layout shells, each a genuine Nuxt layout, not composed:
   - **Landing** — [landing-template.nuxt.dev](https://landing-template.nuxt.dev/)
-  - **Dashboard** (the tools shell — sidebar with Home + each tool, JAM
-    first) — [dashboard-template.nuxt.dev](https://dashboard-template.nuxt.dev/)
+  - **Dashboard** (the tools shell — sidebar with Home + each tool,
+    Composition Room first, then JAM) — [dashboard-template.nuxt.dev](https://dashboard-template.nuxt.dev/)
   - **Docs** (Home and each of its sections — Strudel, Hydra,
     TidalCycles, others later — full layout swap, not nested inside the
     dashboard chrome) — [docs-template.nuxt.dev](https://docs-template.nuxt.dev/)
