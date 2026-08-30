@@ -1,2 +1,56 @@
+/* Font files for jaime's type stack (the stack itself is defined in
+   design/tokens/fonts.css). CSS requires @import before all other rules,
+   so these lead the file. */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* jaime's design tokens — the raw palette and the semantic color layer
+   (beige light surface, graphite dark surface, brand hues). Deliberately
+   NOT design/tokens/base.css: its global <a>/<body>/::selection rules are
+   written for standalone doc pages and, being unlayered, would override
+   @nuxt/ui's own link and button styling. */
+@import "~~/design/tokens/palette.css";
+@import "~~/design/tokens/colors.css";
+
+/* Let Tailwind see classes used inside the docs shell's markdown/MDC. */
+@source "../../../content/**/*";
+
+/* Register jaime's brand ramps under @nuxt/ui v4 color names. app.config.ts
+   points `primary` at rust and `neutral` at graphite; @nuxt/ui then
+   derives every --ui-* role (buttons, focus rings, badges, accents) from
+   these. Values are verbatim from design/tokens/palette.css. */
+@theme static {
+  --color-rust-50: rgb(250, 243, 238);
+  --color-rust-100: rgb(244, 226, 213);
+  --color-rust-200: rgb(232, 196, 169);
+  --color-rust-300: rgb(218, 160, 121);
+  --color-rust-400: rgb(200, 124, 77);
+  --color-rust-500: rgb(178, 94, 47);
+  --color-rust-600: rgb(152, 77, 38);
+  --color-rust-700: rgb(124, 62, 32);
+  --color-rust-800: rgb(99, 50, 28);
+  --color-rust-900: rgb(82, 44, 27);
+  --color-rust-950: rgb(45, 21, 12);
+
+  --color-graphite-50: rgb(250, 250, 249);
+  --color-graphite-100: rgb(245, 244, 242);
+  --color-graphite-200: rgb(232, 231, 227);
+  --color-graphite-300: rgb(213, 211, 206);
+  --color-graphite-400: rgb(162, 160, 154);
+  --color-graphite-500: rgb(115, 113, 108);
+  --color-graphite-600: rgb(87, 85, 81);
+  --color-graphite-700: rgb(64, 62, 59);
+  --color-graphite-800: rgb(40, 39, 37);
+  --color-graphite-900: rgb(25, 24, 23);
+  --color-graphite-950: rgb(14, 14, 13);
+}
+
+@layer base {
+  body {
+    font-family: "DM Sans", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+}

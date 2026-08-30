@@ -8,10 +8,15 @@
 // docs/04-roadmap.md frames this ("basic load test... to see how
 // presence broadcast scales before building UI around it").
 //
+// The JAM UI moved under /app/jam/ in add-tools-hub-visual-identity, but
+// the realtime endpoint is the server route /room?id=<id> — a WebSocket
+// route, not a page — so it's unchanged and this script needs no new
+// path.
+//
 // Usage:
 //   node scripts/room-load-check.mjs [count] [baseUrl]
 //   node scripts/room-load-check.mjs 50 ws://127.0.0.1:8788
-//   node scripts/room-load-check.mjs 50 wss://jaime.marcoalmeida-dev-br.workers.dev
+//   node scripts/room-load-check.mjs 50 wss://jaime.stream
 
 const count = Number(process.argv[2] ?? 20)
 const baseUrl = process.argv[3] ?? 'ws://127.0.0.1:8788'

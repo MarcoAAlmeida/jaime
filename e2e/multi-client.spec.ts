@@ -18,18 +18,24 @@ async function joinWithName(page: Page, name: string) {
   await expect(page.locator('[data-testid="display-name-input"]')).toHaveCount(0)
 }
 
-/** Creates a fresh room via the real landing-page UI, sets a display name, and returns the room's ID. */
+/** Creates a fresh room via the real JAM entry point in the dashboard shell, sets a display name, and returns the room's ID. */
 async function createRoom(page: Page, name = 'Player'): Promise<string> {
-  await page.goto('/')
-  await page.locator('[data-testid="create-room-button"]').click()
-  await page.waitForURL(/\/room\//)
+  await page.goto('/app/jam')
+  // The dashboard shell hydrates after the `load` event, so a click
+  // fired the instant the page loads can land on the not-yet-wired
+  // button and do nothing (visible under the network-jitter test's
+  // added latency). Retry the click until it actually navigates.
+  await expect(async () => {
+    await page.locator('[data-testid="create-room-button"]').click()
+    await page.waitForURL(/\/app\/jam\/room\//, { timeout: 2000 })
+  }).toPass({ timeout: 30_000 })
   await joinWithName(page, name)
   return new URL(page.url()).pathname.split('/').pop()!
 }
 
 /** Navigates directly to an existing room's URL and sets a display name. */
 async function joinRoomById(page: Page, roomId: string, name: string) {
-  await page.goto(`/room/${roomId}`)
+  await page.goto(`/app/jam/room/${roomId}`)
   await joinWithName(page, name)
 }
 
@@ -39,9 +45,9 @@ test('creating a room and joining it by pasting the link land two clients in the
   const pageA = await contextA.newPage()
   const pageB = await contextB.newPage()
 
-  await pageA.goto('/')
+  await pageA.goto('/app/jam')
   await pageA.locator('[data-testid="create-room-button"]').click()
-  await pageA.waitForURL(/\/room\//)
+  await pageA.waitForURL(/\/app\/jam\/room\//)
   const roomUrl = pageA.url()
   await joinWithName(pageA, 'Alice')
 
@@ -49,10 +55,10 @@ test('creating a room and joining it by pasting the link land two clients in the
   // navigating straight to the URL — this is the one test that exercises
   // that path end to end; every other multi-client test below joins a
   // shared room by direct navigation since it isn't what they're testing.
-  await pageB.goto('/')
+  await pageB.goto('/app/jam')
   await pageB.locator('[data-testid="join-code-input"]').fill(roomUrl)
   await pageB.locator('[data-testid="join-room-button"]').click()
-  await pageB.waitForURL(/\/room\//)
+  await pageB.waitForURL(/\/app\/jam\/room\//)
   await joinWithName(pageB, 'Bob')
 
   expect(pageB.url()).toBe(roomUrl)
@@ -261,7 +267,7 @@ test('a joining client sees an audio-unlock prompt until it interacts with the p
   // exists in sessionStorage, so this page load's first click is
   // whatever the test does next, not one already spent on the gate.
   const firstRoomId = await createRoom(page)
-  await page.goto(`/room/${firstRoomId}-2`)
+  await page.goto(`/app/jam/room/${firstRoomId}-2`)
 
   // Browsers block audio until a genuine user gesture, including the
   // automatic evaluate() this page fires for a track that's already
@@ -305,6 +311,11 @@ test('clock offsets from two contexts stay within tolerance after correction', a
 })
 
 test('clock offset correction holds under simulated network jitter', async ({ browser }) => {
+  // The dashboard shell + Strudel/CodeMirror room bundle is heavy enough
+  // that even at broadband speeds two full page loads plus offset
+  // estimation runs past the default 30s.
+  test.setTimeout(90_000)
+
   const contextA = await browser.newContext()
   const contextB = await browser.newContext()
   const pageA = await contextA.newPage()
@@ -315,18 +326,20 @@ test('clock offset correction holds under simulated network jitter', async ({ br
   await cdpA.send('Network.enable')
   await cdpB.send('Network.enable')
   // Asymmetric, non-trivial latency on each context — real jitter, not
-  // near-zero localhost latency.
+  // near-zero localhost latency. Throughput is left at broadband so the
+  // test exercises latency asymmetry (what half-round-trip offset
+  // estimation can't fully correct), not bandwidth starvation.
   await cdpA.send('Network.emulateNetworkConditions', {
     offline: false,
     latency: 80,
-    downloadThroughput: (750 * 1024) / 8,
-    uploadThroughput: (250 * 1024) / 8,
+    downloadThroughput: (16 * 1024 * 1024) / 8,
+    uploadThroughput: (8 * 1024 * 1024) / 8,
   })
   await cdpB.send('Network.emulateNetworkConditions', {
     offline: false,
     latency: 30,
-    downloadThroughput: (1.5 * 1024 * 1024) / 8,
-    uploadThroughput: (750 * 1024) / 8,
+    downloadThroughput: (24 * 1024 * 1024) / 8,
+    uploadThroughput: (12 * 1024 * 1024) / 8,
   })
 
   const roomId = await createRoom(pageA)

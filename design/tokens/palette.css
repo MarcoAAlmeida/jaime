@@ -13,5 +13,9 @@
 --gray-50:rgb(249,250,251);--gray-100:rgb(243,244,246);--gray-200:rgb(229,231,235);--gray-300:rgb(209,213,220);--gray-400:rgb(153,161,175);--gray-500:rgb(106,114,130);--gray-600:rgb(74,85,101);--gray-700:rgb(54,65,83);--gray-800:rgb(30,41,57);--gray-900:rgb(16,24,40);--gray-950:rgb(3,7,18);
 /* graphite — JAiMe's own neutral ramp. Replaces slate/gray as the neutral so dark surfaces read as gray, not navy. Hue is a whisper warm (R≥G≥B) to keep it from feeling digital-cold. */
 --graphite-50:rgb(250,250,249);--graphite-100:rgb(245,244,242);--graphite-200:rgb(232,231,227);--graphite-300:rgb(213,211,206);--graphite-400:rgb(162,160,154);--graphite-500:rgb(115,113,108);--graphite-600:rgb(87,85,81);--graphite-700:rgb(64,62,59);--graphite-800:rgb(40,39,37);--graphite-900:rgb(25,24,23);--graphite-950:rgb(14,14,13);
---white:rgb(255,255,255);--black:rgb(0,0,0)
+--white:rgb(255,255,255);--black:rgb(0,0,0);
+/* pastel light-beige surface — jaime's light-mode background, per design/assets/jaime-logo.jpg */
+--beige-bg:rgb(245,240,229);
+/* rust — jaime's brand primary (warm terracotta, reads well on the beige surface). 500 is #b25e2f. */
+--rust-50:rgb(250,243,238);--rust-100:rgb(244,226,213);--rust-200:rgb(232,196,169);--rust-300:rgb(218,160,121);--rust-400:rgb(200,124,77);--rust-500:rgb(178,94,47);--rust-600:rgb(152,77,38);--rust-700:rgb(124,62,32);--rust-800:rgb(99,50,28);--rust-900:rgb(82,44,27);--rust-950:rgb(45,21,12)
 }

@@ -1,79 +1,70 @@
 <script setup lang="ts">
-import { nanoid } from 'nanoid'
+definePageMeta({ layout: 'landing' })
 
-const joinInput = ref('')
+useSeoMeta({
+  title: 'jaime — a hub of small music tools',
+  description:
+    'jaime is a hub of small, browser-based music tools. Jam on shared Strudel patterns, compose together, and browse a pattern library.'
+})
 
-function createRoom() {
-  navigateTo(`/room/${nanoid(10)}`)
-}
-
-// Accepts either a bare room code or a pasted invite link — a link
-// click and a typed code should land in the same place.
-function extractRoomId(input: string): string | null {
-  const trimmed = input.trim()
-  if (!trimmed) {
-    return null
-  }
-  try {
-    const url = new URL(trimmed)
-    const match = url.pathname.match(/\/room\/([^/]+)/)
-    return match ? match[1]! : null
-  }
-  catch {
-    return trimmed
-  }
-}
-
-function joinRoom() {
-  const id = extractRoomId(joinInput.value)
-  if (id) {
-    navigateTo(`/room/${id}`)
-  }
-}
+// Returning-visitor fast path: anyone who has already set a display
+// name (JAM's per-session identity) has used a tool before — surface a
+// direct link straight to the dashboard so they skip the pitch.
+const { displayName } = useDisplayName()
 </script>
 
 <template>
-  <div class="flex h-screen flex-col items-center justify-center gap-6 p-4">
-    <h1 class="text-2xl font-semibold">
-      jaime
-    </h1>
+  <UPageHero
+    title="Make music together, in the browser"
+    description="jaime is a hub of small, music-oriented tools. Jam on shared patterns, compose together, and dig through a library of ideas — nothing to install."
+    :links="[
+      { label: 'Try JAM', to: '/app/jam', icon: 'i-lucide-radio', size: 'lg' },
+      { label: 'Read the docs', to: '/docs', color: 'neutral', variant: 'subtle', trailingIcon: 'i-lucide-arrow-right', size: 'lg' }
+    ]"
+  >
+    <ClientOnly>
+      <UAlert
+        v-if="displayName"
+        class="mx-auto mt-4 max-w-md"
+        color="neutral"
+        variant="subtle"
+        icon="i-lucide-arrow-right"
+        :title="`Welcome back, ${displayName}`"
+        :actions="[{ label: 'Go to the dashboard', to: '/app/jam', color: 'neutral' }]"
+      />
+    </ClientOnly>
+  </UPageHero>
 
-    <div class="w-full max-w-sm rounded-lg border border-primary-200 bg-primary-50 p-4 dark:border-primary-900 dark:bg-primary-950/20">
-      <h2 class="mb-1 font-medium">
-        Start a new jam
-      </h2>
-      <p class="mb-3 text-sm text-neutral-500">
-        Generates a room and takes you straight in.
-      </p>
-      <UButton data-testid="create-room-button" @click="createRoom">
-        Create a room
-      </UButton>
-    </div>
+  <UPageSection
+    id="tools"
+    headline="Tools"
+    title="What's in the hub"
+    description="Each tool is small and does one thing. More are on the way."
+  >
+    <UPageGrid>
+      <UPageCard
+        v-for="tool in TOOLS"
+        :key="tool.to"
+        :title="tool.label"
+        :description="tool.description"
+        :icon="tool.icon"
+        :to="tool.ready ? tool.to : undefined"
+        :ui="{ container: 'lg:flex-col' }"
+      >
+        <template #footer>
+          <UBadge v-if="tool.ready" color="primary" variant="subtle">Available</UBadge>
+          <UBadge v-else color="neutral" variant="subtle">Coming soon</UBadge>
+        </template>
+      </UPageCard>
+    </UPageGrid>
+  </UPageSection>
 
-    <div class="w-full max-w-sm rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-      <h2 class="mb-1 font-medium">
-        Join with a link or code
-      </h2>
-      <p class="mb-3 text-sm text-neutral-500">
-        Paste an invite link, or type the code someone gave you.
-      </p>
-      <div class="flex gap-2">
-        <UInput
-          v-model="joinInput"
-          data-testid="join-code-input"
-          placeholder="Room link or code"
-          class="flex-1"
-          @keyup.enter="joinRoom"
-        />
-        <UButton
-          data-testid="join-room-button"
-          color="neutral"
-          variant="outline"
-          @click="joinRoom"
-        >
-          Join
-        </UButton>
-      </div>
-    </div>
-  </div>
+  <UPageCTA
+    title="Want to hear when tools land?"
+    description="Join the community list. It's the only thing we'll email you about."
+    :links="[
+      { label: 'Join the community', to: '/signup', icon: 'i-lucide-mail' },
+      { label: 'Try JAM first', to: '/app/jam', color: 'neutral', variant: 'subtle' }
+    ]"
+  />
 </template>

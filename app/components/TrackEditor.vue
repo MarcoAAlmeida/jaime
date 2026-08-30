@@ -19,6 +19,7 @@ const editorEl = ref<HTMLDivElement>()
 let editorView: EditorViewInstance | undefined
 let isApplyingExternalUpdate = false
 const editableCompartment = new Compartment()
+const colorMode = useColorMode()
 
 onMounted(() => {
   editorView = initEditor({
@@ -32,6 +33,14 @@ onMounted(() => {
     onEvaluate: () => emit('evaluate'),
     onStop: () => emit('stop'),
   })
+
+  // @strudel/codemirror's initEditor calls activateTheme(), which forces
+  // `document.documentElement.classList.add('dark')` to make the page
+  // match its dark editor theme — hijacking the app's own color mode.
+  // The editor keeps its dark theme regardless; re-assert the app's real
+  // color mode on the root so the surrounding shell isn't dragged dark.
+  document.documentElement.classList.toggle('dark', colorMode.value === 'dark')
+  document.documentElement.classList.toggle('light', colorMode.value === 'light')
   editorView.dispatch({
     effects: StateEffect.appendConfig.of(editableCompartment.of(EditorView.editable.of(props.editable))),
   })
@@ -71,7 +80,7 @@ watch(() => props.editable, (editable) => {
 </script>
 
 <template>
-  <div ref="editorEl" class="h-full w-full" :class="{ 'opacity-50': !editable }" />
+  <div ref="editorEl" class="h-full w-full overflow-hidden rounded-md" />
 </template>
 
 <style scoped>

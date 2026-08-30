@@ -11,6 +11,13 @@ import {
   sendStopTrack,
 } from '~/plugins/websocket.client'
 
+// Immersive full-screen tool view — no dashboard chrome. Entering a
+// room from the JAM entry point is a deliberate layout swap, not a
+// sidebar tool switch.
+definePageMeta({ layout: false })
+
+useSeoMeta({ title: 'JAM room — jaime' })
+
 const { clientId, tracks, playRequestSeq, presence, bpm } = useJamSession()
 const { displayName, setDisplayName } = useDisplayName()
 const nameInput = ref('')

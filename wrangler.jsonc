@@ -4,6 +4,13 @@
   "main": ".output/server/index.mjs",
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
+  // jaime.stream is the canonical production domain (Cloudflare
+  // Registrar, zone already active in this account). custom_domain:true
+  // makes `wrangler deploy` create/attach the DNS record + edge cert.
+  "routes": [{ "pattern": "jaime.stream", "custom_domain": true }],
+  // Keep the *.workers.dev URL live so it can 301 to jaime.stream
+  // rather than 404 mid-transition — see server/middleware/.
+  "workers_dev": true,
   "assets": {
     "directory": ".output/public",
     "binding": "ASSETS"
@@ -13,6 +20,18 @@
       { "name": "$DurableObject", "class_name": "$DurableObject" }
     ]
   },
+  // Read-only content store for @nuxt/content (the docs shell). Populated
+  // automatically from a bundled SQL dump on first request — not the
+  // app's domain persistence (User/Pattern/etc. schema + migrations are
+  // Phase 2). @nuxt/content's Cloudflare preset hardcodes the binding
+  // name `DB`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jaime-content",
+      "database_id": "7c4710fd-b9a1-4a91-a187-58144c311d12"
+    }
+  ],
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["$DurableObject"] }
   ]
