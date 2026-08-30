@@ -9,15 +9,6 @@ later phases.
 
 ## Requirements
 
-### Requirement: Pattern Library Mock Shows Example Patterns
-The system SHALL provide a mock Pattern library page displaying a
-static list of example patterns with tags, with no real backend
-search.
-
-#### Scenario: Visitor browses the mock pattern list
-- **WHEN** a visitor opens the Pattern library mock page
-- **THEN** a static list of example patterns with tags is visible
-
 ### Requirement: Composition Room Mock Shows Its Core Elements
 The system SHALL provide a mock Composition Room page showing a
 placeholder shared editor, a mock presence indicator, a viewer/editor
