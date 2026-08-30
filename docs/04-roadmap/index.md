@@ -16,42 +16,22 @@ tech demo.
 This is a first-draft phase breakdown synthesized from discussion —
 expect it to be corrected before it's final.
 
-## Phase 1 — Visual identity + click-through mocks
+## Phase 1 — Visual identity + click-through mocks — ✅ shipped 2026-08-30
 
-Design and UX only, no persistence or DDD work yet — deliberately
-first, so screens get validated before the domain model is built
-around them.
+Design and UX only, deliberately first so screens got validated before
+the domain model. Delivered: rust/beige/graphite visual identity wired
+into @nuxt/ui; three layout shells (landing; a shared
+collapsible/resizable sidebar for the dashboard + docs); JAM re-routed
+under `/app/jam`; `jaime.stream` as the production domain (workers.dev
+301s to it); `@nuxt/content` docs shell; click-through mocks for the
+Pattern library, Composition Room, and community signup. Live at
+`https://jaime.stream`.
 
-- `jaime.stream` has been registered (Cloudflare Registrar) and will
-  become the production domain, replacing the `*.workers.dev` default
-  — superseding the earlier "defer custom domain until user feedback"
-  stance. It will also back Cloudflare Email Sending later, but that
-  service isn't enabled yet — deliberately left until Phase 2+, when
-  the email confirmation flow (see [user stories](../06-user-stories/index.md), Journey 1 story 5)
-  is actually implemented. Pointing the deployed Worker at the new
-  domain (custom domain / route config) is a task for this phase.
-- Fix `design/tokens/`'s light-mode background (`--ui-bg` currently
-  resolves to plain white; target is a pastel light-beige, per
-  `design/assets/jaime-logo.jpg`, the reference image — filename is a
-  placeholder, a real logo PNG comes later). Dark mode already uses a
-  custom `graphite` neutral ramp correctly (no navy, reads as
-  gray/near-black) — confirmed against the actual token files, not
-  assumed.
-- Real (Vue/Nuxt UI, not the React design-system export) implementations
-  of three layout shells, each a genuine Nuxt layout, not composed:
-  - **Landing** — [landing-template.nuxt.dev](https://landing-template.nuxt.dev/)
-  - **Dashboard** (the tools shell — sidebar with Home + each tool,
-    Composition Room first, then JAM) — [dashboard-template.nuxt.dev](https://dashboard-template.nuxt.dev/)
-  - **Docs** (Home and each of its sections — Strudel, Hydra,
-    TidalCycles, others later — full layout swap, not nested inside the
-    dashboard chrome) — [docs-template.nuxt.dev](https://docs-template.nuxt.dev/)
-    — likely needs `@nuxt/content` added as a new dependency
-- Click-through mocks for every screen implied so far, generated from
-  user stories: landing page; dashboard home; JAM (re-skinned to the new
-  visual identity); Home + per-technology docs pages; community
-  email-gate/signup; Pattern library browse/search; **Composition
-  Room** (see Phase 6) — shared editor, presence indicator, viewer-only
-  join mode, chat panel (empty/placeholder — no AI wired up yet).
+Full spec and task detail:
+[`openspec/changes/archive/2026-08-30-add-tools-hub-visual-identity/`](../../openspec/changes/archive/2026-08-30-add-tools-hub-visual-identity/).
+One deviation: `@nuxt/content` requires a Cloudflare D1 database, so
+Phase 1 introduced one as a read-only content store (not the domain
+persistence layer — that's still Phase 2).
 
 ## Phase 2 — Domain model + persistence foundation
 
