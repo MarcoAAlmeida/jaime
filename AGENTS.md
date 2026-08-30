@@ -8,17 +8,18 @@ tempo. See `docs/01-project-overview/index.md` for the full picture.
 
 JAM — the room / track-ownership / transport-clock tool built across
 the first roadmap (archived at `docs/04-roadmap/01-archive/`) — is
-implemented and shipped. `add-identity-and-transport-ui`, its final
-change, is implemented and deployed but not yet archived in OpenSpec
-— see `openspec/changes/add-identity-and-transport-ui/`.
+implemented and shipped.
 
 ## Status
 
-jaime is pivoting from a single-purpose jam app to a hub for small
-music-oriented tools, with JAM as the first tool rather than the whole
-product. The next roadmap (`docs/04-roadmap/index.md`) is in planning:
-its domain model and user stories are worked out, but no
-implementation has started yet — no OpenSpec change exists for it.
+jaime is a hub for small music-oriented tools, with JAM as the first
+tool. Phase 1 of the tools-hub roadmap (`docs/04-roadmap/index.md`) —
+visual identity, the three layout shells, JAM re-routed under
+`/app/jam`, the `jaime.stream` domain, and click-through mocks — is
+implemented, deployed, and archived
+(`add-tools-hub-visual-identity`). The site is live at
+`https://jaime.stream`. Phase 2 (domain model + persistence) is next
+and has no OpenSpec change yet.
 
 ## Source of truth
 
@@ -37,6 +38,12 @@ implementation has started yet — no OpenSpec change exists for it.
   conflict with `openspec/specs/`, the spec wins. See
   `docs/99-openspec-adoption/index.md` for why and how this transition
   is happening.
+
+
+## App
+
+Using Nuxt UI documentation from https://ui.nuxt.com/llms.txt
+Follow complete Nuxt UI guidelines from https://ui.nuxt.com/llms-full.txt
 
 ## Layout
 
