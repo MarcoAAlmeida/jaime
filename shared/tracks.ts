@@ -16,11 +16,11 @@ export const TRACK_LABELS: Record<TrackName, string> = {
   b: 'Track B',
 }
 
-// Starter patterns so a fresh room isn't silent/empty. Only built-in
-// synth waveforms are registered (sawtooth/sine/square/triangle) — no
-// sample bank yet. Deliberately generic, not instrument-themed: each
-// track is an open deck, not a fixed role — the owner decides what to
-// script.
+// Starter patterns so a fresh room isn't silent/empty. Kept to synth
+// waveforms so a fresh room makes sound immediately, before the default
+// sample bank finishes loading (see app/lib/audioEngine.ts). Deliberately
+// generic, not instrument-themed: each track is an open deck, not a fixed
+// role — the owner decides what to script.
 export const DEFAULT_CODE: Record<TrackName, string> = {
   a: 'note("c3 e3 g3 c4").s("triangle")',
   b: 'note("c2").s("square").slow(2)',

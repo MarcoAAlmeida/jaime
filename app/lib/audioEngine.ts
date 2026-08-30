@@ -11,8 +11,27 @@ interface StrudelRepl {
 }
 
 let ready: Promise<void> | undefined
+let samplesReady: Promise<void> | undefined
 const repls = new Map<TrackName, StrudelRepl>()
 const lastErrors = new Map<TrackName, string | null>()
+
+// The default sample bank — the same one strudel.cc uses. Named-sample
+// patterns (`s("bd sd")`, breakbeats, chops) need this registered or
+// they play silent. Fetched over the network once; a failure is logged,
+// not fatal, so a sample pattern then errors like an unknown sound
+// while synth patterns keep working. Kicked off from bootstrap() but
+// NOT awaited there — the editor and synth-only playback must not wait
+// on this fetch (evaluate()/evaluatePreview() await it only when a
+// pattern actually needs a sample, which in practice means always
+// awaiting after the fast setup below).
+function loadSamples(): Promise<void> {
+  samplesReady ??= Promise.resolve(samples('github:tidalcycles/dirt-samples'))
+    .then(() => {})
+    .catch((error: unknown) => {
+      console.warn('[audioEngine] default sample bank failed to load', error)
+    })
+  return samplesReady
+}
 
 async function bootstrap() {
   // @strudel/mini must be evalScope'd too: the transpiler statically
@@ -24,12 +43,11 @@ async function bootstrap() {
   // Strudel) throws "n(...).scale is not a function".
   await evalScope(import('@strudel/core'), import('@strudel/mini'), import('@strudel/tonal'))
   miniAllStrings()
-  // Registers built-in oscillator waveforms (sawtooth, sine, square,
-  // triangle) as usable .s(...) sounds. Sample-bank sounds (drum hits
-  // etc.) need a separate samples() call with a source URL — not needed
-  // for the manual synth-only tests so far, deliberately avoiding a
-  // network dependency this early.
+  // Built-in oscillator waveforms (sawtooth/sine/square/triangle) as
+  // usable .s(...) sounds — synchronous and instant.
   registerSynthSounds()
+  // Start fetching the sample bank in the background; don't block here.
+  loadSamples()
 }
 
 function ensureReady() {
@@ -87,6 +105,7 @@ function getRepl(track: TrackName): StrudelRepl {
 export async function evaluate(track: TrackName, code: string): Promise<string | null> {
   await ensureReady()
   await initAudioOnFirstClick()
+  await loadSamples()
   lastErrors.set(track, null)
   await getRepl(track).evaluate(code)
   return lastErrors.get(track) ?? null
@@ -98,19 +117,12 @@ export async function stop(track: TrackName) {
 }
 
 // --- Pattern-library preview -------------------------------------------------
-// A single non-track repl for auditioning a library pattern, plus the
-// default sample bank (loaded once, on first preview) so sample-based
-// patterns actually make sound. JAM's engine above never loads samples
-// — deliberately, to keep it network-free — so this is kept separate.
+// A single non-track repl for auditioning a library pattern. Sound
+// sources (synths + the default sample bank) come from the same
+// bootstrap() the JAM tracks use.
 
 let previewRepl: StrudelRepl | undefined
-let previewSamplesLoaded: Promise<void> | undefined
 let previewError: string | null = null
-
-function ensurePreviewSamples(): Promise<void> {
-  previewSamplesLoaded ??= Promise.resolve(samples('github:tidalcycles/dirt-samples')).then(() => {})
-  return previewSamplesLoaded
-}
 
 function getPreviewRepl(): StrudelRepl {
   previewRepl ??= webaudioRepl({
@@ -130,7 +142,7 @@ function getPreviewRepl(): StrudelRepl {
 export async function evaluatePreview(code: string): Promise<string | null> {
   await ensureReady()
   await initAudioOnFirstClick()
-  await ensurePreviewSamples()
+  await loadSamples()
   previewError = null
   await getPreviewRepl().evaluate(code)
   return previewError

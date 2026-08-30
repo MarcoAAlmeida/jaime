@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Pattern, PatternListResult } from '#shared/catalog'
+import { nanoid } from 'nanoid'
 
 definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'Pattern library — jaime' })
@@ -84,6 +85,12 @@ function sourceLabel(pattern: Pattern): string {
   catch {
     return 'source'
   }
+}
+
+// Open a fresh JAM room with this pattern on the loader's track A. The
+// room page reads ?load and seeds track A once (see the room [id].vue).
+function loadIntoJam(pattern: Pattern) {
+  navigateTo(`/app/jam/room/${nanoid(10)}?load=${encodeURIComponent(pattern.id)}`)
 }
 
 const copiedId = ref<string | null>(null)
@@ -245,10 +252,19 @@ onBeforeUnmount(() => {
 
               <div class="mt-3 flex flex-wrap items-center gap-2">
                 <UButton
+                  label="Load into JAM"
+                  icon="i-lucide-radio"
+                  size="xs"
+                  color="primary"
+                  data-testid="load-into-jam"
+                  @click="loadIntoJam(pattern)"
+                />
+                <UButton
                   :label="previewingId === pattern.id ? 'Stop' : 'Preview'"
                   :icon="previewingId === pattern.id ? 'i-lucide-square' : 'i-lucide-play'"
                   size="xs"
-                  :color="previewingId === pattern.id ? 'neutral' : 'primary'"
+                  color="neutral"
+                  variant="outline"
                   :loading="previewLoading && previewingId !== pattern.id"
                   @click="togglePreview(pattern)"
                 />

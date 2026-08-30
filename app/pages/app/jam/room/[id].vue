@@ -22,6 +22,9 @@ const { clientId, tracks, playRequestSeq, presence, bpm } = useJamSession()
 const { displayName, setDisplayName } = useDisplayName()
 const nameInput = ref('')
 
+const route = useRoute()
+const router = useRouter()
+
 const errors = ref<Partial<Record<TrackName, string | null>>>({})
 // Local-only, never broadcast: a personal listening preference, not
 // shared room state. Muting doesn't tell anyone else anything.
@@ -123,6 +126,75 @@ async function copyInviteLink() {
   }, 1500)
 }
 
+// --- "Load into JAM" from the pattern library -------------------------------
+// The library sends people here as /app/jam/room/<id>?load=<patternId>.
+// Once this client is connected and owns track A, seed A with that
+// pattern's code (once), then strip ?load so the address bar and any
+// copied invite link stay clean. A second person opening a stale ?load
+// link on an existing room is guarded by loadPhase.
+const wantsLoad = computed(() => typeof route.query.load === 'string' && route.query.load.length > 0)
+const loadPhase = ref<'idle' | 'fetching' | 'claiming' | 'done' | 'skipped'>('idle')
+const pendingLoadCode = ref<string | null>(null)
+const loadNotice = ref<string | null>(null)
+
+function applyLoadedCode() {
+  if (pendingLoadCode.value == null) {
+    return
+  }
+  onCodeUpdate('a', pendingLoadCode.value)
+  pendingLoadCode.value = null
+  loadPhase.value = 'done'
+  router.replace({ path: route.path, query: {} })
+}
+
+watch(
+  [clientId, wantsLoad],
+  async ([id, wants]) => {
+    if (!id || !wants || loadPhase.value !== 'idle') {
+      return
+    }
+    loadPhase.value = 'fetching'
+
+    if (tracks.value.a.owner !== null && !isOwnedByMe('a')) {
+      loadPhase.value = 'skipped'
+      loadNotice.value = 'Track A is already taken — the pattern wasn\'t loaded. Claim a track and paste it if you like.'
+      return
+    }
+
+    try {
+      const pattern = await $fetch<{ code: string }>(
+        `/api/patterns/${encodeURIComponent(route.query.load as string)}`,
+      )
+      pendingLoadCode.value = pattern.code
+    }
+    catch {
+      loadPhase.value = 'skipped'
+      loadNotice.value = 'Couldn\'t load that pattern.'
+      return
+    }
+
+    if (isOwnedByMe('a')) {
+      applyLoadedCode()
+    }
+    else {
+      loadPhase.value = 'claiming'
+      sendClaimTrack('a')
+    }
+  },
+  { immediate: true },
+)
+
+// Ownership lands asynchronously after sendClaimTrack — apply the code
+// once track A is ours.
+watch(
+  () => isOwnedByMe('a'),
+  (owned) => {
+    if (owned && loadPhase.value === 'claiming') {
+      applyLoadedCode()
+    }
+  },
+)
+
 const bpmInput = ref(bpm.value)
 // Follows the room's actual tempo, including changes made by other
 // clients — simple last-write-wins, not trying to protect a local
@@ -200,6 +272,15 @@ function submitTempo() {
         </UButton>
       </div>
     </div>
+    <UAlert
+      v-if="loadNotice"
+      data-testid="load-notice"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-info"
+      :title="loadNotice"
+      :close="{ onClick: () => (loadNotice = null) }"
+    />
     <UAlert
       v-if="!audioUnlocked"
       data-testid="audio-unlock-banner"
