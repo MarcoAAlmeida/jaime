@@ -64,6 +64,8 @@
       track). Every seed pattern plays (5.2 playback test). "Load into
       JAM" is the lead action in the library row. Later-joiner / clean
       invite link covered by 5.2.
-- [ ] 5.4 `npm run deploy` (user runs — `wrangler deploy` is
-      sandbox-blocked); verify on `https://jaime.stream`: load a
-      sample-based curated pattern into JAM and hear it
+- [x] 5.4 Deployed via `npm run deploy` (version `3aef1f37`; no
+      migrations — code-only). Verified live on `jaime.stream`: "Amen
+      slice" (`s("amen").chop(8)…`) → Load into JAM → seeded on track A
+      within ~1s, auto-claimed, `?load` stripped; Play → "Playing", no
+      pattern error (sample bank works on production JAM).
