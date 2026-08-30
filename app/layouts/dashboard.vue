@@ -25,7 +25,7 @@ const items = computed<NavigationMenuItem[][]>(() => [
       label: 'Patterns',
       icon: 'i-lucide-library',
       to: '/app/patterns',
-      badge: 'Soon'
+      active: route.path === '/app/patterns'
     }
   ],
   [

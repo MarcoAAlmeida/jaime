@@ -45,6 +45,11 @@ and has no OpenSpec change yet.
 Using Nuxt UI documentation from https://ui.nuxt.com/llms.txt
 Follow complete Nuxt UI guidelines from https://ui.nuxt.com/llms-full.txt
 
+Deploy with `npm run deploy` (build → apply the `PATTERNS_DB` D1
+migrations `--remote` → `wrangler deploy`), not `wrangler deploy` alone
+— that would ship code against an un-migrated schema. Local dev and the
+test scripts apply the migrations `--local` first.
+
 ## Layout
 
 Single project, not a monorepo — no nested `AGENTS.md` files yet. If

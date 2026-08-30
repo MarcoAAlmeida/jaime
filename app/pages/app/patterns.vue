@@ -1,72 +1,135 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard' })
+import type { Pattern, PatternListResult } from '#shared/catalog'
 
+definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'Pattern library — jaime' })
 
-// Static mock data — no backend, no real search. The curated library
-// is Phase 4, backed by the Phase 2 persistence layer.
-interface MockPattern {
-  title: string
-  author: string
-  code: string
-  tags: string[]
+const PAGE_SIZE = 24
+
+const searchInput = ref('')
+const q = ref('')
+const activeTags = ref<string[]>([])
+const page = ref(1)
+
+// Debounce the text box → the query param the fetch keys off.
+let debounceTimer: ReturnType<typeof setTimeout> | undefined
+watch(searchInput, (value) => {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    q.value = value.trim()
+    page.value = 1
+  }, 250)
+})
+watch(activeTags, () => { page.value = 1 }, { deep: true })
+
+const { data: tagData } = await useFetch<{ tags: string[] }>('/api/patterns/tags')
+const allTags = computed(() => tagData.value?.tags ?? [])
+
+const { data, status, error } = await useFetch<PatternListResult>('/api/patterns', {
+  query: computed(() => ({
+    tag: activeTags.value,
+    q: q.value || undefined,
+    page: page.value,
+    limit: PAGE_SIZE,
+  })),
+})
+
+const patterns = computed<Pattern[]>(() => data.value?.patterns ?? [])
+const total = computed(() => data.value?.total ?? 0)
+
+function toggleTag(tag: string) {
+  activeTags.value = activeTags.value.includes(tag)
+    ? activeTags.value.filter(t => t !== tag)
+    : [...activeTags.value, tag]
 }
 
-const patterns: MockPattern[] = [
-  {
-    title: 'Four on the floor',
-    author: 'jaime',
-    code: 's("bd*4, [~ hh]*2, ~ sd")',
-    tags: ['drums', 'house', 'beginner']
-  },
-  {
-    title: 'Amen chop',
-    author: 'jaime',
-    code: 's("amen").chop(8).speed("1 2 -1 1").room(0.3)',
-    tags: ['breaks', 'samples', 'intermediate']
-  },
-  {
-    title: 'Acid line',
-    author: 'jaime',
-    code: 'note("c2 eb2 g2 c3").s("sawtooth").lpf(sine.range(200, 1800).slow(4)).resonance(18)',
-    tags: ['bass', 'acid', '303']
-  },
-  {
-    title: 'Ambient pad',
-    author: 'jaime',
-    code: 'note("<c4 g4 a4 f4>").s("triangle").attack(1).release(3).room(0.8).gain(0.5)',
-    tags: ['pad', 'ambient', 'chords']
-  },
-  {
-    title: 'Polymeter bells',
-    author: 'jaime',
-    code: 'note("c5 e5 g5 b5 d6").s("sine").slow(3).every(4, rev)',
-    tags: ['melody', 'polymeter', 'generative']
-  },
-  {
-    title: 'Euclidean toms',
-    author: 'jaime',
-    code: 's("tom(3,8), tom:2(5,8,2)").gain(0.9)',
-    tags: ['drums', 'euclidean', 'intermediate']
-  }
-]
+function clearFilters() {
+  searchInput.value = ''
+  q.value = ''
+  activeTags.value = []
+  page.value = 1
+}
 
-const query = ref('')
-const activeTag = ref<string | null>(null)
+// --- expand + copy + preview ------------------------------------------------
+type AudioEngine = typeof import('~/lib/audioEngine')
+let audio: AudioEngine | undefined
+let audioLoad: Promise<AudioEngine> | undefined
 
-const allTags = [...new Set(patterns.flatMap(p => p.tags))].sort()
-
-// Mock-only client-side filtering so the screen feels alive — the real
-// search is Phase 4.
-const filtered = computed(() =>
-  patterns.filter((p) => {
-    const matchesQuery
-      = !query.value
-      || `${p.title} ${p.code} ${p.tags.join(' ')}`.toLowerCase().includes(query.value.toLowerCase())
-    const matchesTag = !activeTag.value || p.tags.includes(activeTag.value)
-    return matchesQuery && matchesTag
+// Load the (heavy) Strudel bundle and register the audio-unlock click
+// listener as soon as the user shows intent to preview — i.e. expands a
+// row. Doing it here (rather than in the Preview click handler) means
+// initAudioOnFirstClick() is armed before the click that would satisfy
+// it, same reasoning as the JAM room's primeAudio() call.
+function preloadAudio() {
+  audioLoad ??= import('~/lib/audioEngine').then((m) => {
+    audio = m
+    m.primeAudio()
+    return m
   })
-)
+  return audioLoad
+}
+
+const expanded = ref<string | null>(null)
+function toggleExpanded(id: string) {
+  const opening = expanded.value !== id
+  expanded.value = opening ? id : null
+  if (opening) preloadAudio()
+}
+
+function sourceLabel(pattern: Pattern): string {
+  if (pattern.source.author) return pattern.source.author
+  try {
+    return new URL(pattern.source.url).hostname.replace(/^www\./, '')
+  }
+  catch {
+    return 'source'
+  }
+}
+
+const copiedId = ref<string | null>(null)
+async function copyCode(pattern: Pattern) {
+  await navigator.clipboard.writeText(pattern.code)
+  copiedId.value = pattern.id
+  setTimeout(() => {
+    if (copiedId.value === pattern.id) copiedId.value = null
+  }, 1500)
+}
+
+const previewingId = ref<string | null>(null)
+const previewLoading = ref(false)
+const previewError = ref<{ id: string, message: string } | null>(null)
+
+async function togglePreview(pattern: Pattern) {
+  previewError.value = null
+  if (previewingId.value === pattern.id) {
+    await audio?.stopPreview()
+    previewingId.value = null
+    return
+  }
+  previewLoading.value = true
+  try {
+    const engine = await preloadAudio()
+    await engine.stopPreview()
+    const err = await engine.evaluatePreview(pattern.code)
+    if (err) {
+      previewError.value = { id: pattern.id, message: err }
+      previewingId.value = null
+    }
+    else {
+      previewingId.value = pattern.id
+    }
+  }
+  catch (e) {
+    previewError.value = { id: pattern.id, message: (e as Error).message }
+  }
+  finally {
+    previewLoading.value = false
+  }
+}
+
+onBeforeUnmount(() => {
+  audio?.stopPreview()
+})
 </script>
 
 <template>
@@ -76,72 +139,146 @@ const filtered = computed(() =>
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-        <template #right>
-          <UBadge color="neutral" variant="subtle">Pattern library · mock (Phase 4)</UBadge>
-        </template>
       </UDashboardNavbar>
       <UDashboardToolbar>
         <template #left>
           <UInput
-            v-model="query"
+            v-model="searchInput"
             icon="i-lucide-search"
-            placeholder="Filter patterns…"
+            placeholder="Search patterns…"
             class="w-64"
           />
         </template>
         <template #right>
           <UButton
-            v-for="tag in allTags"
-            :key="tag"
-            :label="tag"
+            v-if="activeTags.length || q"
+            label="Clear"
+            icon="i-lucide-x"
             size="xs"
-            :color="activeTag === tag ? 'primary' : 'neutral'"
-            :variant="activeTag === tag ? 'solid' : 'outline'"
-            @click="activeTag = activeTag === tag ? null : tag"
+            color="neutral"
+            variant="ghost"
+            @click="clearFilters"
           />
+        </template>
+      </UDashboardToolbar>
+      <UDashboardToolbar v-if="allTags.length">
+        <template #default>
+          <div class="flex flex-wrap gap-1 py-1">
+            <UButton
+              v-for="tag in allTags"
+              :key="tag"
+              :label="tag"
+              size="xs"
+              :color="activeTags.includes(tag) ? 'primary' : 'neutral'"
+              :variant="activeTags.includes(tag) ? 'solid' : 'outline'"
+              @click="toggleTag(tag)"
+            />
+          </div>
         </template>
       </UDashboardToolbar>
     </template>
 
     <template #body>
+      <div v-if="status === 'pending' && !patterns.length" class="text-muted py-12 text-center text-sm">
+        Loading patterns…
+      </div>
+
       <UAlert
-        class="mb-4"
-        color="neutral"
+        v-else-if="error"
+        color="error"
         variant="subtle"
-        icon="i-lucide-info"
-        title="This is a preview"
-        description="The pattern library isn't wired up yet. These are hardcoded examples — browsing and search land in a later phase."
+        icon="i-lucide-alert-triangle"
+        title="Couldn't load the pattern library"
+        :description="error.statusMessage ?? 'Please try again.'"
       />
 
-      <UPageGrid>
-        <UCard v-for="pattern in filtered" :key="pattern.title">
-          <template #header>
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-medium">{{ pattern.title }}</span>
-              <span class="text-muted text-xs">{{ pattern.author }}</span>
-            </div>
-          </template>
-
-          <pre class="text-muted overflow-x-auto rounded bg-elevated p-3 text-xs"><code>{{ pattern.code }}</code></pre>
-
-          <template #footer>
-            <div class="flex flex-wrap gap-1">
-              <UBadge
-                v-for="tag in pattern.tags"
-                :key="tag"
-                :label="tag"
-                color="neutral"
-                variant="subtle"
-                size="xs"
-              />
-            </div>
-          </template>
-        </UCard>
-      </UPageGrid>
-
-      <p v-if="!filtered.length" class="text-muted py-8 text-center text-sm">
-        No example patterns match that filter.
+      <p v-else-if="!patterns.length" class="text-muted py-12 text-center text-sm">
+        No patterns match that filter.
       </p>
+
+      <template v-else>
+        <p class="text-muted mb-4 text-xs">
+          {{ total }} pattern{{ total === 1 ? '' : 's' }}
+        </p>
+
+        <div class="flex flex-col gap-2">
+          <UCard
+            v-for="pattern in patterns"
+            :key="pattern.id"
+            :ui="{ body: 'p-0 sm:p-0' }"
+          >
+            <button
+              type="button"
+              class="hover:bg-elevated/50 flex w-full items-center gap-3 p-4 text-left transition-colors"
+              @click="toggleExpanded(pattern.id)"
+            >
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="text-dimmed size-4 shrink-0 transition-transform"
+                :class="expanded === pattern.id ? 'rotate-90' : ''"
+              />
+              <span class="font-medium">{{ pattern.title }}</span>
+              <div class="ml-auto flex flex-wrap justify-end gap-1">
+                <UBadge
+                  v-for="tag in pattern.tags"
+                  :key="tag"
+                  :label="tag"
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
+                />
+              </div>
+            </button>
+
+            <div v-if="expanded === pattern.id" class="border-default border-t p-4">
+              <pre class="text-muted bg-elevated overflow-x-auto rounded p-3 text-xs"><code>{{ pattern.code }}</code></pre>
+
+              <UAlert
+                v-if="previewError?.id === pattern.id"
+                class="mt-3"
+                color="error"
+                variant="subtle"
+                icon="i-lucide-alert-triangle"
+                title="Pattern error"
+                :description="previewError.message"
+              />
+
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <UButton
+                  :label="previewingId === pattern.id ? 'Stop' : 'Preview'"
+                  :icon="previewingId === pattern.id ? 'i-lucide-square' : 'i-lucide-play'"
+                  size="xs"
+                  :color="previewingId === pattern.id ? 'neutral' : 'primary'"
+                  :loading="previewLoading && previewingId !== pattern.id"
+                  @click="togglePreview(pattern)"
+                />
+                <UButton
+                  :label="copiedId === pattern.id ? 'Copied' : 'Copy code'"
+                  :icon="copiedId === pattern.id ? 'i-lucide-check' : 'i-lucide-copy'"
+                  size="xs"
+                  color="neutral"
+                  variant="outline"
+                  @click="copyCode(pattern)"
+                />
+                <span class="text-dimmed ml-auto text-xs">
+                  Source:
+                  <ULink :to="pattern.source.url" target="_blank" class="text-muted hover:text-default">
+                    {{ sourceLabel(pattern) }}
+                  </ULink>
+                </span>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
+        <div v-if="total > PAGE_SIZE" class="mt-6 flex justify-center">
+          <UPagination
+            v-model:page="page"
+            :total="total"
+            :items-per-page="PAGE_SIZE"
+          />
+        </div>
+      </template>
     </template>
   </UDashboardPanel>
 </template>

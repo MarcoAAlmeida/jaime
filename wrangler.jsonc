@@ -30,6 +30,15 @@
       "binding": "DB",
       "database_name": "jaime-content",
       "database_id": "7c4710fd-b9a1-4a91-a187-58144c311d12"
+    },
+    {
+      // The Catalog bounded context (Pattern; User/Sample later). Schema
+      // is version-controlled under migrations/patterns/ via
+      // `wrangler d1 migrations` — deliberately NOT @nuxt/content's `DB`.
+      "binding": "PATTERNS_DB",
+      "database_name": "jaime-patterns",
+      "database_id": "81156163-fc4b-4828-96b5-7f954678ac19",
+      "migrations_dir": "migrations/patterns"
     }
   ],
   "migrations": [

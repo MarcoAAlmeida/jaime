@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "npm run db:migrate:local && nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "test": "nuxt build && vitest run",
-    "test:e2e": "playwright test"
+    "db:migrate:local": "wrangler d1 migrations apply PATTERNS_DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply PATTERNS_DB --remote",
+    "test": "npm run db:migrate:local && nuxt build && vitest run",
+    "test:e2e": "npm run db:migrate:local && playwright test",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "@codemirror/state": "^6.7.1",

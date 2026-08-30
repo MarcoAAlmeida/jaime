@@ -2,7 +2,7 @@ import type { TrackName } from '#shared/tracks'
 import { evalScope } from '@strudel/core'
 import { miniAllStrings } from '@strudel/mini'
 import { transpiler } from '@strudel/transpiler'
-import { initAudioOnFirstClick, registerSynthSounds, webaudioRepl } from '@strudel/webaudio'
+import { initAudioOnFirstClick, registerSynthSounds, samples, webaudioRepl } from '@strudel/webaudio'
 import { waitForSynchronizedStart } from '~/lib/transportClock'
 
 interface StrudelRepl {
@@ -92,4 +92,47 @@ export async function evaluate(track: TrackName, code: string): Promise<string |
 export async function stop(track: TrackName) {
   await ensureReady()
   repls.get(track)?.stop()
+}
+
+// --- Pattern-library preview -------------------------------------------------
+// A single non-track repl for auditioning a library pattern, plus the
+// default sample bank (loaded once, on first preview) so sample-based
+// patterns actually make sound. JAM's engine above never loads samples
+// — deliberately, to keep it network-free — so this is kept separate.
+
+let previewRepl: StrudelRepl | undefined
+let previewSamplesLoaded: Promise<void> | undefined
+let previewError: string | null = null
+
+function ensurePreviewSamples(): Promise<void> {
+  previewSamplesLoaded ??= Promise.resolve(samples('github:tidalcycles/dirt-samples')).then(() => {})
+  return previewSamplesLoaded
+}
+
+function getPreviewRepl(): StrudelRepl {
+  previewRepl ??= webaudioRepl({
+    transpiler,
+    onEvalError: (error: Error) => {
+      previewError = error.message
+    },
+  }) as StrudelRepl
+  return previewRepl
+}
+
+/**
+ * Evaluates a pattern's code on the shared preview repl and starts it.
+ * Returns the evaluation error message, or null on success — same
+ * contract as evaluate() above.
+ */
+export async function evaluatePreview(code: string): Promise<string | null> {
+  await ensureReady()
+  await initAudioOnFirstClick()
+  await ensurePreviewSamples()
+  previewError = null
+  await getPreviewRepl().evaluate(code)
+  return previewError
+}
+
+export async function stopPreview() {
+  previewRepl?.stop()
 }
