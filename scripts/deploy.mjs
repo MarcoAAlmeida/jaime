@@ -3,9 +3,10 @@
 // remote database → deploy the Worker. Runs as one step so the schema
 // is never behind the code.
 //
-// CI=1 is set so `wrangler d1 migrations apply --remote` skips its
-// interactive "database may be unavailable, continue?" prompt — that
-// prompt otherwise halts the chain on a normal terminal.
+// stdin is left closed (not inherited) and CI=1 is set so
+// `wrangler d1 migrations apply --remote` treats the run as
+// non-interactive and skips its "database may be unavailable, continue?"
+// prompt — that prompt otherwise halts the chain.
 
 import { spawnSync } from 'node:child_process'
 
@@ -18,7 +19,7 @@ const steps = [
 for (const [cmd, args] of steps) {
   console.log(`\n▶ ${cmd} ${args.join(' ')}\n`)
   const res = spawnSync(cmd, args, {
-    stdio: 'inherit',
+    stdio: ['ignore', 'inherit', 'inherit'],
     shell: process.platform === 'win32',
     env: { ...process.env, CI: '1' },
   })

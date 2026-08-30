@@ -19,7 +19,10 @@ async function bootstrap() {
   // rewrites string literals into `m("...", offset)` calls, so `m` (from
   // @strudel/mini) needs to be a real global, not just the string parser
   // miniAllStrings() sets up for runtime Pattern.reify() coercion.
-  await evalScope(import('@strudel/core'), import('@strudel/mini'))
+  // @strudel/tonal provides .scale(), .voicing(), chord/note-name
+  // parsing — without it any pattern using those (common in real
+  // Strudel) throws "n(...).scale is not a function".
+  await evalScope(import('@strudel/core'), import('@strudel/mini'), import('@strudel/tonal'))
   miniAllStrings()
   // Registers built-in oscillator waveforms (sawtooth, sine, square,
   // triangle) as usable .s(...) sounds. Sample-bank sounds (drum hits
