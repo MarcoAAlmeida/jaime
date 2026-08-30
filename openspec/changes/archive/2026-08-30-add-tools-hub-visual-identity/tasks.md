@@ -137,12 +137,14 @@
 
 ## 8. Verification
 
-- [ ] 8.1 Manually verify every scenario in
+- [x] 8.1 Manually verify every scenario in
       `specs/visual-identity/spec.md`,
       `specs/landing-page/spec.md`,
       `specs/dashboard-shell/spec.md`,
       `specs/docs-shell/spec.md`, and
-      `specs/hub-mock-screens/spec.md`
+      `specs/hub-mock-screens/spec.md` — user reviewed the running app
+      over two rounds (rust palette, the resizable/collapsible docs
+      sidebar, panel-title cleanup) and signed off.
 - [x] 8.2 Run the existing JAM e2e suite against the new `/app/jam`
       routes and confirm it still passes end to end — 11/11
       `e2e/multi-client.spec.ts` pass against `wrangler dev`; 27/27

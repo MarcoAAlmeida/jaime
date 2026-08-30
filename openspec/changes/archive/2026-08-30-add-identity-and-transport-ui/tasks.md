@@ -107,7 +107,10 @@
       (`name=Alice`/`name=Bob`) confirming `room_state` and
       `presence_update` both carry the correct names over the real
       network
-- [ ] 6.2 Manual two-device smoke test: set distinct display names on
+- [x] 6.2 Manual two-device smoke test: set distinct display names on
       each, confirm both show up correctly in presence and in track
       ownership, and that a tempo change on one device is reflected on
-      the other
+      the other — covered by the Playwright multi-client suite (two
+      independent browser contexts with distinct names exercise
+      presence, owner badges, and tempo propagation); user signed off
+      on archiving without a separate device check.
