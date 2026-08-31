@@ -14,33 +14,41 @@
       `content/patterns/README.md`: `<id>.md`, frontmatter `title`,
       `tags` (list), `source_url`, optional `source_author`, optional
       `description`; body is one ```` ```strudel ```` fence with the code.
-- [ ] 2.2 `scripts/lib/patterns-manifest.mjs` — read `content/patterns/
-      *.md`, split frontmatter/body (dependency-free or `gray-matter`
-      if already resolvable), extract the code fence, return typed
-      entries. Throw with a per-file message on: missing `source_url`,
-      missing/empty code fence, malformed frontmatter.
-- [ ] 2.3 Validation pass over the parsed set: ids unique (filename
-      stem), tags are strings. Any failure aborts before any SQL is
-      emitted.
-- [ ] 2.4 Unit tests for the parser + validation (valid file, missing
-      source, duplicate id, no code fence).
+- [ ] 2.2 `scripts/lib/patterns-manifest.mjs` — plain ESM, importable
+      from both the sync script and `vitest.config.ts`. `readManifest(dir)`
+      reads `content/patterns/*.md`, splits frontmatter/body
+      (dependency-free or `gray-matter` if already resolvable), extracts
+      the code fence, returns typed entries. Throws with a per-file
+      message on: missing `source_url`, missing/empty code fence,
+      malformed frontmatter.
+- [ ] 2.3 Same module: `validateManifest(entries)` — ids unique
+      (filename stem), tags are strings; and `toReconcileSql(entries)`
+      → the `BEGIN;…COMMIT;` string (decision 3). Any validation
+      failure throws before any SQL is produced.
+- [ ] 2.4 Unit tests for parse + validate + SQL generation (valid file,
+      missing source, duplicate id, no code fence, idempotent SQL shape).
 
 ## 3. Reconcile script
 
-- [ ] 3.1 `scripts/sync-patterns.mjs` — parse + validate the manifest,
-      then emit one SQL file: `BEGIN;`, per entry an
-      `INSERT ... ON CONFLICT(id) DO UPDATE SET ... , origin='curated'`,
-      a delete+reinsert of that pattern's `pattern_tags`, then prune
-      `pattern_tags` and `patterns` where `origin='curated' AND id NOT
-      IN (<manifest ids>)`, `COMMIT;`. First-insert `created_at` is
-      derived from manifest order; existing rows keep theirs.
+- [ ] 3.1 `scripts/sync-patterns.mjs` — thin CLI over
+      `scripts/lib/patterns-manifest.mjs`: read + validate the manifest,
+      call `toReconcileSql`, write it to a temp file. SQL shape: `BEGIN;`,
+      per entry `INSERT ... ON CONFLICT(id) DO UPDATE SET ... ,
+      origin='curated'`, delete+reinsert that pattern's `pattern_tags`,
+      then prune `pattern_tags` and `patterns` where `origin='curated'
+      AND id NOT IN (<manifest ids>)`, `COMMIT;`. First-insert
+      `created_at` from manifest order; existing rows keep theirs.
 - [ ] 3.2 Apply step: `wrangler d1 execute PATTERNS_DB {--local|--remote}
       --file <tmp>` with `CI=1` and stdin closed (match `deploy.mjs`).
       `--local` / `--remote` from argv; log the generated SQL before
       applying; non-zero exit on failure.
-- [ ] 3.3 Idempotency check in code review / a test: running the script
-      twice against the same manifest produces the same rows and the
-      second run's prune affects nothing.
+- [ ] 3.3 Idempotency covered by 2.4 (SQL shape) + 7.4 (manual: run
+      twice, second run reports nothing).
+- [ ] 3.4 `vitest.config.ts` — build the reconcile SQL from the manifest
+      (reuse `scripts/lib/patterns-manifest.mjs`) and pass it as a
+      miniflare string binding `PATTERNS_SEED_SQL`; `test/apply-migrations.ts`
+      runs it against `env.PATTERNS_DB` right after `applyD1Migrations`.
+      `test/env.d.ts` types the new binding.
 
 ## 4. Wiring
 

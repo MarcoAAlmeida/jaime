@@ -112,7 +112,30 @@ Migration `0004_pattern_origin.sql`:
 - Tests already assert on seed data; they will assert against the manifest
   from here on.
 
-### 5. Strudel docs = a nested section, real content
+### 5. vitest gets the manifest through its own config, not `db:migrate:local`
+
+`npm test` runs `db:migrate:local` first, but `@cloudflare/vitest-pool-workers`
+provisions its *own* empty D1 per run and seeds it only from
+`readD1Migrations('migrations/patterns')` applied in
+`test/apply-migrations.ts` — the `db:migrate:local` sync never reaches it.
+
+So the manifest parse + SQL generation live in a plain-ESM module
+(`scripts/lib/patterns-manifest.mjs`) importable from Node. `vitest.config.ts`
+(already async, already calls `readD1Migrations`) also builds the reconcile
+SQL from the manifest and passes it as a miniflare string binding
+(`PATTERNS_SEED_SQL`); `test/apply-migrations.ts` runs it against
+`env.PATTERNS_DB` right after `applyD1Migrations`. Same shape as the
+existing migration wiring — one source of truth (the manifest) for unit
+tests, e2e (via `wrangler dev` + `db:migrate:local`), dev, and prod.
+
+- **Why not keep `0002` as the test seed:** that reintroduces exactly the
+  drift this change removes — tests would assert against 20 frozen SQL rows
+  while every other environment tracks the manifest.
+- `0002` stays applied (its rows are already in dev/prod D1); the first
+  reconcile updates/prunes them. Its header comment gets a "manifest is now
+  authoritative" note. It is not edited.
+
+### 6. Strudel docs = a nested section, real content
 
 `content/docs/2.strudel.md` → `content/docs/2.strudel/` with numbered
 pages: `1.index.md`, `2.mini-notation.md`, `3.sounds.md`, `4.effects.md`,
@@ -121,6 +144,10 @@ pages: `1.index.md`, `2.mini-notation.md`, `3.sounds.md`, `4.effects.md`,
 - `docs.vue` nav currently renders one flat level; it gains one level of
   children (a section with a landing page + sub-pages). Small, contained
   change to the nav builder — the lock/`authRequired` handling is unchanged.
+  If nesting the docs nav turns out to need more than a contained
+  `docs.vue` change, fall back to flat sibling pages
+  (`2.strudel.md`, `3.strudel-mini-notation.md`, …) — content and specs
+  are unaffected either way.
 - Ordinary Markdown links from docs pages to `/app/patterns` (and, where
   useful, to a specific pattern) — no component, no spec impact.
 - Content itself is drafted by Claude, reviewed by the maintainer before
