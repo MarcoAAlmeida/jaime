@@ -17,6 +17,7 @@ test('loading a pattern into JAM seeds track A; a later joiner is not seeded', a
   const pageA = await ctxA.newPage()
 
   await pageA.goto('/app/patterns')
+  await pageA.getByPlaceholder('Search patterns…').fill('Four on the floor')
   await pageA.getByRole('button', { name: /^Four on the floor\b/ }).first().click()
   await pageA.getByTestId('load-into-jam').click()
 
@@ -55,6 +56,7 @@ test('a stale ?load link on a room with track A taken does not re-seed', async (
   const ctxA = await browser.newContext()
   const pageA = await ctxA.newPage()
   await pageA.goto('/app/patterns')
+  await pageA.getByPlaceholder('Search patterns…').fill('Acid line')
   await pageA.getByRole('button', { name: /^Acid line\b/ }).first().click()
   await pageA.getByTestId('load-into-jam').click()
   await pageA.waitForURL(/\/app\/jam\/room\//)

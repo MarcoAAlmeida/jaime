@@ -24,9 +24,17 @@ patterns and Strudel docs on top of it.
 - **Migration `0002`'s seed rows are migrated into the manifest** and
   its inserts made idempotent / superseded, so the two mechanisms don't
   fight. The `seed-*` id convention for curated rows is kept.
-- **The curated library is expanded** with a first real batch imported
-  from awesome-strudel — each entry carrying correct attribution from
-  the moment it's authored (story 59).
+- **The curated library is expanded** ~20 → ~45 with a first real batch
+  of short, remixable *starter* patterns (rhythms, basslines, synth
+  textures, generative tricks) in the existing seed style — each
+  carrying correct attribution from the moment it's authored (story
+  59). Note: [awesome-strudel](https://github.com/terryds/awesome-strudel)
+  turned out to be ~29 full-song covers (opaque `strudel.cc/?hash`
+  links, hundreds of lines each) — whole compositions, not the "start
+  here instead of a blank editor" snippet the library is for — so it is
+  cited only where a pattern is genuinely derived from it; the batch is
+  attributed mostly to the strudel.cc learn / workshop / examples pages
+  each pattern demonstrates.
 - **The Strudel docs section gets real content**: the single
   placeholder page becomes a small set of real reference/guide pages
   (mini-notation, sound sources, effects, the subset JAM supports),

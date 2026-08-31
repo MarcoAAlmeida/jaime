@@ -8,9 +8,11 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "db:migrate:local": "wrangler d1 migrations apply PATTERNS_DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply PATTERNS_DB --remote",
-    "test": "npm run db:migrate:local && nuxt build && vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply PATTERNS_DB --local && node scripts/sync-patterns.mjs --local",
+    "db:migrate:remote": "wrangler d1 migrations apply PATTERNS_DB --remote && node scripts/sync-patterns.mjs --remote",
+    "patterns:sync": "node scripts/sync-patterns.mjs",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
+    "test": "npm run test:scripts && npm run db:migrate:local && nuxt build && vitest run",
     "test:e2e": "npm run db:migrate:local && playwright test",
     "deploy": "node scripts/deploy.mjs"
   },
@@ -57,6 +59,7 @@
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",
     "vue-tsc": "^3.3.10",
-    "wrangler": "^4.124.0"
+    "wrangler": "^4.124.0",
+    "yaml": "^2.6.0"
   }
 }

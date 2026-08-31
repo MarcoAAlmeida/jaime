@@ -10,8 +10,10 @@ describe('GET /api/patterns', () => {
   it('returns a paginated first page with the list envelope', async () => {
     const { status, body } = await get('/api/patterns')
     expect(status).toBe(200)
-    expect(body).toMatchObject({ page: 1, pageSize: 24, total: 20 })
-    expect(body.patterns).toHaveLength(20)
+    expect(body).toMatchObject({ page: 1, pageSize: 24 })
+    // The curated catalog (content/patterns/*.md) is larger than one page.
+    expect(body.total).toBeGreaterThanOrEqual(24)
+    expect(body.patterns).toHaveLength(24)
     expect(body.patterns[0]).toMatchObject({
       id: expect.any(String),
       title: expect.any(String),

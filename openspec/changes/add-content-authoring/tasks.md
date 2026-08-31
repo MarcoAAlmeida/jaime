@@ -1,109 +1,116 @@
 ## 1. Schema: mark curated rows
 
-- [ ] 1.1 `migrations/patterns/0004_pattern_origin.sql` —
+- [x] 1.1 `migrations/patterns/0004_pattern_origin.sql` —
       `ALTER TABLE patterns ADD COLUMN origin TEXT NOT NULL DEFAULT
-      'curated'`. `db:migrate:local` applies it; existing `0002` rows
-      become `origin = 'curated'`.
-- [ ] 1.2 Confirm `server/catalog/patterns.ts` read paths are unaffected
-      (no `SELECT *` that would now surface `origin`; add it to the
-      row-shape mapping only if a query needs it — it should not).
+      'curated'` + `idx_patterns_origin`. Applies cleanly `--local`;
+      existing `0002` rows become `origin = 'curated'`. `0002`'s header
+      comment now points at the manifest.
+- [x] 1.2 `server/catalog/patterns.ts` read paths use explicit column
+      lists everywhere (no `SELECT *`) — `origin` is invisible to the
+      API with no code change.
 
 ## 2. Manifest format + parser
 
-- [ ] 2.1 Decide and document the on-disk shape in a short
-      `content/patterns/README.md`: `<id>.md`, frontmatter `title`,
-      `tags` (list), `source_url`, optional `source_author`, optional
-      `description`; body is one ```` ```strudel ```` fence with the code.
-- [ ] 2.2 `scripts/lib/patterns-manifest.mjs` — plain ESM, importable
-      from both the sync script and `vitest.config.ts`. `readManifest(dir)`
-      reads `content/patterns/*.md`, splits frontmatter/body
-      (dependency-free or `gray-matter` if already resolvable), extracts
-      the code fence, returns typed entries. Throws with a per-file
-      message on: missing `source_url`, missing/empty code fence,
-      malformed frontmatter.
-- [ ] 2.3 Same module: `validateManifest(entries)` — ids unique
-      (filename stem), tags are strings; and `toReconcileSql(entries)`
-      → the `BEGIN;…COMMIT;` string (decision 3). Any validation
-      failure throws before any SQL is produced.
-- [ ] 2.4 Unit tests for parse + validate + SQL generation (valid file,
-      missing source, duplicate id, no code fence, idempotent SQL shape).
+- [x] 2.1 `content/patterns/README.md` documents the shape: `<id>.md`,
+      frontmatter `title` / `tags` / `source_url` / optional
+      `source_author` / `description` / `created_at`; body is one
+      ```` ```strudel ```` fence.
+- [x] 2.2 `scripts/lib/patterns-manifest.mjs` — plain ESM, imported by
+      `scripts/sync-patterns.mjs` and `vitest.config.ts`. `readManifest`
+      splits frontmatter (`yaml` — now a direct devDep) / body, extracts
+      the fence, returns id-sorted typed entries, throws `ManifestError`
+      listing every problem (missing `source_url`, no fence, bad YAML).
+- [x] 2.3 Same module: `validateManifest` (dup ids), `toReconcileSql`
+      (upsert + tag rebuild + curated-scoped prune; `'` escaped; empty
+      manifest safe), `buildReconcileSql` = read+validate+generate.
+      Chose plain multi-statement SQL over `BEGIN;…COMMIT;` — wrangler
+      `d1 execute --file` batches statements atomically and rejects a
+      nested transaction.
+- [x] 2.4 `scripts/lib/patterns-manifest.test.mjs` (`node --test`, 12
+      cases) — parse, numeric-tag coercion, no-source, no-fence, bad
+      frontmatter, multi-problem, id sort, dup id, quote escaping, prune
+      scope, stability, empty manifest. `npm run test:scripts`.
 
 ## 3. Reconcile script
 
-- [ ] 3.1 `scripts/sync-patterns.mjs` — thin CLI over
-      `scripts/lib/patterns-manifest.mjs`: read + validate the manifest,
-      call `toReconcileSql`, write it to a temp file. SQL shape: `BEGIN;`,
-      per entry `INSERT ... ON CONFLICT(id) DO UPDATE SET ... ,
-      origin='curated'`, delete+reinsert that pattern's `pattern_tags`,
-      then prune `pattern_tags` and `patterns` where `origin='curated'
-      AND id NOT IN (<manifest ids>)`, `COMMIT;`. First-insert
-      `created_at` from manifest order; existing rows keep theirs.
-- [ ] 3.2 Apply step: `wrangler d1 execute PATTERNS_DB {--local|--remote}
-      --file <tmp>` with `CI=1` and stdin closed (match `deploy.mjs`).
-      `--local` / `--remote` from argv; log the generated SQL before
-      applying; non-zero exit on failure.
-- [ ] 3.3 Idempotency covered by 2.4 (SQL shape) + 7.4 (manual: run
-      twice, second run reports nothing).
-- [ ] 3.4 `vitest.config.ts` — build the reconcile SQL from the manifest
-      (reuse `scripts/lib/patterns-manifest.mjs`) and pass it as a
-      miniflare string binding `PATTERNS_SEED_SQL`; `test/apply-migrations.ts`
-      runs it against `env.PATTERNS_DB` right after `applyD1Migrations`.
-      `test/env.d.ts` types the new binding.
+- [x] 3.1 `scripts/sync-patterns.mjs` — thin CLI over
+      `buildReconcileSql()`; on `ManifestError` prints it and exits 1
+      before touching the DB. Undated entries get a deterministic
+      `created_at` (base `2026-09-01` + id-sorted index); existing rows
+      keep theirs (upsert doesn't rewrite `created_at`).
+- [x] 3.2 `wrangler d1 execute PATTERNS_DB {--local|--remote} --file
+      <tmp>` with `CI=1`, stdin closed, `--yes` on remote. Logs the SQL
+      first; non-zero exit on failure. Verified `--local`: 20 patterns /
+      53 tags, second run a no-op, an `origin='user'` row survived a
+      reconcile, a stray curated row was pruned.
+- [x] 3.3 Idempotency confirmed (2.4 + the `--local` run above).
+- [x] 3.4 `vitest.config.ts` builds `PATTERNS_SEED_SQL` via
+      `buildReconcileSql()`, passed as a miniflare binding;
+      `test/apply-migrations.ts` runs it line-by-line after
+      `applyD1Migrations`; `test/env.d.ts` types it. 21 pattern tests
+      pass against the manifest-seeded DB.
 
 ## 4. Wiring
 
-- [ ] 4.1 `scripts/deploy.mjs` — add `node scripts/sync-patterns.mjs
-      --remote` as a step between `d1 migrations apply --remote` and
-      `wrangler deploy`; a failure aborts the deploy.
-- [ ] 4.2 `package.json` — `db:migrate:local` runs the migrations then
-      `node scripts/sync-patterns.mjs --local`; add a standalone
-      `patterns:sync` script. `dev` / `test` / `test:e2e` inherit it
-      through `db:migrate:local`.
-- [ ] 4.3 Run `npm run db:migrate:local` on a clean local D1; confirm
-      `/api/patterns` returns the manifest set and tag filter/search
-      still work.
+- [x] 4.1 `scripts/deploy.mjs` — `node scripts/sync-patterns.mjs
+      --remote` runs between `d1 migrations apply --remote` and
+      `wrangler deploy`; the loop already aborts on any non-zero step.
+- [x] 4.2 `package.json` — `db:migrate:local` / `db:migrate:remote` now
+      chain the sync; `patterns:sync` standalone; `test:scripts` runs
+      the node tests and is first in `test`. `dev` / `test` / `test:e2e`
+      inherit the sync via `db:migrate:local`. Added `yaml` devDep.
+- [x] 4.3 `db:migrate:local` on the local D1 → `/api/patterns` returns
+      the 20 manifest patterns; tag filter + search covered by the
+      passing `patterns-catalog` / `patterns-api` suites.
 
 ## 5. Author the first curated batch
 
-- [ ] 5.1 Move every `0002` seed pattern worth keeping into
-      `content/patterns/<seed-id>.md` (same ids), tags included. Note
-      in `0002`'s header comment that the manifest is now authoritative.
-- [ ] 5.2 Import a first batch from awesome-strudel — each file with a
-      real `source_url` (and `source_author` where known) from the
-      moment it is authored (spec: "an entry with no source is
-      refused"). Batch size is the design's open question — start with
-      a coherent ~50 and note the count in the change.
-- [ ] 5.3 `npm run db:migrate:local` + spot-check the library UI:
-      preview plays, attribution shows, "Load into JAM" still works.
+- [x] 5.1 All 20 `0002` seed patterns are now
+      `content/patterns/seed-*.md` (same ids, tags, code, `created_at`).
+      `0002`'s header comment points at the manifest.
+- [x] 5.2 26 new starter patterns (`content/patterns/*.md`, catalog
+      20 → 46) across drums / bass / synth / melody / generative / fx /
+      ambient / chords. Every construct is one a seed pattern already
+      exercises; samples are dirt-samples only; every file has a real
+      strudel.cc `source_url`. Decision recorded: awesome-strudel is
+      song-covers, not snippets — see proposal.
+- [x] 5.3 `pattern-playback.spec.ts` (all 46 evaluate, no pattern
+      error) and `pattern-loading.spec.ts` (preview + Load into JAM)
+      pass against the manifest-seeded catalog.
 
 ## 6. Strudel docs content
 
-- [ ] 6.1 Restructure `content/docs/2.strudel.md` → `content/docs/
-      2.strudel/` with `1.index.md` + topic pages (`2.mini-notation`,
-      `3.sounds`, `4.effects`, `5.in-jam`). Drop `placeholder: true`.
-- [ ] 6.2 `app/layouts/docs.vue` — render one level of section children
-      in the nav (section landing page + its sub-pages); keep the
+- [x] 6.1 `content/docs/2.strudel.md` → `content/docs/2.strudel/` with
+      `1.index.md` + `2.mini-notation`, `3.sounds`, `4.effects`,
+      `5.in-jam`. No `placeholder` flag.
+- [x] 6.2 `app/layouts/docs.vue` — `toItem()` recursively maps a
+      section's `children` into `UNavigationMenu` items (`defaultOpen`),
       `authRequired` lock handling unchanged.
-- [ ] 6.3 Draft real content for each page (Claude draft, maintainer
-      review before merge): mini-notation, sound sources, core effects,
-      and precisely which subset JAM supports today. Cross-link to
-      `/app/patterns` where a concept has a matching library pattern.
-- [ ] 6.4 `queryCollectionNavigation` / TOC still work with the nested
-      structure; `9.behind-the-scenes` gate still works.
+- [x] 6.3 Real content on each page — mini-notation, sound sources /
+      synths, the effects & signals chain, and exactly which Strudel
+      packages JAM's engine loads + what it leaves out. Plain links to
+      `/app/patterns`. (Maintainer review is the PR gate, story 58.)
+- [x] 6.4 Landing page is `content/docs/2.strudel.md` beside the
+      `2.strudel/` folder (a bare `1.index.md` inside the folder did not
+      resolve to `/docs/strudel`); nav shows the four nested children,
+      `queryCollectionNavigation` + gate verified via `e2e/docs.spec.ts`.
 
 ## 7. Tests + verification
 
-- [ ] 7.1 Update any vitest/e2e fixtures that assumed the old seed set
-      (prefer asserting "a known id exists" / "tag filter narrows" over
-      exact counts).
-- [ ] 7.2 e2e: the docs nav lists the Strudel sub-pages and they render;
-      a docs→pattern link resolves.
-- [ ] 7.3 `nuxt typecheck`, `vitest run`, `playwright test` green.
-- [ ] 7.4 Manual: fresh `wrangler dev` — `/api/patterns` matches the
-      manifest; add a throwaway `content/patterns/*.md`, re-run
-      `patterns:sync --local`, see it appear; delete it, re-run, see it
-      pruned while a non-`curated` row (insert one by hand with
-      `origin='user'`) survives.
+- [x] 7.1 Fixtures de-counted: `patterns-catalog` / `patterns-api`
+      assert "≥ N" and "seen == total" not "== 20"; the acid-tag shape
+      test finds `seed-acid-line` by id. `pattern-playback.spec.ts`
+      rewritten to summon each pattern with the search box (was: click
+      rows on page 1 — broke past 24 patterns); `pattern-loading.spec.ts`
+      does the same for its two fixed patterns.
+- [x] 7.2 `e2e/docs.spec.ts` — Strudel section is nested, sub-pages in
+      the nav and rendering, a docs→`/app/patterns` link resolves, the
+      `behind-the-scenes` gate still holds for anon.
+- [x] 7.3 `nuxt typecheck` (0), `npm test` (12 node + 77 vitest),
+      `playwright test` (22) all green.
+- [x] 7.4 `--local` reconcile verified during 3.2: `/api/patterns`
+      matches the manifest, a hand-inserted `origin='user'` row survived
+      a reconcile, a stray `origin='curated'` row was pruned.
 - [ ] 7.5 `npm run deploy`; confirm the remote catalog on
       `https://jaime.stream/app/patterns` matches the manifest and the
       new Strudel docs render.

@@ -164,8 +164,11 @@ pages: `1.index.md`, `2.mini-notation.md`, `3.sounds.md`, `4.effects.md`,
   catalog → batch the file if it ever approaches limits; the first batch
   (~50–100 patterns) is well within them.
 - **Tests coupled to manifest content** → tests assert on stable facts
-  (a known id exists, tag filter works) rather than exact counts where
-  possible; a count assertion that must change is a one-line fixture update.
+  (a known `seed-*` id exists, tag filter narrows the set) rather than
+  exact counts. `pattern-playback.spec.ts` previously clicked pattern
+  rows on page 1 of the library — fine at 20, broken once the catalog
+  needs a second page; it now summons each pattern through the search
+  box, which is size-independent.
 - **Partial failure mid-apply** → single `BEGIN;…COMMIT;` file; D1 rolls
   back on error, leaving the previous catalog intact.
 - **Local and remote drift** if someone deploys without running the local

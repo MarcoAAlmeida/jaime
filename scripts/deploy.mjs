@@ -13,6 +13,9 @@ import { spawnSync } from 'node:child_process'
 const steps = [
   ['npx', ['nuxt', 'build']],
   ['npx', ['wrangler', 'd1', 'migrations', 'apply', 'PATTERNS_DB', '--remote']],
+  // Reconcile the curated pattern catalog to content/patterns/*.md
+  // before the code that reads it goes live.
+  ['node', ['scripts/sync-patterns.mjs', '--remote']],
   ['npx', ['wrangler', 'deploy']],
 ]
 

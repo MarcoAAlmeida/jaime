@@ -11,19 +11,28 @@ const { data: navigation } = await useAsyncData('docs-navigation', () =>
 
 // queryCollectionNavigation returns the /docs root with its pages as
 // children; the sidebar wants the pages.
-const sections = computed<(ContentNavigationItem & { authRequired?: boolean })[]>(
-  () => navigation.value?.[0]?.children ?? navigation.value ?? [],
+type DocNode = ContentNavigationItem & { authRequired?: boolean, children?: DocNode[] }
+const sections = computed<DocNode[]>(
+  () => (navigation.value?.[0]?.children ?? navigation.value ?? []) as DocNode[],
 )
 
-const items = computed<NavigationMenuItem[][]>(() => [
-  sections.value.map(section => ({
-    label: section.title,
+// A section can be a single page or a folder with its own pages nested
+// one level (e.g. Strudel → mini-notation, sounds, …).
+function toItem(node: DocNode): NavigationMenuItem {
+  const kids = (node.children ?? []).filter(c => c.page !== false)
+  return {
+    label: node.title,
     // Locked pages stay listed — a lock icon in place of the topic icon.
-    icon: section.authRequired
+    icon: node.authRequired
       ? 'i-lucide-lock'
-      : section.icon ?? (section.path === '/docs' ? 'i-lucide-house' : 'i-lucide-book-text'),
-    to: section.path,
-  })),
+      : node.icon ?? (node.path === '/docs' ? 'i-lucide-house' : 'i-lucide-book-text'),
+    to: node.path,
+    ...(kids.length ? { children: kids.map(toItem), defaultOpen: true } : {}),
+  }
+}
+
+const items = computed<NavigationMenuItem[][]>(() => [
+  sections.value.map(toItem),
   [
     { label: 'Back to tools', icon: 'i-lucide-arrow-left', to: '/app/jam' },
   ],

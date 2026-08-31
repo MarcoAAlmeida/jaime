@@ -1,6 +1,11 @@
--- Curated starter set (~20). Source URLs are real; a full
--- awesome-strudel import is Phase 5's authoring work. IDs are readable
--- slugs (seed rows); user-created patterns later get nanoids.
+-- Curated starter set (~20). IDs are readable slugs (seed rows);
+-- user-created patterns later get nanoids.
+--
+-- As of add-content-authoring (Phase 5) the curated catalog is defined
+-- by content/patterns/*.md and reconciled into this table on every
+-- deploy — these rows are kept here only so a fresh database has a
+-- catalog before the first sync runs. Do not add patterns here; add a
+-- manifest file instead.
 
 INSERT INTO patterns (id, title, code, source_url, source_author, created_at) VALUES
 ('seed-four-on-the-floor', 'Four on the floor', 's("bd*4, [~ hh]*4, ~ cp")', 'https://strudel.cc/workshop/first-sounds/', NULL, '2026-08-30T12:00:00.000Z'),

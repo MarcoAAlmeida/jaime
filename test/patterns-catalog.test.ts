@@ -3,10 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { getPattern, listPatterns, listTags } from '../server/catalog/patterns'
 
 const db = env.PATTERNS_DB
-const SEED_COUNT = 20
 
 describe('listPatterns', () => {
-  it('paginates and covers every seeded pattern exactly once', async () => {
+  it('paginates and covers every curated pattern exactly once', async () => {
     const seen = new Set<string>()
     let page = 1
     let total = -1
@@ -24,8 +23,9 @@ describe('listPatterns', () => {
       page += 1
     }
 
-    expect(total).toBe(SEED_COUNT)
-    expect(seen.size).toBe(SEED_COUNT)
+    // Seeded from content/patterns/*.md — count tracks the manifest.
+    expect(total).toBeGreaterThanOrEqual(20)
+    expect(seen.size).toBe(total)
   })
 
   it('orders by createdAt desc, id — stable across pages', async () => {
@@ -42,9 +42,10 @@ describe('listPatterns', () => {
   })
 
   it('narrows to patterns carrying a tag, with a matching total', async () => {
-    const res = await listPatterns(db, { tags: ['drums'], limit: 60 })
+    const all = await listPatterns(db, { limit: 200 })
+    const res = await listPatterns(db, { tags: ['drums'], limit: 200 })
     expect(res.patterns.length).toBeGreaterThan(0)
-    expect(res.patterns.length).toBeLessThan(SEED_COUNT)
+    expect(res.patterns.length).toBeLessThan(all.total)
     expect(res.total).toBe(res.patterns.length)
     for (const p of res.patterns) expect(p.tags).toContain('drums')
   })
@@ -88,8 +89,8 @@ describe('listPatterns', () => {
   })
 
   it('assembles the full pattern shape', async () => {
-    const { patterns } = await listPatterns(db, { tags: ['acid'] })
-    const p = patterns[0]!
+    const { patterns } = await listPatterns(db, { tags: ['acid'], limit: 200 })
+    const p = patterns.find(x => x.id === 'seed-acid-line')!
     expect(p).toMatchObject({
       id: 'seed-acid-line',
       title: 'Acid line',
