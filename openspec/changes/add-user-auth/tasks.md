@@ -1,12 +1,12 @@
 ## 1. Infra: D1 schema, email, bindings
 
-- [~] 1.1 `send_email` binding `EMAIL` added to `wrangler.jsonc`;
+- [x] 1.1 `send_email` binding `EMAIL` added to `wrangler.jsonc`;
       `compatibility_date` bumped to `2025-07-15` (matches nuxt.config);
       `wrangler types` → `EMAIL: SendEmail` in the ambient `Env`.
-      **BLOCKED on the user:** `wrangler email sending enable jaime.stream`
-      needs the `email_sending:write` OAuth scope — run
-      `wrangler login` then the enable. Until then a real send errors
-      and the request route returns 503 (tests stub the send).
+      Email Sending onboarded for `jaime.stream` via the dashboard
+      (OAuth/MCP tokens lack the email scope) — Status: Enabled, DNS
+      (SPF + DKIM): Configured, reputation Healthy. Sends from the apex
+      (`noreply@jaime.stream`), no subdomain.
 - [x] 1.2 `migrations/patterns/0003_users_and_sessions.sql` — `users`,
       `auth_tokens`, `sessions` + indexes per design decision 3.
       `db:migrate:local` applies cleanly (7 statements).
@@ -126,6 +126,9 @@
       request → emailed/dev link → callback → cookie → `/api/auth/me`
       → PATCH name → `/account` → signout → delete flow all work; the
       remaining spec scenarios are covered by `e2e/auth.spec.ts`.
-- [~] 8.3 `npm run deploy`; on `https://jaime.stream` do one real
-      end-to-end sign-in with a real inbox, confirm the session
-      survives a browser restart, read the gated doc, then sign out
+- [x] 8.3 Deployed via `npm run deploy` (migration 0003 applied to
+      remote `jaime-patterns`, version f175c77a). Real end-to-end
+      sign-in on `https://jaime.stream` confirmed: the email arrived
+      from `noreply@jaime.stream`, the link signed the account in, the
+      session survived a full browser restart, `/account` and the gated
+      doc both render.
