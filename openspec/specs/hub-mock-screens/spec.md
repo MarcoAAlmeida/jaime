@@ -2,10 +2,9 @@
 
 ## Purpose
 Provides non-functional, click-through mock pages for features that
-don't exist yet — Pattern library, Composition Room, and community
-signup — as real Nuxt pages with static/mock data, so the screens can
-be validated before their backing domain model and persistence land in
-later phases.
+don't exist yet — currently the Composition Room — as real Nuxt pages
+with static/mock data, so the screens can be validated before their
+backing domain model and persistence land in later phases.
 
 ## Requirements
 
@@ -19,14 +18,3 @@ collaboration.
 - **WHEN** a visitor opens the Composition Room mock page
 - **THEN** a placeholder editor, a mock presence indicator, a
   viewer/editor toggle, and an empty chat panel are all visible
-
-### Requirement: Community Signup Mock Accepts An Email
-The system SHALL provide a mock community signup screen that accepts
-an email address and acknowledges submission, without sending a real
-confirmation email.
-
-#### Scenario: Visitor submits the mock signup form
-- **WHEN** a visitor enters an email and submits the community signup
-  mock form
-- **THEN** the form acknowledges the submission without sending a real
-  confirmation email
