@@ -63,9 +63,25 @@ Room (aggregate root)
    changeset history + version) inside the Composition Room aggregate,
    separate from presence and chat. Leaning yes, not fully pinned down
    — revisit when Composition Room's design gets detailed (Phase 6).
-3. **The email confirmation token is a value object on User**, not a
-   separate entity with its own lifecycle. Simpler boundary; revisit
-   only if resend/expiry logic turns out to need independent identity.
+3. **Resolved (revised in `add-user-auth`): the sign-in token is its
+   own entity, `AuthToken`, not a value object on User.** Passwordless
+   sign-in is *repeatable* — the same person requests a fresh link every
+   time they sign in on a new device — so the token has a real
+   lifecycle independent of the `User`: issued, superseded, consumed,
+   expired. It is stored only as a SHA-256 hash (`token_hash` is the
+   key, the raw token lives only in the emailed link), carries a 15-min
+   `expiresAt` and a nullable `usedAt`, and issuing a new one for an
+   account deletes that account's prior unused token (one live link per
+   account). Modeled in the Catalog context alongside `User`; deleting
+   a `User` cascades its tokens.
+
+   ```
+   AuthToken (entity, Catalog context)
+   ├─ tokenHash: string   (SHA-256 of the raw token; the raw value is never stored)
+   ├─ userId: UserId
+   ├─ expiresAt: Date     (issued + 15 min)
+   └─ usedAt: Date | null (set once, on consume — single-use)
+   ```
 4. **Sample is a distinct entity/aggregate**, not data embedded in
    Pattern. Patterns reference Samples by ID rather than owning them —
    motivated by Phase 3's full sample playback needing a sample bank
@@ -75,20 +91,40 @@ Room (aggregate root)
    - **Realtime/Session context** — JAM Room, Composition Room (+ its
      Document entity), Track, Presence. Ephemeral or per-Durable-Object,
      matches today's DO storage model.
-   - **Catalog context** — User, Pattern, Sample. Durable, cross-room,
-     D1-backed per Phase 2.
+   - **Catalog context** — User, AuthToken, Session, Pattern, Sample.
+     Durable, cross-room, D1-backed per Phase 2. (`AuthToken` and
+     `Session` were added in `add-user-auth` — see decisions 3 and 6.)
 
 6. **User aggregate** (Catalog context, D1-backed):
 
    ```
    User (aggregate root)
    ├─ id: UserId
-   ├─ email: Email                          (value object)
+   ├─ email: Email               (value object)
    ├─ displayName: string
    ├─ status: 'pending' | 'confirmed'
-   ├─ confirmationToken: ConfirmationToken   (value object — { token, expiresAt }, present only while pending)
-   └─ createdAt: Date
+   ├─ createdAt: Date
+   └─ lastAuthRequestAt: Date | null   (throttle stamp — new in add-user-auth; 60s between link requests)
    ```
+
+   **Revised in `add-user-auth`:** the token no longer lives on `User`
+   — it moved out to its own `AuthToken` entity (decision 3), because
+   sign-in repeats over the account's whole life rather than happening
+   once. `User` also gains a `Session` child relationship:
+
+   ```
+   Session (entity, Catalog context)
+   ├─ id: SessionId          (opaque random — the value of the `jaime_session` cookie; no signing secret)
+   ├─ userId: UserId
+   ├─ createdAt: Date
+   ├─ lastSeenAt: Date
+   └─ expiresAt: Date        (90-day sliding window — bumped when lastSeenAt is > 1 day stale)
+   ```
+
+   - Sessions are what make sign-in *persistent across devices*: each
+     device that completes a magic link gets its own `Session` row and
+     cookie; signing out deletes one row, deleting the account cascades
+     all of them.
 
    - **Anonymous has zero persistence** — it isn't a `User` row at all,
      just the absence of one. No stable ID across sessions, not even a
@@ -205,6 +241,7 @@ Room (aggregate root)
 ## Open
 
 Catalog and Realtime contexts are both fully modeled now (decisions
-1–10). Nothing outstanding — next step is likely turning this into an
-`/opsx:propose` change once you're ready to move from design to
-implementation.
+1–10). The Catalog context's `Pattern` (`add-pattern-library`) and
+`User` / `AuthToken` / `Session` (`add-user-auth`) are shipped;
+`Sample` and the Realtime aggregates are modeled but not yet built out
+to this spec. Nothing outstanding in the model itself.

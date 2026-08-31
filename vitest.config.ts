@@ -20,7 +20,13 @@ export default defineConfig(async () => {
       cloudflareTest({
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
-          bindings: { PATTERNS_MIGRATIONS: patternsMigrations },
+          bindings: {
+            PATTERNS_MIGRATIONS: patternsMigrations,
+            // Tests drive auth via minted tokens, not the emailed link —
+            // keep the dev "link in the response" behaviour off here even
+            // though .dev.vars sets it for `wrangler dev` / `nuxt dev`.
+            AUTH_E2E: '',
+          },
         },
       }),
     ],

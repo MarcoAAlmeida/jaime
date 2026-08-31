@@ -2,7 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "jaime",
   "main": ".output/server/index.mjs",
-  "compatibility_date": "2024-09-23",
+  // Matches nuxt.config's compatibilityDate; also gets the send_email
+  // binding (auth magic-link email).
+  "compatibility_date": "2025-07-15",
   "compatibility_flags": ["nodejs_compat"],
   // jaime.stream is the canonical production domain (Cloudflare
   // Registrar, zone already active in this account). custom_domain:true
@@ -43,5 +45,10 @@
   ],
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["$DurableObject"] }
-  ]
+  ],
+  // Transactional email for the auth magic-link. The `jaime.stream`
+  // domain must be onboarded to Email Sending
+  // (`wrangler email sending enable jaime.stream`) or a send returns an
+  // error; the auth request route degrades to a 503 in that case.
+  "send_email": [{ "name": "EMAIL" }]
 }

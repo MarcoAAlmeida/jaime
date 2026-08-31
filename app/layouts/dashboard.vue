@@ -57,6 +57,7 @@ const items = computed<NavigationMenuItem[][]>(() => [
       </template>
 
       <template #footer="{ collapsed }">
+        <AuthLink :block="!collapsed" />
         <UColorModeButton :class="collapsed ? '' : 'ml-auto'" />
       </template>
     </UDashboardSidebar>

@@ -13,7 +13,10 @@ export default defineContentConfig({
       schema: z.object({
         // Marks a section whose real content still has to be written —
         // the page renders a "coming in a later phase" notice.
-        placeholder: z.boolean().optional()
+        placeholder: z.boolean().optional(),
+        // Content served only to signed-in users; the nav entry stays
+        // listed with a lock, signed-out visitors get an explainer.
+        authRequired: z.boolean().optional()
       })
     })
   }

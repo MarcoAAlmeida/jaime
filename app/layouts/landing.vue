@@ -21,6 +21,7 @@ const items: NavigationMenuItem[] = [
 
       <template #right>
         <UColorModeButton />
+        <AuthLink />
         <UButton label="Open the dashboard" color="neutral" variant="ghost" to="/app/jam" />
         <UButton label="Try JAM" to="/app/jam" />
       </template>

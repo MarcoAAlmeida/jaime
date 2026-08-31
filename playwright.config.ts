@@ -6,7 +6,9 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   webServer: {
-    command: 'npm run build && npx wrangler dev --port 8788',
+    // AUTH_E2E makes /api/auth/request return the magic link in its
+    // response so the auth e2e can follow it without a real inbox.
+    command: 'npm run build && npx wrangler dev --port 8788 --var AUTH_E2E:1',
     url: 'http://127.0.0.1:8788/',
     // Locally, reuse a `wrangler dev` you already have running against a
     // fresh build — spawning the full build+wrangler+workerd chain from
