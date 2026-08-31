@@ -31,8 +31,8 @@ const items = computed<NavigationMenuItem[][]>(() => [
   <UDashboardGroup storage-key="jaime-shell">
     <UDashboardSidebar collapsible resizable>
       <template #header>
-        <NuxtLink to="/" class="text-highlighted text-lg font-semibold tracking-tight">
-          jaime
+        <NuxtLink to="/" aria-label="jaime home">
+          <Logo />
         </NuxtLink>
       </template>
 

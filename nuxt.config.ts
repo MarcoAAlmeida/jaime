@@ -4,6 +4,27 @@ import { fileURLToPath } from 'node:url'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+        { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96x96.png' },
+        { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/android-icon-192x192.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-icon-180x180.png' },
+        { rel: 'manifest', href: '/manifest.json' }
+      ],
+      meta: [
+        { name: 'msapplication-TileColor', content: '#f5f0e5' },
+        { name: 'msapplication-TileImage', content: '/ms-icon-144x144.png' },
+        // Match the app surface (beige light / graphite dark) so a PWA
+        // launch doesn't flash white.
+        { name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#f5f0e5' },
+        { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#191817' }
+      ]
+    }
+  },
   // @nuxt/content MUST come after @nuxt/ui or the prose components the
   // docs shell renders won't be registered.
   modules: ['@nuxt/ui', '@nuxt/content'],

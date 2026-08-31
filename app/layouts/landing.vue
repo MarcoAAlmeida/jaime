@@ -14,7 +14,7 @@ const items: NavigationMenuItem[] = [
   <div class="min-h-screen flex flex-col">
     <UHeader :ui="{ center: 'hidden' }">
       <template #title>
-        <span class="text-highlighted text-lg font-semibold tracking-tight">jaime</span>
+        <Logo />
       </template>
 
       <UNavigationMenu :items="items" color="neutral" variant="link" />

@@ -50,6 +50,12 @@ migrations `--remote` → `wrangler deploy`), not `wrangler deploy` alone
 — that would ship code against an un-migrated schema. Local dev and the
 test scripts apply the migrations `--local` first.
 
+The logo is the interlocked "ja" monogram — `design/assets/logo.png`
+(source), `public/logo.png` (served), the favicon/PWA icon set. In-app
+it's the mark alone via `<Logo>` (`app/components/Logo.vue`), no
+wordmark. `design/assets/jaime-logo.jpg` is an old concept render (blue
+primary) — do not use it.
+
 ## Layout
 
 Single project, not a monorepo — no nested `AGENTS.md` files yet. If

@@ -231,9 +231,9 @@ function submitTempo() {
   </div>
   <div v-else class="flex h-screen flex-col gap-4 overflow-y-auto p-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h1 class="text-xl font-semibold">
-        jaime
-      </h1>
+      <NuxtLink to="/" aria-label="jaime home">
+        <Logo size="sm" />
+      </NuxtLink>
       <div class="flex flex-wrap items-center gap-2">
         <div class="flex items-center gap-1.5">
           <span class="text-xs text-neutral-500">BPM</span>
