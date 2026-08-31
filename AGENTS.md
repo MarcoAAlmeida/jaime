@@ -13,13 +13,25 @@ implemented and shipped.
 ## Status
 
 jaime is a hub for small music-oriented tools, with JAM as the first
-tool. Phase 1 of the tools-hub roadmap (`docs/04-roadmap/index.md`) —
-visual identity, the three layout shells, JAM re-routed under
-`/app/jam`, the `jaime.stream` domain, and click-through mocks — is
-implemented, deployed, and archived
-(`add-tools-hub-visual-identity`). The site is live at
-`https://jaime.stream`. Phase 2 (domain model + persistence) is next
-and has no OpenSpec change yet.
+tool. The site is live at `https://jaime.stream`. Phases 1–4 of the
+tools-hub roadmap (`docs/04-roadmap/index.md`) are implemented,
+deployed, and archived:
+
+- **Phase 1** — visual identity, the three layout shells, JAM under
+  `/app/jam`, the `jaime.stream` domain, click-through mocks
+  (`add-tools-hub-visual-identity`).
+- **Phase 2** — domain model settled (`docs/05-domain-model/`); a
+  `jaime-patterns` D1 database with migrations; **User** durable across
+  sessions and devices via passwordless email auth, plus an
+  auth-gated docs page (`add-pattern-library`, `add-user-auth`).
+- **Phase 3** — sample playback + `@strudel/tonal` in JAM's engine
+  (`add-jam-pattern-loading`).
+- **Phase 4** — the curated, searchable Pattern library and "Load into
+  JAM" (`add-pattern-library`, `add-jam-pattern-loading`).
+
+Phase 5 (Claude-assisted content authoring) is next and has no OpenSpec
+change yet. Still-open carryover: a first-class **Sample** entity, and
+invoking patterns into the Composition Room (Phase 6).
 
 ## Source of truth
 

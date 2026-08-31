@@ -33,44 +33,55 @@ One deviation: `@nuxt/content` requires a Cloudflare D1 database, so
 Phase 1 introduced one as a read-only content store (not the domain
 persistence layer — that's still Phase 2).
 
-## Phase 2 — Domain model + persistence foundation
+## Phase 2 — Domain model + persistence foundation — ✅ shipped 2026-08-31
 
-- Settle the DDD model properly: **User** (durable *across sessions* —
-  a real step up from today's `sessionStorage`-only display name — tied
-  to the email-gated signup), **Room** (already real; gains the
-  Composition Room variant in Phase 6), **Pattern** (a curated,
-  independently-browsable list — not saved from a room — seeded from
-  [awesome-strudel](https://github.com/terryds/awesome-strudel/tree/main)),
-  **Sample** (relationship to Pattern still open: supporting data for
-  patterns, or its own independently searchable entity).
-- Stand up a persistence layer beyond today's per-room Durable Object
-  storage, which is good at "this room's state" but not built for
-  cross-room search — most likely Cloudflare D1, chosen specifically
-  because **migrations and real version control on the schema** are a
-  hard requirement, and D1 has first-class `wrangler d1 migrations`
-  tooling for exactly that. (Vectorize remains a candidate later if
-  Pattern search wants to be similarity-based rather than
-  keyword/tag-based — noted as a possibility, not decided.)
+- The DDD model is fully worked out in
+  [`docs/05-domain-model/index.md`](../05-domain-model/index.md)
+  (decisions 1–10). **Pattern**, **User**, **AuthToken**, and
+  **Session** are shipped entities in the Catalog context; **Sample**
+  is modeled but not yet built (patterns lean on Strudel's `dirt-samples`
+  bank for now, no `Sample` table).
+- **User** is durable across sessions *and devices* now, a real step up
+  from the `sessionStorage`-only display name — passwordless email
+  sign-in, persistent cookie sessions, sign out, account deletion, and
+  a docs page gated to signed-in users.
+  ([`archive/2026-08-31-add-user-auth/`](../../openspec/changes/archive/2026-08-31-add-user-auth/))
+- Persistence layer: a `jaime-patterns` Cloudflare D1 database with
+  version-controlled schema via `wrangler d1 migrations` — chosen
+  because migrations on the schema were a hard requirement. Holds
+  patterns and, since `add-user-auth`, users / auth tokens / sessions.
+  ([`archive/2026-08-30-add-pattern-library/`](../../openspec/changes/archive/2026-08-30-add-pattern-library/))
+- (Vectorize remains a later candidate if Pattern search wants to be
+  similarity-based rather than keyword/tag-based — not decided.)
 
-## Phase 3 — Full Strudel parity in JAM
+## Phase 3 — Full Strudel parity in JAM — ✅ shipped 2026-08-30
 
-Everything normally available at [strudel.cc](https://strudel.cc/) —
-sample playback, all waveforms, the full feature set — not just the
-built-in-synth subset JAM has today. Unblocks curated patterns that rely
-on samples, which most real-world Strudel patterns do.
+Sample playback (`dirt-samples`) and `@strudel/tonal` (`.scale()` /
+`.voicing()`) now load in JAM's engine alongside the built-in synths,
+so curated sample- and tonal-based patterns play. Delivered together
+with Phase 4's "load into JAM" as
+[`archive/2026-08-30-add-jam-pattern-loading/`](../../openspec/changes/archive/2026-08-30-add-jam-pattern-loading/)
+(plus the `@strudel/tonal` fix, commit `5a5e59f`). Any remaining
+strudel.cc features not yet wired are minor follow-ups, not a phase.
 
-## Phase 4 — Pattern (and Sample) library
+## Phase 4 — Pattern (and Sample) library — ✅ shipped 2026-08-30
 
-Searchable, curated library backed by Phase 2's persistence layer;
-browsable/searchable UI per the Phase 1 mocks; patterns invokable
-directly into JAM (and later, Composition Room).
+Curated, searchable/browsable Pattern library backed by the Phase 2 D1
+layer, per the Phase 1 mocks; server-side tag filter + text search,
+in-row Preview, and a "Load into JAM" that opens a fresh room with the
+pattern seeded into track A.
+([`archive/2026-08-30-add-pattern-library/`](../../openspec/changes/archive/2026-08-30-add-pattern-library/),
+[`archive/2026-08-30-add-jam-pattern-loading/`](../../openspec/changes/archive/2026-08-30-add-jam-pattern-loading/)).
+Still open: a first-class **Sample** entity/library, and invoking
+patterns into the Composition Room (Phase 6-gated).
 
-## Phase 5 — Curated content authoring (Claude-assisted)
+## Phase 5 — Curated content authoring (Claude-assisted) — next
 
 A content phase, not an infrastructure phase: Claude helps register real
 Patterns (seeded from awesome-strudel) and write the Home/docs pages for
 Strudel — and eventually Hydra, TidalCycles. Needs Phase 1's docs layout
-and Phase 4's Pattern storage to already exist.
+and Phase 4's Pattern storage to already exist — both now do. No
+OpenSpec change yet.
 
 ## Phase 6 — Composition Room
 
