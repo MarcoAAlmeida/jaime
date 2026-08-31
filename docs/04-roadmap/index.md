@@ -75,13 +75,25 @@ pattern seeded into track A.
 Still open: a first-class **Sample** entity/library, and invoking
 patterns into the Composition Room (Phase 6-gated).
 
-## Phase 5 — Curated content authoring (Claude-assisted) — next
+## Phase 5 — Curated content authoring (Claude-assisted) — 🚧 part one shipped 2026-08-31
 
-A content phase, not an infrastructure phase: Claude helps register real
-Patterns (seeded from awesome-strudel) and write the Home/docs pages for
-Strudel — and eventually Hydra, TidalCycles. Needs Phase 1's docs layout
-and Phase 4's Pattern storage to already exist — both now do. No
-OpenSpec change yet.
+A content phase, not an infrastructure phase. First change,
+[`archive/2026-08-31-add-content-authoring/`](../../openspec/changes/archive/2026-08-31-add-content-authoring/):
+
+- The curated catalog moved from SQL seed rows to a version-controlled
+  manifest (`content/patterns/*.md`) that `npm run deploy` reconciles
+  into D1 — patterns are reviewable data now, not migrations.
+- Catalog grown 20 → 46 with hand-authored starter patterns. Note:
+  awesome-strudel turned out to be full-song covers (opaque
+  `strudel.cc/?hash` links), not the snippet starting-points the
+  library is for — so the batch is technique/genre starters attributed
+  to the strudel.cc pages they demonstrate.
+- Real Strudel docs (`/docs/strudel` — mini-notation, sounds, effects,
+  what JAM's engine runs) replacing the placeholder page.
+
+Still open in Phase 5: full-text docs **search** (Journey 6 story 47),
+**Hydra / TidalCycles** docs (stories 49, 57 — "once written"), and
+more curated patterns.
 
 ## Phase 6 — Composition Room
 

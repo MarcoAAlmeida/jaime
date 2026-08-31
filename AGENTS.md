@@ -15,7 +15,7 @@ implemented and shipped.
 jaime is a hub for small music-oriented tools, with JAM as the first
 tool. The site is live at `https://jaime.stream`. Phases 1–4 of the
 tools-hub roadmap (`docs/04-roadmap/index.md`) are implemented,
-deployed, and archived:
+deployed, and archived, and Phase 5 has started:
 
 - **Phase 1** — visual identity, the three layout shells, JAM under
   `/app/jam`, the `jaime.stream` domain, click-through mocks
@@ -28,10 +28,15 @@ deployed, and archived:
   (`add-jam-pattern-loading`).
 - **Phase 4** — the curated, searchable Pattern library and "Load into
   JAM" (`add-pattern-library`, `add-jam-pattern-loading`).
+- **Phase 5, part one** — the curated catalog is a version-controlled
+  manifest (`content/patterns/*.md`, reconciled into D1 on deploy),
+  grown to 46 patterns; real Strudel docs at `/docs/strudel`
+  (`add-content-authoring`).
 
-Phase 5 (Claude-assisted content authoring) is next and has no OpenSpec
-change yet. Still-open carryover: a first-class **Sample** entity, and
-invoking patterns into the Composition Room (Phase 6).
+Phase 5 continues with docs search and Hydra/TidalCycles pages — no
+OpenSpec change for those yet. Other open carryover: a first-class
+**Sample** entity, and invoking patterns into the Composition Room
+(Phase 6).
 
 ## Source of truth
 
@@ -58,9 +63,16 @@ Using Nuxt UI documentation from https://ui.nuxt.com/llms.txt
 Follow complete Nuxt UI guidelines from https://ui.nuxt.com/llms-full.txt
 
 Deploy with `npm run deploy` (build → apply the `PATTERNS_DB` D1
-migrations `--remote` → `wrangler deploy`), not `wrangler deploy` alone
-— that would ship code against an un-migrated schema. Local dev and the
-test scripts apply the migrations `--local` first.
+migrations `--remote` → reconcile the curated pattern catalog from
+`content/patterns/*.md` → `wrangler deploy`), not `wrangler deploy`
+alone — that would ship code against an un-migrated schema and a stale
+catalog. Local dev and the test scripts run the same
+migrate-then-sync `--local` first.
+
+The curated Pattern library is authored as one Markdown file per
+pattern under `content/patterns/` (see its `README.md`), not SQL. The
+deploy/`db:migrate:local` sync upserts them into D1 and prunes curated
+rows dropped from the manifest; `origin='user'` rows are never touched.
 
 The logo is the interlocked "ja" monogram — `design/assets/logo.png`
 (source), `public/logo.png` (served), the favicon/PWA icon set. In-app
