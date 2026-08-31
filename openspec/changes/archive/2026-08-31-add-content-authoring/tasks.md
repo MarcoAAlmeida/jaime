@@ -111,15 +111,17 @@
 - [x] 7.4 `--local` reconcile verified during 3.2: `/api/patterns`
       matches the manifest, a hand-inserted `origin='user'` row survived
       a reconcile, a stray `origin='curated'` row was pruned.
-- [ ] 7.5 `npm run deploy`; confirm the remote catalog on
-      `https://jaime.stream/app/patterns` matches the manifest and the
-      new Strudel docs render.
+- [x] 7.5 `npm run deploy` (version 2af68e6b) ran the `--remote` sync:
+      remote `jaime-patterns` now has 46 patterns, all `origin='curated'`,
+      the new ones served by `/api/patterns`. `/docs/strudel` + all four
+      sub-pages return 200 with the nested nav.
 
 ## 8. Spec sync + archive
 
-- [ ] 8.1 `openspec validate add-content-authoring --strict`.
-- [ ] 8.2 Sync the `pattern-library` delta into
-      `openspec/specs/pattern-library/spec.md`; archive the change.
-- [ ] 8.3 `docs/04-roadmap/index.md` + `AGENTS.md` — mark Phase 5
-      shipped; note remaining Phase 5 carryover (docs search, Hydra /
-      TidalCycles).
+- [x] 8.1 `openspec validate add-content-authoring --strict` — valid.
+- [x] 8.2 `pattern-library` delta synced — the 3 manifest requirements
+      merged into `openspec/specs/pattern-library/spec.md` (8 → 11);
+      change archived to `2026-08-31-add-content-authoring/`.
+- [x] 8.3 `docs/04-roadmap/index.md` + `AGENTS.md` — Phase 5 (part one)
+      marked shipped; carryover noted (docs search, Hydra / TidalCycles,
+      more patterns).
