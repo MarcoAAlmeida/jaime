@@ -107,20 +107,35 @@
 
 ## 4. Synced playback + chat
 
-- [ ] 4.1 `eval` / `stop` broadcast `{ atCycle }` (not the code);
-      every client — editors and viewers — evaluates its local Y.Text
-      and starts/stops aligned to the shared cycle boundary.
-- [ ] 4.2 Late joiner of a playing room starts playback of the current
-      doc locked to the clock, with no re-trigger.
-- [ ] 4.3 Per-client eval-error surfacing in the editor; the engine
-      stays usable for the next eval.
-- [ ] 4.4 Ephemeral room chat — panel beside the editor, messages to
-      everyone connected, attributed to the sender's display name, not
-      persisted (empty after restart / when the room empties).
-- [ ] 4.5 e2e (`e2e/composition.spec.ts`): two contexts — merged edits
-      converge; a viewer can't edit; a cursor is visible to the other;
-      one evaluates and both are playing; a chat message crosses; a
-      reload of the link shows the persisted doc but empty chat.
+- [x] 4.1 Ctrl-Enter / the Play button call `provider.sendEval(atCycle)`
+      (`atCycle` = next cycle boundary on the room clock); `provider.on
+      ('eval')` on every client — editors **and** viewers — calls
+      `editor.evaluate()`, whose `beforeStart` waits for that client's
+      own next boundary. `stop` symmetric. e2e: one editor plays, the
+      other editor's button flips to Stop and all three clients
+      (including the viewer) paint their `.punchcard()` backdrop.
+- [x] 4.2 The `playing` flag from the `welcome` is remembered
+      (`playingOnJoin`); right after the editor + yCollab are built, a
+      late joiner calls `editor.evaluate()` once so it locks onto the
+      running document with no one re-triggering. e2e covers a viewer
+      joining a playing room.
+- [x] 4.3 `createStrudelEditor`'s `onEvalError` → an `error` ref → a
+      "Pattern error" `UAlert`; the error is per-client (a document
+      syntax error shows for everyone). `evaluate()` clears it and the
+      engine keeps working — e2e evaluates a broken doc (error on both
+      clients) then a good one (paints, error gone).
+- [x] 4.4 Chat panel in the room aside: `provider.on('chat')` appends to
+      a list (auto-scrolled), `chat-input` + Send call
+      `provider.sendChat`. Server-side the chat is in-memory only and
+      cleared when the room empties (1.3/1.6). Attributed to the
+      sender's display name.
+- [x] 4.5 `e2e/composition.spec.ts` — 10 tests: concurrent inserts
+      converge; late joiner loads the doc; unsent edits rebase; roster +
+      roles + leave; viewer read-only + role switch; live cursor
+      labelled + removed on leave; room-wide synced eval (editor +
+      viewer paint); late joiner catches playback; pattern error on all
+      + recovery; chat crosses + gone once the room empties (doc
+      persists). All green; JAM + strudel-parity e2e unaffected.
 
 ## 5. Cutover
 

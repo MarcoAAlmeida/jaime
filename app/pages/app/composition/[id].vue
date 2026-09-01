@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CompositionPresenceEntry, Role } from '#shared/compositionProtocol'
+import type { ChatMessage, CompositionPresenceEntry, Role } from '#shared/compositionProtocol'
 import type { CompositionProvider } from '~/lib/compositionProvider'
 import type { StrudelEditor } from '~/lib/strudelEditor'
 import { StateEffect } from '@codemirror/state'
@@ -53,8 +53,18 @@ const playing = ref(false)
 const error = ref<string | null>(null)
 const linkCopied = ref(false)
 const participants = ref<CompositionPresenceEntry[]>([])
+const chat = ref<ChatMessage[]>([])
+const chatInput = ref('')
+const chatLog = ref<HTMLDivElement>()
 
 const isEditor = computed(() => role.value === 'editor')
+
+function sendChat() {
+  const text = chatInput.value.trim()
+  if (!text) return
+  provider?.sendChat(text)
+  chatInput.value = ''
+}
 
 let provider: CompositionProvider | undefined
 let editor: StrudelEditor | undefined
@@ -122,9 +132,20 @@ async function start() {
     name: displayName.value,
     role: role.value,
   })
+  // `playing` fires once from the welcome (before the editor exists) and
+  // again on later broadcasts — remember it so a late joiner can start
+  // its own repl right after the editor is built (4.2).
+  let playingOnJoin = false
   provider.on('status', (c) => { connected.value = c })
-  provider.on('playing', (p) => { playing.value = p })
+  provider.on('playing', (p) => { playing.value = p; playingOnJoin = p })
   provider.on('presence', (roster) => { participants.value = roster })
+  provider.on('chat', (msg) => {
+    chat.value.push(msg)
+    void nextTick(() => { if (chatLog.value) chatLog.value.scrollTop = chatLog.value.scrollHeight })
+  })
+  // Every client — editors and viewers — evaluates its own copy of the
+  // shared document, aligned to the room clock by the editor's
+  // beforeStart. The broadcast carries only { atCycle }, never code.
   provider.on('eval', () => { playing.value = true; void editor?.evaluate() })
   provider.on('stop', () => { playing.value = false; editor?.stop() })
 
@@ -169,6 +190,14 @@ async function start() {
   // the app's real colour mode so the surrounding shell isn't dragged.
   document.documentElement.classList.toggle('dark', colorMode.value === 'dark')
   document.documentElement.classList.toggle('light', colorMode.value === 'light')
+
+  // Joined a room that's already playing — start this client's repl on
+  // the current document, locked to the same clock, with no one
+  // re-triggering (4.2).
+  if (playingOnJoin) {
+    playing.value = true
+    void editor.evaluate()
+  }
 }
 
 onMounted(() => { void start() })
@@ -295,27 +324,57 @@ onBeforeUnmount(() => {
         <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
       </div>
 
-      <aside
-        class="hidden w-48 shrink-0 flex-col gap-1.5 overflow-y-auto sm:flex"
-        data-testid="participants"
-      >
-        <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
-          In the room ({{ participants.length }})
-        </h2>
-        <div
-          v-for="p in participants"
-          :key="p.clientId"
-          class="flex items-center justify-between gap-2 text-sm"
-          data-testid="participant"
-        >
-          <span class="truncate">{{ p.name }}</span>
-          <UBadge
-            size="xs"
-            :color="p.role === 'editor' ? 'primary' : 'neutral'"
-            variant="subtle"
+      <aside class="hidden w-56 shrink-0 flex-col gap-3 sm:flex">
+        <div class="flex flex-col gap-1.5" data-testid="participants">
+          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
+            In the room ({{ participants.length }})
+          </h2>
+          <div
+            v-for="p in participants"
+            :key="p.clientId"
+            class="flex items-center justify-between gap-2 text-sm"
+            data-testid="participant"
           >
-            {{ p.role }}
-          </UBadge>
+            <span class="truncate">{{ p.name }}</span>
+            <UBadge
+              size="xs"
+              :color="p.role === 'editor' ? 'primary' : 'neutral'"
+              variant="subtle"
+            >
+              {{ p.role }}
+            </UBadge>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col gap-1.5" data-testid="chat">
+          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
+            Chat
+          </h2>
+          <div
+            ref="chatLog"
+            class="border-default min-h-0 flex-1 space-y-1 overflow-y-auto rounded-md border p-2 text-sm"
+            data-testid="chat-log"
+          >
+            <p v-if="!chat.length" class="text-muted text-xs">
+              Messages are visible to everyone here and aren't saved.
+            </p>
+            <p v-for="(m, i) in chat" :key="i" data-testid="chat-message">
+              <span class="text-muted">{{ m.name }}:</span> {{ m.text }}
+            </p>
+          </div>
+          <div class="flex gap-1.5">
+            <UInput
+              v-model="chatInput"
+              size="xs"
+              placeholder="Message"
+              class="flex-1"
+              data-testid="chat-input"
+              @keyup.enter="sendChat"
+            />
+            <UButton size="xs" color="neutral" data-testid="chat-send" @click="sendChat">
+              Send
+            </UButton>
+          </div>
         </div>
       </aside>
     </div>

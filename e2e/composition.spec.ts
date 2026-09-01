@@ -2,12 +2,33 @@ import type { BrowserContext, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 
 // add-composition-room — one shared Strudel document per room, merged
-// with Yjs + y-codemirror.next. This file covers concurrent-edit
-// convergence (task 2.4); roles / cursors / synced playback / chat land
-// in later tasks (4.5 extends it).
+// with Yjs + y-codemirror.next: concurrent-edit convergence, editor /
+// viewer roles, live cursors, room-synced playback, ephemeral chat.
+test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } })
 test.describe.configure({ retries: 2 })
 
 const CONTENT = '[data-testid="composition-editor"] .cm-content'
+const CANVAS = '[data-testid="composition-canvas"]'
+
+/** Pixels painted on a page's editor-backdrop canvas (see strudel-parity.spec.ts). */
+async function paintedPixels(page: Page): Promise<number> {
+  return page.evaluate((sel) => {
+    const c = document.querySelector(sel) as HTMLCanvasElement | null
+    if (!c) return -1
+    const { data } = c.getContext('2d')!.getImageData(0, 0, c.width, c.height)
+    let n = 0
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) n++
+    return n
+  }, CANVAS)
+}
+
+/** Replaces the whole document with `code` (an editor page only). */
+async function setDoc(page: Page, code: string): Promise<void> {
+  await page.locator(CONTENT).click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.press('Delete')
+  await page.keyboard.insertText(code)
+}
 
 async function joinRoom(
   context: BrowserContext,
@@ -224,4 +245,111 @@ test('editors see each other\'s live cursor, labelled by name', async ({ browser
   ).toHaveCount(0, { timeout: 15_000 })
 
   await context.close()
+})
+
+test('one editor evaluates and the whole room — editor and viewer — plays it', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `play-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageB = await joinRoom(context, roomId, 'Bob', 'editor')
+  const pageV = await joinRoom(context, roomId, 'Val', 'viewer')
+
+  await setDoc(pageA, 's("bd sd hh cp").punchcard()')
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('s("bd sd hh cp").punchcard()')
+
+  await pageA.locator('[data-testid="play-stop-button"]').click()
+
+  // The other editor's transport flips too, and every client — including
+  // the viewer, who has no Play button — actually evaluates: its
+  // backdrop canvas paints.
+  await expect(pageB.locator('[data-testid="play-stop-button"]')).toHaveText('Stop', { timeout: 15_000 })
+  for (const page of [pageA, pageB, pageV]) {
+    await expect.poll(() => paintedPixels(page), { timeout: 45_000 }).toBeGreaterThan(500)
+  }
+
+  await pageA.locator('[data-testid="play-stop-button"]').click()
+  await expect(pageB.locator('[data-testid="play-stop-button"]')).toHaveText('Play', { timeout: 15_000 })
+
+  await context.close()
+})
+
+test('a late joiner starts playing the running document with no re-trigger', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `latejoin-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+
+  await setDoc(pageA, 's("bd*4, hh*8").punchcard()')
+  await pageA.locator('[data-testid="play-stop-button"]').click()
+  await expect.poll(() => paintedPixels(pageA), { timeout: 45_000 }).toBeGreaterThan(500)
+
+  // C opens the link while the room is playing — no one clicks Play again.
+  const pageC = await joinRoom(context, roomId, 'Cara', 'viewer')
+  await expect.poll(() => paintedPixels(pageC), { timeout: 45_000 }).toBeGreaterThan(500)
+
+  await context.close()
+})
+
+test('a pattern error shows for everyone and the engine still evaluates next', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `err-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageB = await joinRoom(context, roomId, 'Bob', 'editor')
+
+  await setDoc(pageA, 's("bd sd"') // unbalanced paren
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('s("bd sd"')
+  await pageA.locator('[data-testid="play-stop-button"]').click()
+
+  for (const page of [pageA, pageB]) {
+    await expect(page.getByText('Pattern error')).toBeVisible({ timeout: 20_000 })
+  }
+
+  // A valid document evaluates fine afterwards — the engine is not
+  // wedged. Ctrl-Enter re-evaluates in place (the transport is still
+  // "playing" from the errored attempt).
+  await setDoc(pageA, 's("bd sd hh cp").punchcard()')
+  await pageA.locator(CONTENT).press('ControlOrMeta+Enter')
+  await expect.poll(() => paintedPixels(pageB), { timeout: 45_000 }).toBeGreaterThan(500)
+  await expect(pageA.getByText('Pattern error')).toHaveCount(0)
+
+  await context.close()
+})
+
+test('a chat message reaches everyone; chat is gone once the room empties', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `chat-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageB = await joinRoom(context, roomId, 'Bob', 'viewer')
+
+  await setDoc(pageA, 's("bd sd")')
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('s("bd sd")')
+
+  await pageA.locator('[data-testid="chat-input"]').fill('hey room')
+  await pageA.locator('[data-testid="chat-send"]').click()
+
+  for (const page of [pageA, pageB]) {
+    await expect(page.locator('[data-testid="chat-message"]')).toHaveText('Alice: hey room', { timeout: 15_000 })
+  }
+
+  // Let the doc snapshot debounce (2s) land, then everyone leaves.
+  await pageA.waitForTimeout(2500)
+  await pageA.close()
+  await pageB.close()
+  await context.close()
+
+  // A fresh visitor (new context = no stored name) opens the same link:
+  // the persisted document is back, the ephemeral chat is not.
+  const context2 = await browser.newContext()
+  const pageC = await joinRoom(context2, roomId, 'Cara', 'viewer')
+  await expect.poll(() => docText(pageC), { timeout: 15_000 }).toBe('s("bd sd")')
+  await expect(pageC.locator('[data-testid="chat-message"]')).toHaveCount(0)
+
+  await context2.close()
 })
