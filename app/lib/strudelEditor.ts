@@ -32,6 +32,8 @@ export interface StrudelEditorOptions {
   onRequestPlay?: () => void
   /** Ctrl-. in the editor. Same idea as onRequestPlay. */
   onRequestStop?: () => void
+  /** True when the last-evaluated pattern requests a visualiser. */
+  onVisualsChange?: (hasVisuals: boolean) => void
 }
 
 export interface StrudelEditor {
@@ -74,6 +76,11 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
     onEvalError: (err: Error) => {
       error = err.message
       opts.onError?.(err.message)
+    },
+    // StrudelMirror forwards its afterEval to this caller hook.
+    afterEval: (result: { pattern?: { getPainters?: () => unknown[] } }) => {
+      const painters = result?.pattern?.getPainters?.() ?? []
+      opts.onVisualsChange?.(painters.length > 0)
     },
   })
 

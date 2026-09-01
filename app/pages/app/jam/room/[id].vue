@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TrackName } from '#shared/tracks'
 import { TRACK_LABELS, TRACK_NAMES } from '#shared/tracks'
-import { evaluate, primeAudio, stop } from '~/lib/audioEngine'
+import { primeAudio } from '~/lib/strudelEditor'
 import {
   sendClaimTrack,
   sendPatternUpdate,
@@ -26,6 +26,10 @@ const route = useRoute()
 const router = useRouter()
 
 const errors = ref<Partial<Record<TrackName, string | null>>>({})
+// Each TrackEditor owns its own repl now — the playback watch below
+// drives per-client evaluate()/stop() through these refs.
+interface TrackEditorHandle { evaluate: () => Promise<void>, stop: () => Promise<void> }
+const editorRefs = ref<Partial<Record<TrackName, TrackEditorHandle | null>>>({})
 // Local-only, never broadcast: a personal listening preference, not
 // shared room state. Muting doesn't tell anyone else anything.
 const muted = ref<Record<TrackName, boolean>>(
@@ -63,11 +67,12 @@ for (const track of TRACK_NAMES) {
     [() => tracks.value[track].isPlaying, () => playRequestSeq.value[track], () => muted.value[track]],
     async ([isPlaying, , isMuted]) => {
       if (isPlaying && !isMuted) {
-        errors.value[track] = await evaluate(track, tracks.value[track].code)
+        errors.value[track] = null
+        await editorRefs.value[track]?.evaluate()
       }
       else {
         errors.value[track] = null
-        await stop(track)
+        await editorRefs.value[track]?.stop()
       }
     },
   )
@@ -353,12 +358,14 @@ function submitTempo() {
         :description="errors[track]!"
       />
       <TrackEditor
+        :ref="(el) => { editorRefs[track] = el as TrackEditorHandle | null }"
         :code="tracks[track].code"
         :editable="isOwnedByMe(track)"
         class="min-h-0 flex-1"
         @update:code="(code) => onCodeUpdate(track, code)"
-        @evaluate="() => sendPlayTrack(track)"
-        @stop="() => sendStopTrack(track)"
+        @update:error="(e) => { errors[track] = e }"
+        @request-play="() => sendPlayTrack(track)"
+        @request-stop="() => sendStopTrack(track)"
       />
     </div>
   </div>

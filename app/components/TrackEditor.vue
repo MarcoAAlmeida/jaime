@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type { EditorView as EditorViewInstance } from '@codemirror/view'
-import { Compartment, StateEffect } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
-import { initEditor } from '@strudel/codemirror'
+import type { StrudelEditor } from '~/lib/strudelEditor'
+import { createStrudelEditor } from '~/lib/strudelEditor'
 
 const props = defineProps<{
   code: string
@@ -11,85 +9,103 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:code': [code: string]
-  evaluate: []
-  stop: []
+  'update:error': [error: string | null]
+  'requestPlay': []
+  'requestStop': []
 }>()
 
 const editorEl = ref<HTMLDivElement>()
-let editorView: EditorViewInstance | undefined
-let isApplyingExternalUpdate = false
-const editableCompartment = new Compartment()
+const canvasEl = ref<HTMLCanvasElement>()
+const hasVisuals = ref(false)
 const colorMode = useColorMode()
 
-onMounted(() => {
-  editorView = initEditor({
-    root: editorEl.value,
-    initialCode: props.code,
-    onChange: (update) => {
-      if (update.docChanged && !isApplyingExternalUpdate) {
-        emit('update:code', update.state.doc.toString())
-      }
-    },
-    onEvaluate: () => emit('evaluate'),
-    onStop: () => emit('stop'),
-  })
+let editor: StrudelEditor | undefined
+let ready: Promise<StrudelEditor> | undefined
+// While applying code that came from outside this editor (a WebSocket
+// relay), the factory's own guard suppresses the echo — this flag is a
+// second guard for the props.code watcher itself.
+let applyingExternal = false
 
-  // @strudel/codemirror's initEditor calls activateTheme(), which forces
-  // `document.documentElement.classList.add('dark')` to make the page
-  // match its dark editor theme — hijacking the app's own color mode.
-  // The editor keeps its dark theme regardless; re-assert the app's real
-  // color mode on the root so the surrounding shell isn't dragged dark.
-  document.documentElement.classList.toggle('dark', colorMode.value === 'dark')
-  document.documentElement.classList.toggle('light', colorMode.value === 'light')
-  editorView.dispatch({
-    effects: StateEffect.appendConfig.of(editableCompartment.of(EditorView.editable.of(props.editable))),
+onMounted(() => {
+  ready = createStrudelEditor({
+    root: editorEl.value!,
+    drawContext: canvasEl.value?.getContext('2d') ?? null,
+    initialCode: props.code,
+    editable: props.editable,
+    onCodeChange: (code) => {
+      if (!applyingExternal) emit('update:code', code)
+    },
+    onError: error => emit('update:error', error),
+    onRequestPlay: () => emit('requestPlay'),
+    onRequestStop: () => emit('requestStop'),
+    onVisualsChange: has => (hasVisuals.value = has),
+  }).then((e) => {
+    editor = e
+    // props.code can change during the async import gap (e.g. a
+    // "Load into JAM" seed lands before the editor is ready) — the
+    // watcher below bails while `editor` is undefined, so re-sync here.
+    if (props.code !== e.view.state.doc.toString()) {
+      applyingExternal = true
+      try {
+        e.setCode(props.code)
+      }
+      finally {
+        applyingExternal = false
+      }
+    }
+    // @strudel/codemirror's initTheme() forces the dark class on <html>
+    // to match its editor theme — re-assert the app's real colour mode
+    // on the root so the surrounding shell isn't dragged dark.
+    document.documentElement.classList.toggle('dark', colorMode.value === 'dark')
+    document.documentElement.classList.toggle('light', colorMode.value === 'light')
+    return e
   })
 })
 
 onBeforeUnmount(() => {
-  editorView?.destroy()
+  editor?.destroy()
 })
 
-// Applies code changes that came from outside this editor (e.g. a
-// WebSocket relay update) without re-triggering onChange above — which
-// would otherwise emit('update:code') right back out and echo the
-// update, or fight the user's own cursor if they're mid-edit.
 watch(() => props.code, (newCode) => {
-  if (!editorView) {
-    return
+  if (!editor || newCode === editor.view.state.doc.toString()) return
+  applyingExternal = true
+  try {
+    editor.setCode(newCode)
   }
-  const currentDoc = editorView.state.doc.toString()
-  if (newCode === currentDoc) {
-    return
+  finally {
+    applyingExternal = false
   }
-  isApplyingExternalUpdate = true
-  editorView.dispatch({
-    changes: { from: 0, to: editorView.state.doc.length, insert: newCode },
-  })
-  isApplyingExternalUpdate = false
 })
 
 watch(() => props.editable, (editable) => {
-  if (!editorView) {
-    return
-  }
-  editorView.dispatch({
-    effects: editableCompartment.reconfigure(EditorView.editable.of(editable)),
-  })
+  editor?.setEditable(editable)
+})
+
+defineExpose({
+  async evaluate() {
+    await (await ready)?.evaluate()
+  },
+  async stop() {
+    (await ready)?.stop()
+  },
 })
 </script>
 
 <template>
-  <div ref="editorEl" class="h-full w-full overflow-hidden rounded-md" />
+  <div class="flex min-h-0 flex-col">
+    <div ref="editorEl" class="min-h-0 flex-1 overflow-hidden rounded-md" />
+    <canvas
+      ref="canvasEl"
+      width="600"
+      height="140"
+      class="mt-2 w-full rounded-md"
+      :class="hasVisuals ? '' : 'hidden'"
+      data-testid="track-canvas"
+    />
+  </div>
 </template>
 
 <style scoped>
-/*
- * CodeMirror's .cm-editor has an intrinsic (content-sized) height by
- * default. These aren't Tailwind utility classes applied to CodeMirror's
- * internal nodes (see docs/03-architecture-frontend.md) — just plain CSS
- * making the editor fill this component's wrapper div.
- */
 :deep(.cm-editor) {
   height: 100%;
 }
