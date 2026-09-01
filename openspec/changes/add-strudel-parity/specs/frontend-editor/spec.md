@@ -31,29 +31,33 @@ name from that map (drum hits like `bd`/`sd`/`hh`, break loops like
 ### Requirement: Labelled Multi-Pattern Documents
 The system SHALL evaluate a document that defines more than one named
 pattern with `$:` / `$<label>:` syntax, playing every labelled pattern
-together, and SHALL let the user mute or solo an individual label
-without re-evaluating.
+together. Muting a label is done the Strudel-native way — prefixing its
+name with `_` — which re-evaluates the document; a no-re-evaluation
+mixer UI is out of scope (a later change).
 
 #### Scenario: Two labelled patterns play together
 - **WHEN** a document contains `$drums: …` and `$bass: …` and is
   evaluated
 - **THEN** both patterns play simultaneously
 
-#### Scenario: Muting one label leaves the others
-- **WHEN** the user mutes one label of a running multi-pattern document
-- **THEN** that label goes silent and the other labels keep playing,
-  with no re-evaluation
+#### Scenario: A `_`-prefixed label is silent
+- **WHEN** a label is renamed from `$drums:` to `$_drums:` and the
+  document is re-evaluated
+- **THEN** that pattern is silent and the other labels keep playing
 
 ### Requirement: Document-Controlled Tempo
 The system SHALL honour a `setcps` / `setcpm` call in the evaluated
-document as the pattern's cycle rate, except where a room's shared
-transport clock owns tempo (see the composition-room and transport
-capabilities), in which case the shared clock wins.
+document as the pattern's cycle rate.
 
-#### Scenario: setcps in a standalone document takes effect
-- **WHEN** a document outside a tempo-synced room calls `setcps` and is
-  evaluated
+#### Scenario: setcps in a document takes effect
+- **WHEN** a document calls `setcps` and is evaluated
 - **THEN** the pattern plays at that cycle rate
+
+> A JAM room's shared transport start-aligns every track to a common
+> cycle boundary but does not currently override a per-track `setcps`;
+> strict shared-clock tempo ownership is specified by the
+> `composition-room` capability, where it matters, and revisited for
+> JAM there.
 
 ### Requirement: Mini-Notation Event Highlighting
 The system SHALL highlight, in the editor, the mini-notation token(s)

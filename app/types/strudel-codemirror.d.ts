@@ -31,5 +31,7 @@ declare module '@strudel/codemirror' {
     stop: () => Promise<void>
     setCode: (code: string) => void
     clear: () => void
+    draw: (haps: unknown, time: unknown, painters?: unknown[]) => void
+    onDraw: (haps: unknown, time: unknown, painters?: unknown[]) => void
   }
 }

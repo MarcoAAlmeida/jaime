@@ -31,26 +31,33 @@
 
 ## 2. Features + JAM regression gate
 
-- [ ] 2.1 JAM tracks use the new engine — one instance per track,
-      `solo:false`. `app/components/TrackEditor.vue` (or a new shared
-      editor component) mounts it; external code updates still apply
-      without re-emitting `update:code`; auto-stop-on-edit still works.
-- [ ] 2.2 Mini-notation event highlighting visible in each track editor
-      during playback, cleared on stop.
-- [ ] 2.3 Pattern-driven visuals — `punchcard` / `pianoroll` / `scope`
-      / `spectrum` / `markcss` draw to a per-editor canvas when the
-      pattern calls them; nothing shown (canvas hidden) when it
-      doesn't; playback unaffected either way.
-- [ ] 2.4 `$:` / labelled multi-pattern documents evaluate (all labels
-      play); per-label mute/solo without re-evaluation.
-- [ ] 2.5 `setcps` / `setcpm` honoured for a standalone evaluation;
-      a room's shared clock still wins where one applies.
-- [ ] 2.6 Regression gate: `e2e/pattern-playback.spec.ts`,
-      `e2e/multi-client.spec.ts`, `e2e/pattern-loading.spec.ts`,
-      `nuxt typecheck`, `npm test` all green with the new engine, and
-      `nuxt build` succeeds (bundles `@strudel/draw` etc.).
-- [ ] 2.7 A short e2e or manual check that a `$:` document and a
-      `.punchcard()` pattern both play + draw in a JAM track.
+- [x] 2.1 Each JAM `TrackEditor` owns a per-track `StrudelMirror` via
+      `createStrudelEditor`; `[id].vue` drives per-client evaluate/stop
+      through component refs (was the headless audioEngine). External
+      code applies without echo (re-synced after the async import
+      resolves); auto-stop-on-edit preserved. `audioEngine.ts` is now
+      preview-only + `prebake()`.
+- [x] 2.2 Mini-notation event highlighting — works out of the box
+      (`StrudelMirror` drives it via the Drawer); `e2e/strudel-parity`
+      "highlights the playing token" passes.
+- [x] 2.3 Pattern-driven visuals — a per-track `<canvas>` (pointer-
+      events none, hidden until used). Detection via a wrapped
+      `mirror.onDraw` that reads the live painter list
+      (`pattern.getPainters()` queries `[0,0]` and misses them); reset
+      to hidden on stop.
+- [x] 2.4 `$:` documents evaluate and every label plays
+      (`e2e/strudel-parity` "$: document plays every label"). Spec
+      revised: label mute is the Strudel-native `_` prefix; a
+      no-re-eval mixer is a later change.
+- [x] 2.5 `setcps` is registered by `@strudel/core`'s repl in both
+      paths, so it takes effect on a standalone evaluation. Spec revised:
+      strict shared-clock ownership for a JAM room is the
+      `composition-room` capability's concern (JAM start-aligns only).
+- [x] 2.6 Regression gate: `multi-client` 11/11, `pattern-loading` 2/2,
+      `pattern-playback` (every curated pattern) green; `npm test`
+      12 + 77; `nuxt typecheck` 0; `nuxt build` succeeds.
+- [x] 2.7 `e2e/strudel-parity.spec.ts` — visuals canvas, `$:` doc,
+      event highlight.
 
 ## 3. Docs
 

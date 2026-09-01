@@ -77,12 +77,23 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
       error = err.message
       opts.onError?.(err.message)
     },
-    // StrudelMirror forwards its afterEval to this caller hook.
-    afterEval: (result: { pattern?: { getPainters?: () => unknown[] } }) => {
-      const painters = result?.pattern?.getPainters?.() ?? []
-      opts.onVisualsChange?.(painters.length > 0)
-    },
   })
+
+  // Surface whether the running pattern draws anything. The Drawer's
+  // frame callback receives the live painter list (queried over a real
+  // time window, unlike pattern.getPainters() which queries [0,0] and
+  // misses them); wrap StrudelMirror's onDraw to observe it, then
+  // delegate to the real draw.
+  let hasVisuals = false
+  const realOnDraw = mirror.onDraw.bind(mirror)
+  mirror.onDraw = (haps: unknown, time: unknown, painters?: unknown[]) => {
+    const has = Array.isArray(painters) && painters.length > 0
+    if (has !== hasVisuals) {
+      hasVisuals = has
+      opts.onVisualsChange?.(has)
+    }
+    realOnDraw(haps, time, painters)
+  }
 
   // StrudelMirror's baked keymap calls mirror.evaluate() / mirror.stop()
   // on Ctrl-Enter / Ctrl-. In JAM those must broadcast, not fire local
@@ -121,6 +132,10 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
       await nativeEvaluate()
     },
     stop() {
+      if (hasVisuals) {
+        hasVisuals = false
+        opts.onVisualsChange?.(false)
+      }
       nativeStop()
     },
     setCode(code: string) {

@@ -11,7 +11,7 @@ test('the Strudel docs section is nested and its pages render', async ({ page })
   const nav = page.getByRole('navigation')
   await expect(nav.getByRole('link', { name: 'Mini-notation' })).toBeVisible()
   await expect(nav.getByRole('link', { name: 'Effects' })).toBeVisible()
-  await expect(nav.getByRole('link', { name: 'Strudel in JAM' })).toBeVisible()
+  await expect(nav.getByRole('link', { name: 'Strudel in jaime' })).toBeVisible()
 
   await nav.getByRole('link', { name: 'Mini-notation' }).click()
   await expect(page).toHaveURL(/\/docs\/strudel\/mini-notation$/)

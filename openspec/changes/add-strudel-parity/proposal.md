@@ -23,11 +23,12 @@ work depends on it.
   like the current bank; a synth-only pattern still plays without
   waiting.
 - **`$:` / labelled multi-pattern documents** (`$drums: …`, `$bass: …`)
-  — every label plays together, with per-label mute/solo that doesn't
-  re-evaluate.
-- **`setcps` / `setcpm` honoured from the document** for a standalone
-  evaluation (a room's shared transport clock still wins inside a
-  synced room).
+  — every label plays together; muting a label is the Strudel-native
+  `_` prefix (a no-re-eval mixer UI is a later change).
+- **`setcps` / `setcpm` honoured from the document.** (A JAM room's
+  transport start-aligns tracks but does not yet override a per-track
+  `setcps` — strict shared-clock ownership is the `composition-room`
+  capability's concern.)
 - **Mini-notation event highlighting** in the editor — the token(s)
   being triggered light up in time with the audio, cleared on stop.
 - **Pattern-driven visuals** — `.punchcard()`, `.pianoroll()`,

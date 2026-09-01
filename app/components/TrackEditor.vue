@@ -97,9 +97,10 @@ defineExpose({
     <canvas
       ref="canvasEl"
       width="600"
-      height="140"
-      class="mt-2 w-full rounded-md"
+      height="120"
+      class="mt-2 h-[120px] w-full shrink-0 rounded-md"
       :class="hasVisuals ? '' : 'hidden'"
+      style="pointer-events: none"
       data-testid="track-canvas"
     />
   </div>
