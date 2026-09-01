@@ -390,3 +390,67 @@ test('a chat message reaches everyone; chat is gone once the room empties', asyn
 
   await context2.close()
 })
+
+test('three separate clients — two editors + a viewer — edit, cursor, hear, and chat together', async ({ browser }) => {
+  test.setTimeout(240_000)
+
+  const ctxA = await browser.newContext()
+  const ctxB = await browser.newContext()
+  const ctxV = await browser.newContext()
+
+  const pageA = await joinRoom(ctxA, `trio-${Date.now()}`, 'Ann', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageB = await joinRoom(ctxB, roomId, 'Ben', 'editor')
+  const pageV = await joinRoom(ctxV, roomId, 'Vic', 'viewer')
+
+  // Everyone sees the full roster with roles.
+  for (const page of [pageA, pageB, pageV]) {
+    await expect(page.locator('[data-testid="participant"]')).toHaveCount(3, { timeout: 15_000 })
+  }
+
+  // Two editors type concurrently; all three converge.
+  await clearDoc(pageA)
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('')
+  await pageA.locator(CONTENT).click()
+  await pageA.keyboard.insertText('s("bd sd hh cp").punchcard()')
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('s("bd sd hh cp").punchcard()')
+
+  await Promise.all([
+    (async () => {
+      await pageA.locator(CONTENT).click()
+      await pageA.keyboard.press('ControlOrMeta+End')
+      await pageA.keyboard.insertText('\n// ann')
+    })(),
+    (async () => {
+      await pageB.locator(CONTENT).click()
+      await pageB.keyboard.press('ControlOrMeta+End')
+      await pageB.keyboard.insertText('\n// ben')
+    })(),
+  ])
+  await expect.poll(() => docText(pageA), { timeout: 15_000 }).toBe(await docText(pageV))
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe(await docText(pageV))
+
+  // Ben sees Ann's caret, labelled.
+  await pageA.locator(CONTENT).click()
+  await pageA.keyboard.press('ControlOrMeta+Home')
+  await expect(
+    pageB.locator('[data-testid="composition-editor"] .cm-ySelectionInfo').filter({ hasText: 'Ann' }),
+  ).toBeAttached({ timeout: 15_000 })
+
+  // Ann evaluates; all three (viewer included) paint the backdrop.
+  await pageA.locator('[data-testid="play-stop-button"]').click()
+  for (const page of [pageA, pageB, pageV]) {
+    await expect.poll(() => paintedPixels(page), { timeout: 45_000 }).toBeGreaterThan(500)
+  }
+
+  // Chat from the viewer reaches both editors.
+  await pageV.locator('[data-testid="chat-input"]').fill('sounds good')
+  await pageV.locator('[data-testid="chat-send"]').click()
+  for (const page of [pageA, pageB]) {
+    await expect(page.locator('[data-testid="chat-message"]')).toHaveText('Vic: sounds good', { timeout: 15_000 })
+  }
+
+  await ctxA.close()
+  await ctxB.close()
+  await ctxV.close()
+})

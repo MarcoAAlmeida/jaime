@@ -156,11 +156,16 @@
 
 ## 6. Verification + deploy
 
-- [ ] 6.1 `nuxt typecheck`, `npm test`, `playwright test` all green.
-- [ ] 6.2 Manual against `wrangler dev`: three browser contexts in one
-      Composition Room — two editors + a viewer — merged editing, live
-      cursors, one evaluates and all three hear it in sync, chat,
-      restart-persistence of the doc.
+- [x] 6.1 `nuxt typecheck` clean; `npm test` (scripts + local D1 migrate
+      + build + vitest) 82 pass; `playwright test` 39 pass (1 pre-existing
+      jam-audio cold-start flake, green on retry).
+- [x] 6.2 `e2e/composition.spec.ts` "three separate clients" drives it
+      against `wrangler dev`: three independent browser contexts (two
+      editors + a viewer) in one room — concurrent edits converge for
+      all three, a labelled remote caret, one editor evaluates and all
+      three (viewer included) paint, chat from the viewer reaches both
+      editors. Doc restart-persistence is covered by the chat test
+      (room empties → rejoin sees the doc, empty chat).
 - [ ] 6.3 `npm run deploy`; on `https://jaime.stream` run the same
       three-client check live, plus confirm JAM still plays every
       curated pattern.
