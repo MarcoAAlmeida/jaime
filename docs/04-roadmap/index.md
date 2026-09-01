@@ -54,15 +54,22 @@ persistence layer — that's still Phase 2).
 - (Vectorize remains a later candidate if Pattern search wants to be
   similarity-based rather than keyword/tag-based — not decided.)
 
-## Phase 3 — Full Strudel parity in JAM — ✅ shipped 2026-08-30
+## Phase 3 — Full Strudel parity in JAM — ✅ shipped 2026-08-30, completed 2026-08-31
 
-Sample playback (`dirt-samples`) and `@strudel/tonal` (`.scale()` /
-`.voicing()`) now load in JAM's engine alongside the built-in synths,
-so curated sample- and tonal-based patterns play. Delivered together
-with Phase 4's "load into JAM" as
-[`archive/2026-08-30-add-jam-pattern-loading/`](../../openspec/changes/archive/2026-08-30-add-jam-pattern-loading/)
-(plus the `@strudel/tonal` fix, commit `5a5e59f`). Any remaining
-strudel.cc features not yet wired are minor follow-ups, not a phase.
+First pass (2026-08-30): sample playback (`dirt-samples`) and
+`@strudel/tonal` loaded in JAM's engine alongside the synths
+([`archive/2026-08-30-add-jam-pattern-loading/`](../../openspec/changes/archive/2026-08-30-add-jam-pattern-loading/)
++ the `@strudel/tonal` fix `5a5e59f`).
+
+The rest turned out to be a real body of work, not "minor follow-ups":
+`add-strudel-parity` (2026-08-31) rebuilt the shared engine on
+`@strudel/codemirror`'s `StrudelMirror` + a jaime `prebake()` — the
+full strudel.cc default sample map, `$:` labelled documents, document
+`setcps`, mini-notation event highlighting, and pattern-driven visuals
+(`punchcard` / `pianoroll` / `scope` / `spectrum`). JAM and the coming
+Composition Room now share **one** engine at feature parity with
+strudel.cc. Remaining exclusions: Hydra, MIDI/OSC, tool-loaded sample
+banks.
 
 ## Phase 4 — Pattern (and Sample) library — ✅ shipped 2026-08-30
 

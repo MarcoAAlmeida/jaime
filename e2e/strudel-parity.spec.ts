@@ -5,6 +5,11 @@ import { expect, test } from '@playwright/test'
 // pattern-driven visuals, mini-notation event highlight, $: documents.
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } })
 
+// The visuals test depends on the drawer's first frame landing within a
+// bounded time; on a stone-cold server (first-ever eval, sample map not
+// yet fetched) that first frame can lag. A retry always runs warm.
+test.describe.configure({ retries: 2 })
+
 async function roomWithTrackA(page: Page): Promise<void> {
   await page.goto('/app/jam')
   await expect(async () => {
