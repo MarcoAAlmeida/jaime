@@ -16,12 +16,12 @@ export const TRACK_LABELS: Record<TrackName, string> = {
   b: 'Track B',
 }
 
-// Starter patterns so a fresh room isn't silent/empty. Kept to synth
-// waveforms so a fresh room makes sound immediately, before the default
-// sample bank finishes loading (see app/lib/audioEngine.ts). Deliberately
-// generic, not instrument-themed: each track is an open deck, not a fixed
-// role — the owner decides what to script.
+// Starter patterns so a fresh room isn't silent/empty. Now that the
+// engine loads the full strudel.cc sample map + visuals (add-strudel-
+// parity), the defaults show it off: A is a `$:` two-line drum groove
+// with a punchcard visual, B a moving synth bass. Deliberately generic
+// — each track is an open deck, not a fixed role.
 export const DEFAULT_CODE: Record<TrackName, string> = {
-  a: 'note("c3 e3 g3 c4").s("triangle")',
-  b: 'note("c2").s("square").slow(2)',
+  a: '$: s("bd(3,8), ~ cp, hh*8").punchcard()\n$: s("~ ~ ~ oh").gain(0.5)',
+  b: 'note("<c2 eb2 g2 f2>").s("sawtooth").lpf(sine.range(400, 1800).slow(4)).lpq(8).room(0.2)',
 }
