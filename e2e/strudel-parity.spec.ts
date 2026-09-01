@@ -31,19 +31,20 @@ async function play(page: Page): Promise<void> {
 }
 
 test('a pattern-driven visualiser shows a canvas; a plain pattern does not', async ({ page }) => {
-  test.setTimeout(60_000)
+  test.setTimeout(90_000)
   await roomWithTrackA(page)
   const canvas = page.locator('[data-testid="track-a"] [data-testid="track-canvas"]')
 
   await setCode(page, 's("bd sd").punchcard()')
   await play(page)
-  await expect(canvas).toBeVisible({ timeout: 15_000 })
+  // First eval on a fresh page loads the sample map + waits for the next
+  // shared cycle boundary before the drawer's first frame — allow for it.
+  await expect(canvas).toBeVisible({ timeout: 30_000 })
 
   await page.locator('[data-testid="track-a"] [data-testid="play-stop-button"]').click()
   await setCode(page, 'note("c3 e3 g3").s("triangle")')
   await play(page)
-  await page.waitForTimeout(2000)
-  await expect(canvas).toBeHidden()
+  await expect(canvas).toBeHidden({ timeout: 10_000 })
 })
 
 test('a $: document plays every label with no pattern error', async ({ page }) => {
