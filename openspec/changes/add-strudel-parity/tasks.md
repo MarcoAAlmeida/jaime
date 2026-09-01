@@ -4,13 +4,13 @@
       `yjs` / `y-codemirror.next` / `y-protocols` also added here (they
       belong to `add-composition-room` but landed together — commit
       `d9a5510`).
-- [ ] 1.2 Spike (design open question): one `StrudelMirror` with
-      `solo:false` + a minimal `prebake()` in a throwaway route. Confirm
-      it runs under jaime's Nitro/Cloudflare client build; play a few
-      patterns; check the `initTheme()` dark-class hijack workaround and
-      the `start-repl` solo event behave with more than one instance.
-      Decide N `StrudelMirror` vs. bespoke-repl-plus-parity for JAM and
-      record it in `design.md`.
+- [x] 1.2 Spike done — `nuxt build` bundles `StrudelMirror` +
+      `@strudel/draw` under the Cloudflare preset; two `solo:false`
+      instances on one page construct and evaluate with zero console
+      errors (no theme-hijack breakage, no `start-repl` cross-talk).
+      Resolved toward **N `StrudelMirror` for JAM**; recorded in
+      `design.md` decision 1 with the `repl()` options needed. Throwaway
+      route + spec removed.
 - [ ] 1.3 `app/lib/prebake.ts` — one memoised promise registering the
       strudel.cc default sample map (`samples(url)` for Dirt-Samples +
       the drum-machine / VCSL / piano / EmuSP12 sets), each bank in its

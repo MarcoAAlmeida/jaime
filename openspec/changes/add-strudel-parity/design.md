@@ -71,8 +71,19 @@ the parity pieces individually** (prebake, `@strudel/draw` painters,
 `@strudel/codemirror` highlight, `$:` via the transpiler). Kept as the
 fallback if N `StrudelMirror` proves too heavy or too entangled (the
 `start-repl` solo custom event, the `initTheme()` dark-class hijack that
-`TrackEditor.vue` already works around, bundle weight). The **group 1
-spike** decides; the spec is unaffected either way.
+`TrackEditor.vue` already works around, bundle weight).
+
+**Spike result (task 1.2 — resolved, `StrudelMirror` path confirmed):**
+`nuxt build` bundles `StrudelMirror` + `@strudel/draw` cleanly under the
+Nitro/Cloudflare preset (3.46 MB / 937 KB gzip total). Two
+`StrudelMirror` instances with `solo:false` on one page **construct and
+evaluate with zero console errors** — no theme-hijack breakage, no
+`start-repl` cross-talk, `@strudel/draw` `drawContext` accepted. The
+`repl()` options needed: `transpiler` (jaime already has it),
+`defaultOutput: webaudioOutput`, `getTime: () =>
+getAudioContext().currentTime`, and a `prebake` (required — it is
+awaited internally). Proceeding with **N `StrudelMirror` for JAM**; the
+fallback stays documented but is not expected.
 
 ### 2. `prebake()` — the strudel.cc default sample map
 
@@ -134,7 +145,7 @@ Fix the "four basic waveforms" line in `3.sounds.md` and any
 
 ## Open Questions
 
-- N `StrudelMirror` vs. bespoke-repl-plus-parity for JAM — resolved by
-  the group 1 spike; affects task detail, not the spec.
+- N `StrudelMirror` vs. bespoke-repl-plus-parity for JAM — **resolved**:
+  the spike (see decision 1) confirmed the `StrudelMirror` path.
 - The exact sample-bank URL set to mirror — settled while writing
   `prebake.ts`.
