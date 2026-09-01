@@ -42,6 +42,12 @@ export interface StrudelEditorOptions {
   onRequestStop?: () => void
   /** The last-evaluated pattern requests a visualiser (or not). */
   onVisualsChange?: (hasVisuals: boolean) => void
+  /**
+   * Called before the scheduler starts — align to the shared cycle
+   * boundary here. Defaults to JAM's `waitForSynchronizedStart`; the
+   * Composition Room passes a closure over its own clock.
+   */
+  beforeStart?: () => Promise<void>
 }
 
 export interface StrudelEditor {
@@ -98,9 +104,8 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
     bgFill: false,
     defaultOutput: webaudioOutput,
     getTime: () => getAudioContext().currentTime,
-    // Every scheduler start aligns to the room's shared cycle boundary
-    // — same hook JAM's bespoke repl used.
-    beforeStart: waitForSynchronizedStart,
+    // Every scheduler start aligns to the room's shared cycle boundary.
+    beforeStart: opts.beforeStart ?? waitForSynchronizedStart,
     onEvalError: (err: Error) => {
       error = err.message
       opts.onError?.(err.message)

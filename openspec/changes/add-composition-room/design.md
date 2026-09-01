@@ -133,8 +133,18 @@ No `y-websocket` server. The client provider:
 ### 5. Synced playback reuses the transport clock
 
 A Composition Room carries `bpm` + `cycleStartTimestamp` in its
-persisted state, exactly like a JAM room, and clients use the existing
-`waitForSynchronizedStart` as the repl's `beforeStart`.
+persisted state, exactly like a JAM room, and clients align playback to
+the next cycle boundary the same way JAM does.
+
+`transportClock.ts`'s `waitForSynchronizedStart` was JAM-coupled — it
+read `useJamSession()` and the JAM WS plugin's `getOffset()`. Extract a
+generic `waitForCycleBoundary(cycleStartTimestamp, bpm, offset)` (the
+existing function becomes a thin JAM-bound wrapper), and give
+`createStrudelEditor` a `beforeStart?` option (default: the JAM
+wrapper). The Composition Room passes a `beforeStart` closure over its
+own clock state + its own ping/pong offset (the DO clock is the same
+single instance for both room types, but a client that went straight to
+a composition room never ran JAM's offset estimate).
 
 - **Evaluate** (Ctrl-Enter) broadcasts `{ t: 'eval', room, atCycle }` —
   *not* the code; every client already has the document via Yjs. Each

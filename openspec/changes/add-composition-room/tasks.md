@@ -38,9 +38,16 @@
 
 ## 2. Client editor + collaborative doc
 
-- [ ] 2.1 `app/lib/compositionProvider.ts` — a thin Yjs provider over
-      the room WebSocket: `ydoc.on('update')` → frame; incoming frame →
-      `Y.applyUpdate`; `y-protocols/awareness` wired; reconnect-safe.
+- [x] 2.1 `app/lib/compositionProvider.ts` — `createCompositionProvider`:
+      `ydoc.on('update')` → `y-update` frame; incoming → `Y.applyUpdate`
+      (origin `'remote'` so it doesn't echo); `y-protocols/awareness`
+      relayed; reconnect with 1.5s backoff + re-join + re-sync; own
+      `clock_ping`/`clock_pong` offset (15s); emits ready / presence /
+      playing / eval / stop / chat / tempo / status. Also:
+      `transportClock.ts` split into `waitForCycleBoundary(cst, bpm,
+      offset)` + the JAM wrapper; `createStrudelEditor` gains a
+      `beforeStart?` option (default = JAM's). 29 clock/room/composition
+      tests green.
 - [ ] 2.2 `app/pages/app/composition/[id].vue` (+ index/create) — real
       room: `add-strudel-parity`'s editor factory for the shared doc,
       `yCollab(ytext, awareness, { undoManager })` appended via
