@@ -157,13 +157,19 @@ export default defineNuxtPlugin(() => {
   // dependency: the display name, gated by the room page's own join
   // screen — the WebSocket doesn't open at all until both a room ID and
   // a display name exist (see design.md in add-identity-and-transport-ui).
+  //
+  // Restricted to JAM room routes: `route.params.id` also exists on
+  // `/app/composition/[id]` (add-composition-room), which runs its own
+  // `/composition` WebSocket via compositionProvider.ts — without this
+  // guard every composition room visit also opened a phantom `/room`
+  // connection and spun up an empty JAM room DO entry under the same ID.
   watch(
-    [() => route.params.id, () => displayName.value],
-    ([id, name]) => {
+    [() => route.params.id, () => displayName.value, () => route.path.startsWith('/app/jam/room/')],
+    ([id, name, isJamRoom]) => {
       ws?.close()
       hasEstimatedOffset = false
       offset = 0
-      if (typeof id !== 'string' || !id || !name) {
+      if (typeof id !== 'string' || !id || !name || !isJamRoom) {
         ws = undefined
         return
       }

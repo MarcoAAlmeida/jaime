@@ -48,18 +48,35 @@
       offset)` + the JAM wrapper; `createStrudelEditor` gains a
       `beforeStart?` option (default = JAM's). 29 clock/room/composition
       tests green.
-- [ ] 2.2 `app/pages/app/composition/[id].vue` (+ index/create) — real
-      room: `add-strudel-parity`'s editor factory for the shared doc,
-      `yCollab(ytext, awareness, { undoManager })` appended via
-      `StateEffect.appendConfig`, draw canvas mounted, `beforeStart:
-      waitForSynchronizedStart`.
-- [ ] 2.3 Create + join-by-link + "copy invite link"; room id in the
-      URL; opening the same link lands in the same room over the same
-      doc.
-- [ ] 2.4 Concurrent-edit behaviour verified: two browser contexts,
-      simultaneous inserts at different positions both survive and the
-      docs converge; same-region edits reconcile with neither lost
-      without a trace; local unsent edits rebased over a remote change.
+- [x] 2.2 `app/pages/app/composition/[id].vue` (+ index/create) — real
+      room: `add-strudel-parity`'s editor factory for the shared doc
+      (`initialCode` from the synced `Y.Text`, or a starter pattern the
+      first-in client seeds), `yCollab(ytext, awareness, { undoManager })`
+      appended via `StateEffect.appendConfig`, backdrop draw canvas
+      mounted (same TrackEditor layout), `beforeStart` closes over the
+      provider's own clock + ping/pong offset via the new
+      `waitForCycleBoundary`. Ctrl-Enter/Ctrl-. route through
+      `onRequestPlay`/`onRequestStop` to `provider.sendEval`/`sendStop`;
+      `provider.on('eval'|'stop')` drives the actual repl. Found + fixed
+      along the way: `primeAudio()` was awaited before editor creation,
+      so the editor never mounted until a click happened — fixed to fire
+      it without blocking (mirrors the JAM room page); the global
+      `/room` WebSocket plugin was matching on `route.params.id`, which
+      also exists on this route, opening a phantom JAM room per
+      Composition Room visit — restricted it to `/app/jam/room/*`.
+- [x] 2.3 `app/pages/app/composition/index.vue` — create + join-by-link
+      (mirrors JAM's entry point); room id in the URL; the room page's
+      "Copy invite link" button. Opening the same link lands in the same
+      room over the same doc (verified by 2.4 and manually).
+- [x] 2.4 Concurrent-edit behaviour verified (`e2e/composition.spec.ts`,
+      3 tests, all green): two browser contexts, simultaneous inserts at
+      different positions both survive and the docs converge; a late
+      joiner loads the current document; local unsent edits are rebased
+      over a remote change losing neither side. (Reading `.cm-content`
+      directly picks up y-codemirror.next's remote-cursor name label as
+      text — `docText()` strips `.cm-ySelectionCaret` widgets before
+      comparing.) Manually verified eval/stop broadcasts and flips the
+      Play/Stop button on both clients.
 
 ## 3. Roles, presence, cursors
 
