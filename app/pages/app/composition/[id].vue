@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CompositionPresenceEntry, Role } from '#shared/compositionProtocol'
 import type { CompositionProvider } from '~/lib/compositionProvider'
 import type { StrudelEditor } from '~/lib/strudelEditor'
 import { StateEffect } from '@codemirror/state'
@@ -20,8 +21,15 @@ const roomId = computed(() => String(route.params.id))
 
 const { displayName, setDisplayName } = useDisplayName()
 const nameInput = ref('')
-function joinRoom() {
+function submitName() {
   setDisplayName(nameInput.value)
+}
+
+// Self-declared, one link, no server-enforced access control — see
+// design.md decision 4. Chosen on join, switchable in-room.
+const role = ref<Role>()
+function chooseRole(next: Role) {
+  role.value = next
 }
 
 // Seed only used when the very first person enters a brand-new room; an
@@ -31,13 +39,6 @@ const STARTER_DOC = `// One shared script — everyone in this room edits it tog
 $: s("bd*4, ~ cp*<1 2>").bank("RolandTR909")
 $: note("<c2 eb2 g2 bb1>").s("sawtooth").lpf(sine.range(400, 1400).slow(8)).lpq(6).gain(.7)
 `
-
-// A stable-for-this-tab colour for this participant's cursor + awareness
-// entry (y-codemirror.next paints remote selections in the peer's
-// colour). Full role/cursor treatment is a later task; the provider
-// needs a colour now.
-const COLORS = ['#f97316', '#22c55e', '#3b82f6', '#e11d48', '#a855f7', '#14b8a6', '#eab308', '#ec4899']
-const myColor = COLORS[Math.floor(Math.random() * COLORS.length)]!
 
 const rootEl = ref<HTMLDivElement>()
 const editorEl = ref<HTMLDivElement>()
@@ -51,6 +52,9 @@ const connected = ref(false)
 const playing = ref(false)
 const error = ref<string | null>(null)
 const linkCopied = ref(false)
+const participants = ref<CompositionPresenceEntry[]>([])
+
+const isEditor = computed(() => role.value === 'editor')
 
 let provider: CompositionProvider | undefined
 let editor: StrudelEditor | undefined
@@ -79,20 +83,30 @@ async function copyInviteLink() {
 // Evaluate / stop are broadcast, not run locally — the server relays an
 // `eval` / `stop` back to everyone (this client included) and the
 // provider events below drive the actual repl, so editors and viewers
-// start together on the next shared cycle boundary.
+// start together on the next shared cycle boundary. Only an editor
+// originates one.
 function requestEval() {
-  if (!provider) return
+  if (!provider || !isEditor.value) return
   const clock = provider.getClock()
   const atCycle = nextCycleBoundary(clock.cycleStartTimestamp, clock.bpm, Date.now() + provider.getOffset())
   provider.sendEval(atCycle)
 }
 function requestStop() {
-  provider?.sendStop()
+  if (isEditor.value) provider?.sendStop()
+}
+
+// Switch role live — reconfigure the editable compartment and tell the
+// room; no rejoin (design.md decision 4).
+function toggleRole() {
+  const next: Role = isEditor.value ? 'viewer' : 'editor'
+  role.value = next
+  provider?.setRole(next)
+  editor?.setEditable(next === 'editor')
 }
 
 async function start() {
-  if (!displayName.value || provider) return
-  await nextTick() // the room shell (and its refs) render once the name gate clears
+  if (!displayName.value || !role.value || provider) return
+  await nextTick() // the room shell (and its refs) render once the gates clear
 
   // Don't block editor mount on this — browsers only resume the
   // AudioContext on a genuine gesture, so it may not settle until the
@@ -106,11 +120,11 @@ async function start() {
   provider = createCompositionProvider({
     roomId: roomId.value,
     name: displayName.value,
-    role: 'editor',
-    color: myColor,
+    role: role.value,
   })
   provider.on('status', (c) => { connected.value = c })
   provider.on('playing', (p) => { playing.value = p })
+  provider.on('presence', (roster) => { participants.value = roster })
   provider.on('eval', () => { playing.value = true; void editor?.evaluate() })
   provider.on('stop', () => { playing.value = false; editor?.stop() })
 
@@ -120,7 +134,7 @@ async function start() {
     root: editorEl.value!,
     drawContext: canvasEl.value?.getContext('2d', { willReadFrequently: true }) ?? null,
     initialCode: provider.text.length > 0 ? provider.text.toString() : STARTER_DOC,
-    editable: true,
+    editable: isEditor.value,
     // Align every scheduler start to this room's shared cycle grid,
     // using the provider's own ping/pong offset (a client that came
     // straight here never ran JAM's offset estimate).
@@ -135,14 +149,17 @@ async function start() {
 
   // First person into a fresh room seeds the shared document. The length
   // check makes a same-instant double-entry the only race, and it only
-  // duplicates this canned text — no edits are lost.
-  if (provider.text.length === 0) {
+  // duplicates this canned text — no edits are lost. A viewer never
+  // seeds (they can't originate document changes).
+  if (isEditor.value && provider.text.length === 0) {
     provider.text.insert(0, STARTER_DOC)
   }
 
   // yCollab makes the Y.Text authoritative for the editor and brings
-  // collaborative undo + remote selections. Appended the same way
-  // TrackEditor appends its editable compartment.
+  // collaborative undo + remote selections (name + colour per peer).
+  // Appended the same way TrackEditor appends its editable compartment;
+  // it stays attached for viewers so they receive edits, they just
+  // can't originate them.
   undoManager = new Y.UndoManager(provider.text)
   editor.view.dispatch({
     effects: StateEffect.appendConfig.of(yCollab(provider.text, provider.awareness, { undoManager })),
@@ -154,12 +171,8 @@ async function start() {
   document.documentElement.classList.toggle('light', colorMode.value === 'light')
 }
 
-onMounted(() => {
-  if (displayName.value) void start()
-})
-watch(displayName, (name) => {
-  if (name) void start()
-})
+onMounted(() => { void start() })
+watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
@@ -181,13 +194,32 @@ onBeforeUnmount(() => {
         placeholder="Your name"
         class="flex-1"
         autofocus
-        @keyup.enter="joinRoom"
+        @keyup.enter="submitName"
       />
-      <UButton data-testid="submit-name-button" @click="joinRoom">
-        Join
+      <UButton data-testid="submit-name-button" @click="submitName">
+        Next
       </UButton>
     </div>
   </div>
+
+  <div v-else-if="!role" class="flex h-screen flex-col items-center justify-center gap-4 p-4">
+    <h1 class="text-xl font-semibold">
+      Join as…
+    </h1>
+    <p class="text-muted max-w-sm text-center text-sm">
+      Editors change the shared script; viewers follow along and hear
+      playback. You can switch any time.
+    </p>
+    <div class="flex gap-2">
+      <UButton data-testid="role-editor" @click="chooseRole('editor')">
+        Editor
+      </UButton>
+      <UButton data-testid="role-viewer" color="neutral" variant="outline" @click="chooseRole('viewer')">
+        Viewer
+      </UButton>
+    </div>
+  </div>
+
   <div v-else class="flex h-screen flex-col gap-3 p-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <NuxtLink to="/" aria-label="jaime home">
@@ -202,6 +234,7 @@ onBeforeUnmount(() => {
           {{ connected ? 'Connected' : 'Connecting…' }}
         </UBadge>
         <UButton
+          v-if="isEditor"
           size="xs"
           :color="playing ? 'neutral' : 'success'"
           :variant="playing ? 'outline' : 'solid'"
@@ -209,6 +242,15 @@ onBeforeUnmount(() => {
           @click="playing ? requestStop() : requestEval()"
         >
           {{ playing ? 'Stop' : 'Play' }}
+        </UButton>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="outline"
+          data-testid="toggle-role-button"
+          @click="toggleRole"
+        >
+          {{ isEditor ? 'Switch to viewer' : 'Switch to editor' }}
         </UButton>
         <UButton
           size="xs"
@@ -238,18 +280,44 @@ onBeforeUnmount(() => {
       :close="{ onClick: () => (error = null) }"
     />
 
-    <div
-      ref="rootEl"
-      class="bg-elevated relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md"
-      data-testid="composition-editor"
-    >
-      <canvas
-        ref="canvasEl"
-        class="pointer-events-none absolute inset-0 z-0 size-full"
-        aria-hidden="true"
-        data-testid="composition-canvas"
-      />
-      <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
+    <div class="flex min-h-0 flex-1 gap-3">
+      <div
+        ref="rootEl"
+        class="bg-elevated relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md"
+        data-testid="composition-editor"
+      >
+        <canvas
+          ref="canvasEl"
+          class="pointer-events-none absolute inset-0 z-0 size-full"
+          aria-hidden="true"
+          data-testid="composition-canvas"
+        />
+        <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
+      </div>
+
+      <aside
+        class="hidden w-48 shrink-0 flex-col gap-1.5 overflow-y-auto sm:flex"
+        data-testid="participants"
+      >
+        <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
+          In the room ({{ participants.length }})
+        </h2>
+        <div
+          v-for="p in participants"
+          :key="p.clientId"
+          class="flex items-center justify-between gap-2 text-sm"
+          data-testid="participant"
+        >
+          <span class="truncate">{{ p.name }}</span>
+          <UBadge
+            size="xs"
+            :color="p.role === 'editor' ? 'primary' : 'neutral'"
+            variant="subtle"
+          >
+            {{ p.role }}
+          </UBadge>
+        </div>
+      </aside>
     </div>
   </div>
 </template>

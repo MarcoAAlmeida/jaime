@@ -9,7 +9,7 @@ import type {
   CompositionServerMessage,
   Role,
 } from '#shared/compositionProtocol'
-import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate } from 'y-protocols/awareness'
+import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 import { fromBase64, toBase64 } from '#shared/compositionProtocol'
 import { computeOffset } from '~/lib/clockOffset'
@@ -18,6 +18,17 @@ export const DOC_TEXT = 'strudel'
 
 const RECONNECT_MS = 1500
 const CLOCK_PING_MS = 15_000
+
+// Cursor / presence palette. A participant's colour is hashed from their
+// Yjs client id so it is stable for the session and spread across the
+// palette without coordination.
+const CURSOR_COLORS = [
+  '#f97316', '#22c55e', '#3b82f6', '#e11d48',
+  '#a855f7', '#14b8a6', '#eab308', '#ec4899',
+]
+export function cursorColor(clientId: number): string {
+  return CURSOR_COLORS[Math.abs(clientId) % CURSOR_COLORS.length]!
+}
 
 export interface CompositionClock {
   bpm: number
@@ -54,14 +65,16 @@ export interface CompositionProviderOptions {
   roomId: string
   name: string
   role: Role
-  color: string
+  /** Cursor colour; defaults to one hashed from the Yjs client id. */
+  color?: string
 }
 
 export function createCompositionProvider(opts: CompositionProviderOptions): CompositionProvider {
   const ydoc = new Y.Doc()
   const text = ydoc.getText(DOC_TEXT)
   const awareness = new Awareness(ydoc)
-  awareness.setLocalStateField('user', { name: opts.name, color: opts.color })
+  const color = opts.color ?? cursorColor(ydoc.clientID)
+  awareness.setLocalStateField('user', { name: opts.name, color })
 
   const listeners: { [K in keyof Events]?: Events[K][] } = {}
   const emit = <K extends keyof Events>(event: K, ...args: Parameters<Events[K]>) => {
@@ -115,7 +128,8 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
         t: 'join',
         role,
         name: opts.name,
-        color: opts.color,
+        color,
+        awarenessId: awareness.clientID,
         sv: toBase64(Y.encodeStateVector(ydoc)),
       })
       // Any local state the server doesn't have yet (reconnect / offline
@@ -169,6 +183,12 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
         break
       case 'awareness':
         applyAwarenessUpdate(awareness, fromBase64(msg.a), 'remote')
+        break
+      case 'peer_left':
+        // The server has no Yjs awareness of its own — it just tells us
+        // which peer dropped so y-codemirror.next removes their cursor
+        // now instead of waiting for the 30s outdated-state sweep.
+        removeAwarenessStates(awareness, [msg.awarenessId], 'remote')
         break
       case 'presence':
         emit('presence', msg.roster)

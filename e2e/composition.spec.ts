@@ -9,11 +9,17 @@ test.describe.configure({ retries: 2 })
 
 const CONTENT = '[data-testid="composition-editor"] .cm-content'
 
-async function joinRoom(context: BrowserContext, roomId: string, name: string): Promise<Page> {
+async function joinRoom(
+  context: BrowserContext,
+  roomId: string,
+  name: string,
+  role: 'editor' | 'viewer' = 'editor',
+): Promise<Page> {
   const page = await context.newPage()
   await page.goto(`/app/composition/${roomId}`)
   await page.locator('[data-testid="display-name-input"]').fill(name)
   await page.locator('[data-testid="submit-name-button"]').click()
+  await page.locator(`[data-testid="role-${role}"]`).click()
   await expect(page.locator('[data-testid="display-name-input"]')).toHaveCount(0)
   // Editor is mounted once the CodeMirror content node exists. A fresh
   // page pays the same cold-start cost as JAM's editor (dynamic import +
@@ -132,6 +138,90 @@ test('local unsent edits are rebased over a remote change, losing neither', asyn
 
   await expect.poll(() => docText(pageA), { timeout: 15_000 }).toBe('[A] hello world [B]')
   await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('[A] hello world [B]')
+
+  await context.close()
+})
+
+test('the roster shows every participant and their role, and updates on leave', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `roster-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageB = await joinRoom(context, roomId, 'Bob', 'viewer')
+
+  for (const page of [pageA, pageB]) {
+    const rows = page.locator('[data-testid="participant"]')
+    await expect(rows).toHaveCount(2)
+    await expect(rows.filter({ hasText: 'Alice' })).toContainText('editor')
+    await expect(rows.filter({ hasText: 'Bob' })).toContainText('viewer')
+  }
+
+  await pageB.close()
+  await expect(pageA.locator('[data-testid="participant"]')).toHaveCount(1)
+  await expect(pageA.locator('[data-testid="participant"]')).toContainText('Alice')
+
+  await context.close()
+})
+
+test('a viewer cannot edit the document; switching to editor lets them', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `viewer-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageV = await joinRoom(context, roomId, 'Val', 'viewer')
+
+  await clearDoc(pageA)
+  await pageA.locator(CONTENT).click()
+  await pageA.keyboard.insertText('editor-only')
+  await expect.poll(() => docText(pageV), { timeout: 15_000 }).toBe('editor-only')
+
+  // A viewer has no Play button and cannot type.
+  await expect(pageV.locator('[data-testid="play-stop-button"]')).toHaveCount(0)
+  await pageV.locator(CONTENT).click()
+  await pageV.keyboard.type('SNEAKY')
+  await pageV.waitForTimeout(500)
+  await expect.poll(() => docText(pageV)).toBe('editor-only')
+  await expect.poll(() => docText(pageA)).toBe('editor-only')
+
+  // Switching to editor makes their edits land for everyone, no rejoin.
+  await pageV.locator('[data-testid="toggle-role-button"]').click()
+  await expect(pageV.locator('[data-testid="play-stop-button"]')).toBeVisible()
+  await pageV.locator(CONTENT).click()
+  await pageV.keyboard.press('ControlOrMeta+End')
+  await pageV.keyboard.type(' + viewer-now-editor')
+  await expect.poll(() => docText(pageA), { timeout: 15_000 }).toBe('editor-only + viewer-now-editor')
+  await expect(pageA.locator('[data-testid="participant"]').filter({ hasText: 'Val' })).toContainText('editor')
+
+  await context.close()
+})
+
+test('editors see each other\'s live cursor, labelled by name', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `cursor-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageB = await joinRoom(context, roomId, 'Bob', 'editor')
+
+  await clearDoc(pageA)
+  await pageA.locator(CONTENT).click()
+  await pageA.keyboard.insertText('one two three')
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('one two three')
+
+  // A moves; B should see A's caret widget carrying A's name.
+  await pageA.locator(CONTENT).click()
+  await pageA.keyboard.press('ControlOrMeta+Home')
+  await expect(
+    pageB.locator('[data-testid="composition-editor"] .cm-ySelectionInfo').filter({ hasText: 'Alice' }),
+  ).toBeAttached({ timeout: 15_000 })
+
+  // When A leaves, the caret goes with them.
+  await pageA.close()
+  await expect(
+    pageB.locator('[data-testid="composition-editor"] .cm-ySelectionCaret'),
+  ).toHaveCount(0, { timeout: 15_000 })
 
   await context.close()
 })

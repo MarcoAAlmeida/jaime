@@ -25,7 +25,9 @@ export interface ChatMessage {
 export type CompositionClientMessage =
   // Sent once on connect. `sv` is the client's Yjs state vector
   // (base64); the server replies with the update the client is missing.
-  | { t: 'join', role: Role, name: string, color: string, sv: string }
+  // `awarenessId` is this client's Yjs awareness id, so the server can
+  // tell the others to drop its cursor when it disconnects.
+  | { t: 'join', role: Role, name: string, color: string, sv: string, awarenessId?: number }
   // A Yjs document update (base64). The server applies + relays it.
   | { t: 'y-update', u: string }
   // A y-protocols/awareness update (base64). Relayed, never persisted.
@@ -55,6 +57,8 @@ export type CompositionServerMessage =
   }
   | { t: 'y-update', u: string }
   | { t: 'awareness', a: string }
+  // A participant disconnected — drop their awareness (cursor) state.
+  | { t: 'peer_left', awarenessId: number }
   | { t: 'presence', roster: CompositionPresenceEntry[] }
   | { t: 'eval', atCycle: number }
   | { t: 'stop' }

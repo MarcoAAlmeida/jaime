@@ -80,17 +80,30 @@
 
 ## 3. Roles, presence, cursors
 
-- [ ] 3.1 Editor/viewer chosen on join (self-declared); role in
-      awareness; `EditorView.editable` compartment reconfigured live on
-      role switch, no rejoin.
-- [ ] 3.2 A viewer's editor is strictly read-only — no local edit
-      lands, no `y-update` leaves; server-side drop as the backstop
-      (1.3).
-- [ ] 3.3 Presence roster (name + role), room-scoped, updates as people
-      join/leave.
-- [ ] 3.4 Live remote cursors/selections via `yRemoteSelections` — per
-      person name + colour (palette hashed on client id), correctly
-      remapped as the doc changes, removed when an editor leaves.
+- [x] 3.1 Editor/viewer chosen on a second join gate (`role-editor` /
+      `role-viewer`), after the name gate. Role rides in the `join`
+      frame + the presence roster; the room's "Switch to viewer/editor"
+      button calls `provider.setRole()` and reconfigures the factory's
+      editable compartment via `editor.setEditable()` — no rejoin,
+      verified by e2e (viewer→editor then edits land).
+- [x] 3.2 A viewer's editor mounts with `editable: false`, so CodeMirror
+      rejects input transactions (no local edit, no `y-update` out), and
+      the server's viewer `y-update` drop (1.3) is the backstop. A
+      viewer also has no Play button and `requestEval`/`requestStop`
+      no-op. e2e types "SNEAKY" as a viewer and the doc is unchanged for
+      everyone.
+- [x] 3.3 `provider.on('presence')` → a roster aside (name + role
+      badge, count), room-scoped by the `composition:<id>` topic,
+      updates on join and on leave. e2e checks both.
+- [x] 3.4 `yCollab` brings `yRemoteSelections`; colour is
+      `cursorColor(ydoc.clientID)` (hashed into an 8-colour palette in
+      compositionProvider.ts), name from the awareness `user` field.
+      Remap-on-edit is y-codemirror.next's. Removal on leave needed a
+      protocol addition: `join` carries `awarenessId`, and the server's
+      `close` broadcasts `{ t: 'peer_left', awarenessId }` so the
+      provider calls `removeAwarenessStates` immediately rather than
+      waiting for the 30s outdated-state sweep. e2e: B sees A's
+      name-labelled caret, and it's gone once A closes.
 
 ## 4. Synced playback + chat
 

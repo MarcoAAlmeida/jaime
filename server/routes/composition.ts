@@ -24,8 +24,10 @@ interface CompositionRoom {
   cycleStartTimestamp: number
   playing: boolean
   evalAtCycle: number | null
-  // clientId -> { name, role }. Never persisted (rebuilt from live peers).
-  presence: Map<string, { name: string, role: Role }>
+  // clientId -> { name, role, awarenessId }. Never persisted (rebuilt
+  // from live peers). awarenessId is the peer's Yjs awareness id, used
+  // to tell the others to drop its cursor on disconnect.
+  presence: Map<string, { name: string, role: Role, awarenessId?: number }>
   chat: ChatMessage[]
   snapshotTimer: ReturnType<typeof setTimeout> | null
   evictTimer: ReturnType<typeof setTimeout> | null
@@ -169,7 +171,8 @@ export default defineWebSocketHandler({
 
     if (data.t === 'join') {
       const role: Role = data.role === 'viewer' ? 'viewer' : 'editor'
-      room.presence.set(peer.id, { name, role })
+      const awarenessId = typeof data.awarenessId === 'number' ? data.awarenessId : undefined
+      room.presence.set(peer.id, { name, role, awarenessId })
       send(peer, {
         t: 'welcome',
         clientId: peer.id,
@@ -251,7 +254,11 @@ export default defineWebSocketHandler({
     if (!roomId) return
     const room = rooms.get(roomId)
     if (!room) return
+    const left = room.presence.get(peer.id)
     room.presence.delete(peer.id)
+    if (left?.awarenessId != null) {
+      toOthers(peer, roomId, { t: 'peer_left', awarenessId: left.awarenessId })
+    }
     toOthers(peer, roomId, { t: 'presence', roster: roster(room) })
     if (room.presence.size === 0) {
       // Everyone left — chat is ephemeral.
