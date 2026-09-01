@@ -11,16 +11,23 @@
       Resolved toward **N `StrudelMirror` for JAM**; recorded in
       `design.md` decision 1 with the `repl()` options needed. Throwaway
       route + spec removed.
-- [ ] 1.3 `app/lib/prebake.ts` — one memoised promise registering the
-      strudel.cc default sample map (`samples(url)` for Dirt-Samples +
-      the drum-machine / VCSL / piano / EmuSP12 sets), each bank in its
-      own `try/catch`. Synth-only playback must not await it.
-- [ ] 1.4 Editor/engine factory: wraps the chosen path (StrudelMirror
-      or parity-augmented repl), taking a root element + a draw canvas +
-      `beforeStart: waitForSynchronizedStart`, sharing the singleton
-      `AudioContext` and one `prebake()` promise. Preserves today's
-      surface: evaluate / stop / last-error per instance, external-code
-      apply without echo, the editable compartment.
+- [x] 1.3 `app/lib/prebake.ts` — memoised. `evalScope` (core/mini/
+      tonal/draw/webaudio) + `registerSynthSounds` + `registerZZFXSounds`,
+      then awaits `github:tidalcycles/dirt-samples` (every curated
+      pattern needs it) and kicks the strudel.cc dough-samples extras
+      (tidal-drum-machines / piano / EmuSP12 / vcsl / mridangam) in the
+      background, each `loadBank` in its own try/catch. Synth-only
+      playback never waits on the network. Typechecks; runtime verified
+      in group 2/4.
+- [x] 1.4 `app/lib/strudelEditor.ts` — `createStrudelEditor({ root,
+      drawContext, initialCode, editable, onCodeChange, onError })` →
+      `{ view, error, evaluate, stop, setCode, setEditable, destroy }`.
+      Wraps `StrudelMirror` (`solo:false`, `beforeStart:
+      waitForSynchronizedStart`, `onEvalError`), appends the editable
+      compartment + a local-edit `updateListener` (guarded so `setCode`
+      from a WS relay doesn't echo). `primeAudio()` re-exported. Ambient
+      types for `StrudelMirror` / `@strudel/draw` added. Typechecks;
+      wired into JAM in group 2.
 
 ## 2. Features + JAM regression gate
 
