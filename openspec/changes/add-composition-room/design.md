@@ -13,19 +13,12 @@ See `proposal.md` — Why. Current state:
 - **Transport clock** (`app/lib/transportClock.ts`): `waitForSynchronizedStart`
   aligns a repl's start to `nextCycleBoundary(cycleStartTimestamp, bpm)`
   using the estimated DO-clock offset. Room-type-agnostic.
-- **Audio engine** (`app/lib/audioEngine.ts`): hand-wired — one
-  `webaudioRepl` per track, `evalScope` of core/mini/tonal,
-  `registerSynthSounds()`, a one-time `samples('github:tidalcycles/dirt-samples')`.
-  No `$:` support, no visuals, no mini-notation highlight, no widgets.
-- **Editor** (`app/components/TrackEditor.vue`): calls
-  `@strudel/codemirror`'s `initEditor()` (a sealed `EditorView`), then
-  `StateEffect.appendConfig.of(...)` for the editable compartment.
-  External code changes are applied by replacing the whole doc.
-- **`@strudel/codemirror` ships `StrudelMirror`** — the strudel.cc
-  editor class: `initEditor()` + `repl()` + a `Drawer` + mini-location
-  highlight wiring + slider/widget updates + a caller-supplied
-  `prebake()` + `drawContext`. `@strudel/draw` (`pianoroll`,
-  `getPunchcardPainter`, `getDrawContext`) is installed but unused.
+- **The shared engine + editor factory** comes from `add-strudel-parity`
+  (a prerequisite): one `StrudelMirror`-based (or parity-augmented)
+  editor at strudel.cc feature level — full sample map, `$:`, document
+  `setcps`, mini-notation highlight, `@strudel/draw` visuals — taking a
+  root element + a draw canvas + `beforeStart: waitForSynchronizedStart`.
+  This change reuses that factory and appends a `yCollab` extension.
 - **`@tiptap/extension-collaboration` (Yjs-based) is already a dep** from
   earlier exploration.
 - The Composition Room is a mock (`app/pages/app/composition-room.vue`).
@@ -40,8 +33,8 @@ See `proposal.md` — Why. Current state:
   trust model.
 - Room-synced playback reusing the transport clock; viewers hear it.
 - Ephemeral room chat.
-- **One** audio+editor engine at strudel.cc parity, used by both JAM
-  and the Composition Room — JAM stops being the narrowed one.
+- Reuse `add-strudel-parity`'s editor factory unchanged — the room adds
+  collaboration on top, it does not fork the engine.
 
 **Non-Goals:**
 
@@ -106,7 +99,7 @@ bounded to one snapshot.
 `{ t: 'y-update' | 'y-sync' | 'y-awareness', room, payload }` with
 `payload` base64 (Uint8Array ⇄ base64). If crossws is confirmed to pass
 `ArrayBuffer`/`Uint8Array` through untouched, send raw binary frames
-with a 1-byte type tag instead — decide in the group 3 spike.
+with a 1-byte type tag instead — decide in the group 1 spike.
 
 ### 3. A thin custom Yjs provider over the existing WebSocket
 
@@ -154,58 +147,29 @@ persisted state, exactly like a JAM room, and clients use the existing
 - Errors are local — each client's editor shows its own eval error; a
   document syntax error therefore shows for everyone.
 
-### 6. One engine at parity, built on `StrudelMirror` + a jaime `prebake()`
+### 6. The room's editor is `add-strudel-parity`'s factory + `yCollab`
 
-Reaching strudel.cc parity by extending the bespoke engine means
-re-implementing sample-map loading, `$:` handling, the `Drawer`,
-mini-location highlighting, and widget/slider updates — all of which
-`@strudel/codemirror`'s `StrudelMirror` already does. So:
+The Composition Room builds one editor from `add-strudel-parity`'s
+shared factory (a `StrudelMirror`-based or parity-augmented editor at
+strudel.cc feature level) and appends `yCollab(ytext, awareness,
+{ undoManager })` via `StateEffect.appendConfig` — the same mechanism
+`TrackEditor.vue` uses for the editable compartment. `drawContext` is a
+`<canvas>` the room mounts near the editor; `beforeStart` is
+`waitForSynchronizedStart`.
 
-- **Composition Room**: one `StrudelMirror` for the shared editor.
-  `yCollab(...)` is appended to its editor via
-  `StateEffect.appendConfig` (same mechanism as the editable
-  compartment). `drawContext` = a `<canvas>` jaime mounts near the
-  editor; `beforeStart` = `waitForSynchronizedStart`.
-- **JAM**: one `StrudelMirror` per track, `solo: false` (tracks
-  coexist), sharing one lazy `prebake()` promise and the singleton
-  `AudioContext`. Per-track `beforeStart` stays
-  `waitForSynchronizedStart`. This gets JAM highlight + widgets + `$:`
-  + visuals "for free" and keeps a single engine path.
-- **`prebake()`** is jaime's own function that registers the full
-  strudel.cc default sample map (`samples(url)` for Dirt-Samples — kept
-  — plus VCSL, tidal-drum-machines, EmuSP12, mridangam, etc., the set
-  strudel.cc's REPL bakes). Lazy-loaded exactly like `dirt-samples` is
-  today; a synth-only pattern still plays without waiting.
-- **Visuals**: `@strudel/draw` (already installed) provides the
-  painters; `StrudelMirror`'s `onDraw`/`Drawer` already drive them.
-  `scope`/`spectrum` come from `@strudel/webaudio`. jaime mounts the
-  draw canvas; nothing new to render with.
-
-**Main integration risk (group 1 spike)**: `StrudelMirror` assumes one
-instance per page in places — it dispatches a `start-repl` custom event
-for solo, and `initTheme()` forces `document.documentElement.classList.add('dark')`
-(`TrackEditor.vue` already works around the theme hijack). N instances
-for JAM must set `solo: false` and share the theme workaround. If N
-`StrudelMirror` proves too heavy or too entangled, fall back to keeping
-JAM's per-track `webaudioRepl` and bolting on the parity pieces
-individually (prebake, `@strudel/draw` painters, `@strudel/codemirror`
-highlight) — the specs don't change either way.
+No engine work happens here — that all lives in `add-strudel-parity`.
+If that change lands the bespoke-repl fallback rather than
+`StrudelMirror`, this design is unaffected: the factory contract (root
++ canvas + `beforeStart`, evaluate/stop/error surface) is the same and
+`yCollab` still appends to whatever `EditorView` it produces.
 
 ### 7. Docs
 
-`content/docs/strudel/in-jam.md` becomes "Strudel in jaime" — drop the
-"curated subset / leaves out" framing now that both tools run the full
-engine; keep an honest short list of the real remaining exceptions
-(Hydra, MIDI, room-loaded sample banks).
+Any Composition-Room mention in `content/docs/strudel/*` is added if
+useful; the "curated subset" rewrite belongs to `add-strudel-parity`.
 
 ## Risks / Trade-offs
 
-- **Engine upgrade regresses JAM playback** → do groups 1–2 first and
-  gate on the `pattern-playback` e2e ("every curated pattern plays")
-  and `multi-client` e2e before touching the room.
-- **N `StrudelMirror` in JAM** — solo events, theme hijack, bundle
-  weight → `solo: false`, the existing theme workaround, lazy-load;
-  fallback in decision 6.
 - **Yjs + `y-codemirror.next` + `y-protocols` bundle** (~40 KB gzip) →
   lazy-loaded with the editor route, acceptable.
 - **DO memory / CPU** — a `Y.Doc` per active composition room, applying
@@ -217,25 +181,22 @@ engine; keep an honest short list of the real remaining exceptions
 
 ## Migration Plan
 
-1. **Engine parity (groups 1–2):** add `@strudel/draw` use + `y`/
-   `y-codemirror.next`/`y-protocols` deps; write `prebake()`; move
-   `audioEngine.ts` / the editor to the `StrudelMirror`-based path for
-   JAM; get `pattern-playback` + `multi-client` + `nuxt typecheck`
-   green. Shippable on its own if desired.
-2. **Composition room (groups 3–6):** DO Yjs handler + snapshot; the
-   client provider; the real `/app/composition` room (shared
-   `StrudelMirror` + `yCollab`); roles + editable compartment; cursors
-   via awareness; synced eval/stop; room chat.
-3. **Cutover:** replace the mock route, delete
-   `composition-room.vue` mock, update `hub-mock-screens` +
-   `content/docs/strudel`.
-4. Rollback: the engine change is the risky part; it reverts as a unit.
-   The composition-room code is additive (new route + new DO branch) —
-   disabling the route leaves JAM untouched.
+1. **Prerequisite:** `add-strudel-parity` is applied and archived — the
+   shared editor factory exists and JAM is green on it.
+2. **DO + protocol (group 1):** `shared/compositionProtocol.ts`; the
+   Yjs branch in the room handler (`Y.applyUpdate` + relay, viewer-write
+   drop, debounced snapshot, `y-sync` handshake); pool-workers tests.
+3. **Client (groups 2–4):** the custom provider; the real
+   `/app/composition` room (factory + `yCollab`); roles + editable
+   compartment; cursors via awareness; synced eval/stop; room chat;
+   `e2e/composition.spec.ts`.
+4. **Cutover (group 5):** route the real room, delete the mock, retire
+   `hub-mock-screens`.
+5. Rollback: additive — a new route and a new DO branch. Disabling the
+   route leaves JAM and `add-strudel-parity` untouched.
 
 ## Open Questions
 
-- N `StrudelMirror` vs. bespoke-repl-plus-parity-pieces for JAM —
-  resolved by the group 1 spike; affects task detail, not the specs.
-- The exact sample-bank URL set to mirror from strudel.cc — a content
-  detail, settled while writing `prebake()`.
+- Raw-binary vs. base64 frames over crossws — confirmed in the group 1
+  spike (`server/routes/room.ts` sends JSON today); a base64 wrapper is
+  the safe default.

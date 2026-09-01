@@ -7,27 +7,16 @@ several people edit at the same time**, character by character, the way
 a pair-programming session or a Google Doc works. That's the
 Composition Room (Journey 3, stories 12–19).
 
-Two things fall out of doing this now:
+The chat panel becomes real here too. The roadmap always had a chat
+panel beside the editor whose *eventual* job is an AI assistant
+(Phase 7); this ships it as a working, ephemeral, human-to-human room
+chat now, and Phase 7 adds the AI as another participant in it.
 
-- **The audio engine gets lifted to full strudel.cc parity.** JAM
-  today runs a deliberately-curated subset (built-in synths + the
-  `dirt-samples` bank, one pattern per track). A Composition Room is a
-  whole shared piece of music, so it needs the real thing — the full
-  default sample map, `$:` layered patterns, `setcps`, the transpiler
-  sugar, and pattern-driven visuals. Rather than maintain two engine
-  configs, this lifts the **one** engine both tools share, so JAM stops
-  being narrowed too. (`@codemirror/collab` was the roadmap's noted
-  mechanism; this uses **Yjs / `y-codemirror.next`** instead — see
-  design.md.)
-
-- **The chat panel becomes real.** The roadmap always had a chat panel
-  beside the editor whose *eventual* job is an AI assistant (Phase 7).
-  This ships it as a working, ephemeral, human-to-human room chat now;
-  Phase 7 adds the AI as another participant in it.
-
-This is a large change. The engine-parity work (groups 1–2 of tasks) is
-independently useful and could be pulled into its own change if you'd
-rather ship it to JAM first — flag it at review.
+**Depends on `add-strudel-parity`** — the shared engine upgrade (full
+sample map, `$:`, `setcps`, event highlight, pattern-driven visuals)
+was split into its own change so the invasive engine work lands and
+bakes in JAM before the collaborative-editing work builds on it. This
+change assumes that engine exists.
 
 ## What Changes
 
@@ -39,7 +28,8 @@ rather ship it to JAM first — flag it at review.
   simultaneous edits merge (not last-write-wins), backed by a Yjs
   document whose authority + persistence live in the room's Durable
   Object. The document survives a Worker restart; presence and chat do
-  not.
+  not. (`@codemirror/collab` was the roadmap's noted mechanism; this
+  uses **Yjs / `y-codemirror.next`** instead — see design.md.)
 - **Live presence + cursors** — who's in the room, their role, and
   each editor's caret/selection rendered in their colour.
 - **Shared synced playback** — evaluating the document broadcasts to
@@ -48,20 +38,9 @@ rather ship it to JAM first — flag it at review.
   hears the same thing in time. Reuses JAM's clock.
 - **Working room chat** — an ephemeral text panel beside the editor,
   cleared on restart / when everyone leaves.
-- **Audio engine → strudel.cc parity** (shared by JAM and the
-  Composition Room):
-  - the full strudel.cc default sample map, not just `dirt-samples`;
-  - `$:` / labelled multi-pattern documents (`$drums: …`, `$bass: …`)
-    with per-label mute/solo;
-  - `setcps` / `setcpm` honoured from the document;
-  - pattern-driven visuals — `.punchcard()`, `.pianoroll()`,
-    `._scope()`, `._spectrum()`, `.markcss()` — plus the mini-notation
-    **event highlight** in the editor gutter/text;
-  - the `@strudel/transpiler` sugar strudel.cc assumes.
-- **Out of scope, noted:** Hydra / WebGL video synthesis (its own
-  system and language — a later change if wanted), MIDI/OSC I/O,
-  loading arbitrary user sample banks via `samples('github:…')` from
-  inside a room, and the AI in the chat panel (Phase 7).
+- **Out of scope, noted:** the AI in the chat panel (Phase 7); Hydra,
+  MIDI/OSC, and room sample-bank loading (never in scope, see
+  `add-strudel-parity`).
 
 ## Capabilities
 
@@ -76,37 +55,28 @@ rather ship it to JAM first — flag it at review.
 
 ### Modified Capabilities
 
-- `frontend-editor`: the Strudel engine and editor gain full
-  strudel.cc parity — an expanded default sample set, labelled
-  multi-pattern (`$:`) documents, `setcps` from the document,
-  transpiler sugar, mini-notation event highlighting, and
-  pattern-driven visuals. Existing behaviour (per-track editing, "every
-  curated pattern plays", invalid-pattern handling) is unchanged; the
-  "curated subset" framing is dropped.
 - `hub-mock-screens`: remove the "Composition Room Mock" requirement —
-  the room is real now.
+  the room is real now. This retires the capability (its last
+  requirement).
 
 ## Impact
 
-- **New**: `y`, `y-codemirror.next`, and a Yjs provider (client
-  transport) as dependencies; a Yjs document store + sync handler in
-  the room Durable Object keyed by composition-room id;
+- **New**: `yjs`, `y-codemirror.next`, `y-protocols` (added early with
+  `add-strudel-parity`, commit `d9a5510`) + a thin custom Yjs provider
+  (`app/lib/compositionProvider.ts`); a Yjs document store + sync
+  handler in the room Durable Object keyed by composition-room id;
   `app/pages/app/composition/…` (real room, replacing the mock);
-  `shared/` protocol types for the composition-room WebSocket messages
-  (Yjs update frames, presence, chat, eval); a shared cursor /
-  remote-selection extension for CodeMirror.
-- **Changed**: `app/lib/audioEngine.ts` (sample map, `$:` handling,
-  visuals, transpiler), `app/components/TrackEditor.vue` or a shared
-  editor factory (event highlight, visuals mount points),
-  `server/routes/room.ts` (or a sibling handler) for the new protocol,
-  `content/docs/strudel/*` (drop the "subset JAM supports" framing
-  now that parity is real), the Composition Room mock is deleted.
-- **Bundle size**: the full sample map is lazy-loaded like
-  `dirt-samples` is today; the visuals draw calls are Strudel's own,
-  no new render lib. Yjs + `y-codemirror.next` add ~30–40 KB gzipped
-  to the editor route.
-- **Risk surface**: the engine upgrade touches JAM's playback path —
-  the `pattern-playback` e2e ("every curated pattern plays") is the
-  regression guard and must stay green.
+  `shared/compositionProtocol.ts` (Yjs update frames, presence, chat,
+  eval).
+- **Changed**: `server/routes/room.ts` (or a sibling handler) for the
+  new protocol; the shared editor factory from `add-strudel-parity` is
+  reused for the room's editor with `yCollab` appended;
+  `content/docs/strudel/*` only if a Composition-Room reference is
+  worth adding; the Composition Room mock is deleted.
+- **Bundle size**: Yjs + `y-codemirror.next` + `y-protocols` add
+  ~40 KB gzipped to the editor route (lazy-loaded).
+- **Risk surface**: additive — a new route and a new DO branch.
+  Disabling the route leaves JAM untouched. The engine risk lives in
+  `add-strudel-parity`.
 - No D1 / schema change. No API-route change to `/api/patterns*` or
   auth.
