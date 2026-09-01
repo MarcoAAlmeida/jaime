@@ -40,15 +40,14 @@
 - [x] 2.2 Mini-notation event highlighting — works out of the box
       (`StrudelMirror` drives it via the Drawer); `e2e/strudel-parity`
       "highlights the playing token" passes.
-- [~] 2.3 Pattern-driven visuals — **deferred**. Verified against the
-      live site (browser MCP): `.punchcard()` evaluates fine and audio
-      plays, but the canvas paints nothing — `StrudelMirror` zeroes the
-      draw window because `pattern.getPainters()` returns 0 for a
-      `$:`-wrapped pattern, and a sibling canvas is the wrong model
-      anyway (strudel.cc draws a transparent backdrop *behind* the
-      editor). The `<canvas>` stays as a hidden sink so `@strudel/draw`
-      doesn't spawn its own full-viewport overlay; the spec requirement
-      and the docs claim are pulled. A later change does it properly.
+- [ ] 2.3 Pattern-driven visuals — a per-track **backdrop canvas**
+      (`absolute inset-0`, behind the transparent `.cm-editor`), sized
+      to the editor via a `ResizeObserver`, its context passed as
+      `drawContext`. `StrudelMirror` built with `drawTime: [-2, 2]` +
+      `bgFill: false`; the drawer's `setDrawTime` is patched to refuse
+      the `[0,0]` window it picks for a `$:`-wrapped pattern (whose
+      `getPainters()` returns 0). Cleared on stop. Verify with a real
+      pixel count on the canvas, not just visibility.
 - [x] 2.4 `$:` documents evaluate and every label plays
       (`e2e/strudel-parity` "$: document plays every label"). Spec
       revised: label mute is the Strudel-native `_` prefix; a

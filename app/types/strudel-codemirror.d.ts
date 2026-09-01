@@ -33,5 +33,9 @@ declare module '@strudel/codemirror' {
     clear: () => void
     draw: (haps: unknown, time: unknown, painters?: unknown[]) => void
     onDraw: (haps: unknown, time: unknown, painters?: unknown[]) => void
+    drawer?: {
+      setDrawTime: (dt: [number, number]) => void
+      invalidate: (scheduler?: unknown, t?: number) => void
+    }
   }
 }

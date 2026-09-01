@@ -14,25 +14,42 @@ const emit = defineEmits<{
   'requestStop': []
 }>()
 
+const rootEl = ref<HTMLDivElement>()
 const editorEl = ref<HTMLDivElement>()
-// A hidden canvas handed to @strudel/draw so a `.pianoroll()` in a
-// pattern draws here (invisibly) instead of @strudel/draw creating its
-// own full-viewport overlay. Pattern-driven visuals aren't finished
-// (add-strudel-parity) — this just contains the side effect for now.
+// Backdrop canvas — sits behind the (transparent) editor text so
+// @strudel/draw visuals render the way strudel.cc shows them.
 const canvasEl = ref<HTMLCanvasElement>()
 const colorMode = useColorMode()
 
 let editor: StrudelEditor | undefined
 let ready: Promise<StrudelEditor> | undefined
+let resizeObserver: ResizeObserver | undefined
 // While applying code that came from outside this editor (a WebSocket
 // relay), the factory's own guard suppresses the echo — this flag is a
 // second guard for the props.code watcher itself.
 let applyingExternal = false
 
+// Keep the canvas's pixel buffer matched to its displayed size —
+// @strudel/draw's painters lay out against canvas.width / height.
+function syncCanvasSize() {
+  const c = canvasEl.value
+  const host = rootEl.value
+  if (!c || !host) return
+  const dpr = window.devicePixelRatio || 1
+  const w = Math.max(1, Math.round(host.clientWidth * dpr))
+  const h = Math.max(1, Math.round(host.clientHeight * dpr))
+  if (c.width !== w) c.width = w
+  if (c.height !== h) c.height = h
+}
+
 onMounted(() => {
+  syncCanvasSize()
+  resizeObserver = new ResizeObserver(syncCanvasSize)
+  if (rootEl.value) resizeObserver.observe(rootEl.value)
+
   ready = createStrudelEditor({
     root: editorEl.value!,
-    drawContext: canvasEl.value?.getContext('2d') ?? null,
+    drawContext: canvasEl.value?.getContext('2d', { willReadFrequently: true }) ?? null,
     initialCode: props.code,
     editable: props.editable,
     onCodeChange: (code) => {
@@ -65,6 +82,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
   editor?.destroy()
 })
 
@@ -94,18 +112,28 @@ defineExpose({
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-col">
-    <div ref="editorEl" class="min-h-0 flex-1 overflow-hidden rounded-md" />
-    <canvas ref="canvasEl" width="600" height="120" class="hidden" aria-hidden="true" />
+  <div ref="rootEl" class="bg-elevated relative flex min-h-0 flex-col overflow-hidden rounded-md">
+    <canvas
+      ref="canvasEl"
+      class="pointer-events-none absolute inset-0 z-0 size-full"
+      aria-hidden="true"
+      data-testid="track-canvas"
+    />
+    <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
   </div>
 </template>
 
 <style scoped>
 :deep(.cm-editor) {
   height: 100%;
+  background: transparent;
 }
 
 :deep(.cm-scroller) {
   overflow: auto;
+}
+
+:deep(.cm-gutters) {
+  background: transparent;
 }
 </style>

@@ -1,8 +1,8 @@
 // One editor + repl at strudel.cc parity (add-strudel-parity). Wraps
 // @strudel/codemirror's StrudelMirror — which bundles the CodeMirror
 // editor, the webaudio repl, mini-notation highlighting, the @strudel/
-// draw painters, and slider/widget support — behind the small surface
-// jaime needs.
+// draw painters (punchcard / pianoroll / scope / spectrum), and
+// slider/widget support — behind the small surface jaime needs.
 //
 // One instance per JAM track (solo:false, so tracks coexist); the
 // Composition Room reuses the same factory and appends yCollab.
@@ -14,14 +14,16 @@ import { getAudioContext, initAudioOnFirstClick, webaudioOutput } from '@strudel
 import { prebake } from '~/lib/prebake'
 import { waitForSynchronizedStart } from '~/lib/transportClock'
 
+// Any pattern call that attaches a @strudel/draw painter.
+const VISUAL_CALL = /\b_?(punchcard|pianoroll|scope|spectrum|pitchwheel|spiral)\s*\(/
+
 export interface StrudelEditorOptions {
   root: HTMLElement
   /**
-   * 2D context handed to @strudel/draw so a visual call in a pattern
-   * (`.pianoroll()` etc.) draws there rather than making @strudel/draw
-   * spawn its own full-viewport canvas. Pattern-driven visuals are not
-   * finished — see add-strudel-parity; for now this just contains the
-   * side effect.
+   * 2D context of a backdrop canvas sitting behind the editor text.
+   * `@strudel/draw` renders visuals here (the way strudel.cc draws them
+   * behind a transparent editor). Omit and a visual call silently draws
+   * nowhere.
    */
   drawContext?: CanvasRenderingContext2D | null
   initialCode: string
@@ -38,6 +40,8 @@ export interface StrudelEditorOptions {
   onRequestPlay?: () => void
   /** Ctrl-. in the editor. Same idea as onRequestPlay. */
   onRequestStop?: () => void
+  /** The last-evaluated pattern requests a visualiser (or not). */
+  onVisualsChange?: (hasVisuals: boolean) => void
 }
 
 export interface StrudelEditor {
@@ -64,6 +68,21 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
 
   let error: string | null = null
   let applyingExternal = false
+  let hasVisuals = false
+
+  // The @strudel/draw painters repaint the whole backdrop every frame,
+  // so once a visual stops there's a stale full-canvas frame to wipe.
+  // Clear on the next couple of frames to beat any already-queued draw.
+  function clearBackdrop() {
+    const ctx = opts.drawContext
+    if (!ctx) return
+    let n = 0
+    const wipe = () => {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+      if (++n < 3) requestAnimationFrame(wipe)
+    }
+    wipe()
+  }
 
   const mirror = new StrudelMirror({
     root: opts.root,
@@ -72,6 +91,11 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
     solo: false,
     transpiler,
     drawContext: opts.drawContext ?? undefined,
+    // A real window so punchcard / pianoroll have cycles to draw. The
+    // caller (TrackEditor) owns the editor background; don't paint over
+    // the backdrop canvas.
+    drawTime: [-2, 2],
+    bgFill: false,
     defaultOutput: webaudioOutput,
     getTime: () => getAudioContext().currentTime,
     // Every scheduler start aligns to the room's shared cycle boundary
@@ -81,7 +105,27 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
       error = err.message
       opts.onError?.(err.message)
     },
+    afterEval: (result: { code?: string }) => {
+      const next = VISUAL_CALL.test(result?.code ?? '')
+      if (hasVisuals && !next) clearBackdrop()
+      hasVisuals = next
+      opts.onVisualsChange?.(hasVisuals)
+    },
   })
+
+  // StrudelMirror decides the drawer's time window from
+  // `pattern.getPainters()`, which returns 0 for a `$:`-wrapped pattern
+  // and zeroes the window — so punchcard/pianoroll draw nothing inside a
+  // multi-line document. When the code we just evaluated has a visual
+  // call, refuse the zero window.
+  const drawer = mirror.drawer
+  if (drawer?.setDrawTime) {
+    const nativeSetDrawTime = drawer.setDrawTime.bind(drawer)
+    drawer.setDrawTime = (dt: [number, number]) => {
+      if (hasVisuals && dt && dt[0] === 0 && dt[1] === 0) dt = [-2, 2]
+      return nativeSetDrawTime(dt)
+    }
+  }
 
   // StrudelMirror's baked keymap calls mirror.evaluate() / mirror.stop()
   // on Ctrl-Enter / Ctrl-. In JAM those must broadcast, not fire local
@@ -120,7 +164,10 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
       await nativeEvaluate()
     },
     stop() {
+      hasVisuals = false
+      opts.onVisualsChange?.(false)
       nativeStop()
+      clearBackdrop()
     },
     setCode(code: string) {
       if (code === mirror.editor.state.doc.toString()) return

@@ -31,10 +31,9 @@ work depends on it.
   capability's concern.)
 - **Mini-notation event highlighting** in the editor — the token(s)
   being triggered light up in time with the audio, cleared on stop.
-- **Pattern-driven visuals deferred** — the engine now loads
-  `@strudel/draw` so `.punchcard()` / `.pianoroll()` don't error, but
-  nothing renders yet; a later change adds the editor-backdrop canvas
-  strudel.cc uses.
+- **Pattern-driven visuals** — `.punchcard()`, `.pianoroll()`,
+  `._scope()`, `._spectrum()` — drawn from the running pattern onto a
+  canvas *behind* the editor text, the way strudel.cc renders them.
 - The **"Strudel in JAM"** docs page is rewritten as "Strudel in
   jaime": the "curated subset / leaves out" framing goes; an honest
   short list of the real remaining exceptions stays.
@@ -53,10 +52,10 @@ _None._
 - `frontend-editor`: the Strudel engine and editor gain full
   strudel.cc parity — an expanded default sample set, labelled
   multi-pattern (`$:`) documents, document `setcps`, mini-notation
-  event highlighting. (Pattern-driven visuals deferred.) Existing
-  behaviour (per-track editing, "every curated pattern plays",
-  invalid-pattern handling) is unchanged; the "curated subset" framing
-  is dropped.
+  event highlighting, and pattern-driven visuals drawn behind the
+  editor. Existing behaviour (per-track editing, "every curated pattern
+  plays", invalid-pattern handling) is unchanged; the "curated subset"
+  framing is dropped.
 
 ## Impact
 
@@ -66,7 +65,7 @@ _None._
 - **Changed**: `app/lib/audioEngine.ts` (rework onto
   `@strudel/codemirror`'s `StrudelMirror` — or a parity-augmented repl,
   see design.md), `app/components/TrackEditor.vue` / a shared editor
-  factory (event highlight, widgets), `content/docs/strudel/*`
+  factory (event highlight, visuals backdrop, widgets), `content/docs/strudel/*`
   (drop the subset framing; adjust the "four basic waveforms" /
   "dirt-samples only" lines).
 - **Risk surface**: this touches JAM's playback path — the

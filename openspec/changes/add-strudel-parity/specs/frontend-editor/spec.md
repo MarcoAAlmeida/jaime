@@ -73,8 +73,28 @@ which part of the code is currently sounding.
 - **WHEN** playback stops
 - **THEN** the editor clears the event highlight
 
-> Pattern-driven visuals (`punchcard` / `pianoroll` / `scope` /
-> `spectrum`) are **not** in this change. The engine loads
-> `@strudel/draw` and a visual call in a pattern no longer errors, but
-> nothing is rendered yet — a later change adds a proper editor-backdrop
-> canvas (the way strudel.cc does it).
+### Requirement: Pattern-Driven Visuals
+The system SHALL render the visual outputs a Strudel pattern can
+request — at least `punchcard`, `pianoroll`, `scope`, and `spectrum` —
+driven by the running pattern, drawn behind the editor text the way
+strudel.cc renders them, without requiring any external
+visual-synthesis system.
+
+#### Scenario: A pattern that requests a visualiser draws it
+- **WHEN** a playing pattern calls one of the supported visual
+  functions
+- **THEN** the corresponding visual is drawn behind the code and
+  animates with the audio
+
+#### Scenario: A visual call inside a `$:` document still draws
+- **WHEN** a labelled line of a multi-pattern document ends in a visual
+  call and the document is evaluated
+- **THEN** that visual is drawn, not suppressed
+
+#### Scenario: A pattern with no visual call draws nothing
+- **WHEN** a playing pattern requests no visualiser
+- **THEN** the editor backdrop stays clear and playback is unaffected
+
+#### Scenario: Stopping clears the visual
+- **WHEN** playback of a pattern with a visualiser stops
+- **THEN** the backdrop is cleared, not left frozen mid-animation

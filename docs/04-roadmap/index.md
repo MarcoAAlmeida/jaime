@@ -65,12 +65,11 @@ The rest turned out to be a real body of work, not "minor follow-ups":
 `add-strudel-parity` (2026-08-31) rebuilt the shared engine on
 `@strudel/codemirror`'s `StrudelMirror` + a jaime `prebake()` — the
 full strudel.cc default sample map, `$:` labelled documents, document
-`setcps`, and mini-notation event highlighting. JAM and the coming
-Composition Room now share **one** engine on `@strudel/codemirror`'s
-`StrudelMirror`. Remaining exclusions: pattern-driven visuals
-(`punchcard` / `pianoroll` — the engine loads `@strudel/draw` so they
-don't error, but rendering is a follow-up), Hydra, MIDI/OSC,
-tool-loaded sample banks.
+`setcps`, mini-notation event highlighting, and pattern-driven visuals
+(`punchcard` / `pianoroll` / `scope` / `spectrum`, drawn behind the
+editor like strudel.cc). JAM and the coming Composition Room now share
+**one** engine on `@strudel/codemirror`'s `StrudelMirror`. Remaining
+exclusions: Hydra, MIDI/OSC, tool-loaded sample banks.
 
 ## Phase 4 — Pattern (and Sample) library — ✅ shipped 2026-08-30
 
