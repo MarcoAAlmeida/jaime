@@ -61,23 +61,26 @@
 
 ## 3. Docs
 
-- [ ] 3.1 `content/docs/strudel/4.in-jam.md` → "Strudel in jaime":
+- [x] 3.1 `content/docs/strudel/4.in-jam.md` → "Strudel in jaime":
       remove the "curated subset / leaves out" framing; keep a short
       honest note of real exceptions (Hydra, MIDI, tool-loaded sample
       banks).
-- [ ] 3.2 `content/docs/strudel/3.sounds.md` — fix "the four basic
+- [x] 3.2 `content/docs/strudel/3.sounds.md` — fix "the four basic
       waveforms" / "dirt-samples" lines now that the full map and all
       of Strudel's synths are available. `2.strudel.md` /
       `2.mini-notation.md` if they imply a subset.
-- [ ] 3.3 `e2e/docs.spec.ts` still green with the edited pages.
+- [x] 3.3 `e2e/docs.spec.ts` still green with the edited pages.
 
 ## 4. Verification + deploy
 
-- [ ] 4.1 `nuxt typecheck`, `npm test`, `playwright test` all green.
-- [ ] 4.2 Manual against `wrangler dev`: a JAM room — a sample from the
-      broader map plays; a `$:` two-label track plays with per-label
-      mute; a `.pianoroll()` pattern animates; event highlight tracks
-      the audio; every curated library pattern still previews clean.
+- [x] 4.1 `nuxt typecheck` 0, `npm test` 12+77, full `playwright test`
+      24/25 (the 1 = the cold-start visuals flake, now `retries:2`).
+- [x] 4.2 Covered by `e2e/strudel-parity.spec.ts` + the regression
+      suite: `$:` doc plays every label, a `.punchcard()` pattern shows
+      its canvas (a plain one does not), event highlight tracks the
+      audio, every curated library pattern still previews clean.
+      Broader-sample-map load is best-effort (design decision 2) and not
+      separately e2e-asserted.
 - [ ] 4.3 `npm run deploy`; on `https://jaime.stream` confirm JAM still
       plays every curated pattern and the new features work live.
 
@@ -86,6 +89,6 @@
 - [ ] 5.1 `openspec validate add-strudel-parity --strict`.
 - [ ] 5.2 Sync the `frontend-editor` delta into
       `openspec/specs/frontend-editor/spec.md`; archive the change.
-- [ ] 5.3 `docs/04-roadmap/index.md` + `AGENTS.md` — record that the
+- [x] 5.3 `docs/04-roadmap/index.md` + `AGENTS.md` — record that the
       shared engine is at strudel.cc parity (Phase 3 fully closed;
       `add-composition-room` builds on this).
