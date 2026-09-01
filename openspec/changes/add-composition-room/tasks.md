@@ -1,8 +1,9 @@
 ## 1. Engine parity — foundation (also lands in JAM)
 
-- [ ] 1.1 Add deps: `@strudel/draw` (use it), `yjs`, `y-codemirror.next`,
-      `y-protocols`. Confirm they bundle under the Cloudflare/Nitro
-      client build.
+- [x] 1.1 Deps added: `yjs@^13.6.32`, `y-codemirror.next@^0.3.6`,
+      `y-protocols@^1.0.7`, `@strudel/draw@^1.2.6` (was transitive).
+      All resolve (`y-protocols/sync`, `y-protocols/awareness` too).
+      Bundle-under-Nitro check folded into the group-2 gate (2.6).
 - [ ] 1.2 Spike (design open question): stand up one `StrudelMirror`
       with `solo:false` + a jaime `prebake()` in a throwaway route,
       play a few patterns, check the theme hijack workaround and the
