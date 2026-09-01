@@ -40,14 +40,17 @@
 - [x] 2.2 Mini-notation event highlighting — works out of the box
       (`StrudelMirror` drives it via the Drawer); `e2e/strudel-parity`
       "highlights the playing token" passes.
-- [ ] 2.3 Pattern-driven visuals — a per-track **backdrop canvas**
+- [x] 2.3 Pattern-driven visuals — a per-track **backdrop canvas**
       (`absolute inset-0`, behind the transparent `.cm-editor`), sized
       to the editor via a `ResizeObserver`, its context passed as
       `drawContext`. `StrudelMirror` built with `drawTime: [-2, 2]` +
       `bgFill: false`; the drawer's `setDrawTime` is patched to refuse
       the `[0,0]` window it picks for a `$:`-wrapped pattern (whose
-      `getPainters()` returns 0). Cleared on stop. Verify with a real
-      pixel count on the canvas, not just visibility.
+      `getPainters()` returns 0). Backdrop cleared over 3 frames on stop
+      / when a new eval has no visual call. Verified with real
+      `getImageData` pixel counts (standalone, inside `$:`, cleared on
+      plain) and on the deployed site; reads well in dark mode (light
+      mode is low-contrast — a later polish pass).
 - [x] 2.4 `$:` documents evaluate and every label plays
       (`e2e/strudel-parity` "$: document plays every label"). Spec
       revised: label mute is the Strudel-native `_` prefix; a
@@ -84,15 +87,18 @@
       audio, every curated library pattern still previews clean.
       Broader-sample-map load is best-effort (design decision 2) and not
       separately e2e-asserted.
-- [x] 4.3 `npm run deploy` (version `7089fa18`). Live smoke: `/app/jam`
-      200, `/docs/strudel/in-jam` serves "Strudel in jaime" (no "curated
-      subset"), `/api/patterns` still 46. The engine is client-side JS —
-      identical bundle local/prod, proven by the local suite.
+- [x] 4.3 Deployed (final version `e120862a`). Verified on
+      `https://jaime.stream`: JAM plays the default tracks, `.punchcard()`
+      paints the backdrop (browser check + screenshot), docs updated.
+      Dark mode confirmed by the user.
 
 ## 5. Spec sync + archive
 
 - [x] 5.1 `openspec validate add-strudel-parity --strict` — valid.
-- [ ] 5.2 Sync the `frontend-editor` delta into
+- [x] 5.2 `frontend-editor` delta synced into the main spec (4 2192 8
+      requirements: + labelled `$:` docs, document `setcps`, event
+      highlight, pattern-driven visuals; Sample Playback broadened to
+      the full map). Change archived.
       `openspec/specs/frontend-editor/spec.md`; archive the change.
 - [x] 5.3 `docs/04-roadmap/index.md` + `AGENTS.md` — record that the
       shared engine is at strudel.cc parity (Phase 3 fully closed;
