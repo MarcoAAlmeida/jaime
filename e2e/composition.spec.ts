@@ -74,6 +74,43 @@ async function docText(page: Page): Promise<string> {
   })
 }
 
+test('the sidebar links to the real room; create + join-by-link land in the same room', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+  const pageA = await context.newPage()
+
+  // Sidebar entry for Composition Room is a live link (no "Soon" badge).
+  await pageA.goto('/app/jam')
+  const navLink = pageA.getByRole('navigation').getByRole('link', { name: 'Composition Room' })
+  await expect(navLink).toBeVisible()
+  await navLink.click()
+  await expect(pageA).toHaveURL(/\/app\/composition$/)
+
+  await pageA.getByTestId('create-room-button').click()
+  await expect(pageA).toHaveURL(/\/app\/composition\/[\w-]+$/)
+  const roomUrl = pageA.url()
+  await pageA.getByTestId('display-name-input').fill('Alice')
+  await pageA.getByTestId('submit-name-button').click()
+  await pageA.getByTestId('role-editor').click()
+  await expect(pageA.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
+
+  // B joins by pasting the link into the join box.
+  const pageB = await context.newPage()
+  await pageB.goto('/app/composition')
+  await pageB.getByTestId('join-code-input').fill(roomUrl)
+  await pageB.getByTestId('join-room-button').click()
+  await expect(pageB).toHaveURL(roomUrl)
+  await pageB.getByTestId('display-name-input').fill('Bob')
+  await pageB.getByTestId('submit-name-button').click()
+  await pageB.getByTestId('role-editor').click()
+  await expect(pageB.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
+
+  await setDoc(pageA, 'shared("here")')
+  await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('shared("here")')
+
+  await context.close()
+})
+
 test('concurrent inserts at different positions both survive and converge', async ({ browser }) => {
   test.setTimeout(180_000)
   const context = await browser.newContext()

@@ -15,8 +15,8 @@ export const TOOLS: Tool[] = [
     label: 'Composition Room',
     description: 'One shared editor, edited together — with presence, a viewer mode, and a chat panel.',
     icon: 'i-lucide-users',
-    to: '/app/composition-room',
-    ready: false
+    to: '/app/composition',
+    ready: true
   },
   {
     label: 'JAM',

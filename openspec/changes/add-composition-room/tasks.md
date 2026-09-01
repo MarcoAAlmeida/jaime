@@ -139,13 +139,20 @@
 
 ## 5. Cutover
 
-- [ ] 5.1 Route the real room at `/app/composition`; delete
-      `app/pages/app/composition-room.vue` and its mock testids from
-      `e2e/` where they only covered the mock.
-- [ ] 5.2 Sidebar / dashboard entry points to the Composition Room
-      (create + recent), consistent with JAM's.
-- [ ] 5.3 `openspec/specs/hub-mock-screens/` — the delta retires the
-      last requirement; the sync deletes the spec.
+- [x] 5.1 `TOOLS` now points to `/app/composition` with `ready: true`;
+      `app/pages/app/composition-room.vue` (the mock) deleted. No e2e
+      referenced the mock's testids, so nothing to strip there — a new
+      `composition.spec.ts` test drives the real create + join-by-link
+      flow instead.
+- [x] 5.2 The dashboard sidebar entry (driven by `TOOLS` in
+      `dashboard.vue`) links to `/app/composition` with no "Soon" badge
+      and highlights for `/app/composition/*`; the landing page shows it
+      as an available tool. `/app/composition` is create + join-by-link,
+      the same shape as JAM's entry point.
+- [x] 5.3 `openspec/changes/add-composition-room/specs/hub-mock-screens/
+      spec.md` already carries the `REMOVED` of "Composition Room Mock
+      Shows Its Core Elements" (its only requirement) — the archive sync
+      retires the spec.
 
 ## 6. Verification + deploy
 
