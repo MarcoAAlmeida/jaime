@@ -16,12 +16,11 @@ export const TRACK_LABELS: Record<TrackName, string> = {
   b: 'Track B',
 }
 
-// Starter patterns so a fresh room isn't silent/empty. Now that the
-// engine loads the full strudel.cc sample map + visuals (add-strudel-
-// parity), the defaults show it off: A is a `$:` two-line drum groove
-// with a punchcard visual, B a moving synth bass. Deliberately generic
-// — each track is an open deck, not a fixed role.
+// Starter patterns so a fresh room isn't silent/empty — and, played
+// together, an actual house loop: A a four-on-the-floor kit off the
+// sample bank, B an offbeat filtered synth bass in Cm. Deliberately
+// generic — each track is an open deck, not a fixed role.
 export const DEFAULT_CODE: Record<TrackName, string> = {
-  a: '$: s("bd(3,8), ~ cp, hh*8").punchcard()\n$: s("~ ~ ~ oh").gain(0.5)',
-  b: 'note("<c2 eb2 g2 f2>").s("sawtooth").lpf(sine.range(400, 1800).slow(4)).lpq(8).room(0.2)',
+  a: 's("bd*4, [~ cp]*2, hh*8").gain("1 .8 .9 .8")',
+  b: 'note("<c2 c2 eb2 g2>").struct("~ x").fast(4).s("sawtooth").lpf(sine.range(500, 1600).slow(8)).lpq(8).decay(.14).sustain(0).gain(.8)',
 }

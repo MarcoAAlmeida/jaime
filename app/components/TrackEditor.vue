@@ -15,8 +15,11 @@ const emit = defineEmits<{
 }>()
 
 const editorEl = ref<HTMLDivElement>()
+// A hidden canvas handed to @strudel/draw so a `.pianoroll()` in a
+// pattern draws here (invisibly) instead of @strudel/draw creating its
+// own full-viewport overlay. Pattern-driven visuals aren't finished
+// (add-strudel-parity) — this just contains the side effect for now.
 const canvasEl = ref<HTMLCanvasElement>()
-const hasVisuals = ref(false)
 const colorMode = useColorMode()
 
 let editor: StrudelEditor | undefined
@@ -38,7 +41,6 @@ onMounted(() => {
     onError: error => emit('update:error', error),
     onRequestPlay: () => emit('requestPlay'),
     onRequestStop: () => emit('requestStop'),
-    onVisualsChange: has => (hasVisuals.value = has),
   }).then((e) => {
     editor = e
     // props.code can change during the async import gap (e.g. a
@@ -94,15 +96,7 @@ defineExpose({
 <template>
   <div class="flex min-h-0 flex-col">
     <div ref="editorEl" class="min-h-0 flex-1 overflow-hidden rounded-md" />
-    <canvas
-      ref="canvasEl"
-      width="600"
-      height="120"
-      class="mt-2 h-[120px] w-full shrink-0 rounded-md"
-      :class="hasVisuals ? '' : 'hidden'"
-      style="pointer-events: none"
-      data-testid="track-canvas"
-    />
+    <canvas ref="canvasEl" width="600" height="120" class="hidden" aria-hidden="true" />
   </div>
 </template>
 

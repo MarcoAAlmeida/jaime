@@ -35,3 +35,6 @@ logs
 
 # Local dev secrets/vars
 .dev.vars
+
+# Playwright MCP browser snapshots
+.playwright-mcp/

@@ -16,7 +16,13 @@ import { waitForSynchronizedStart } from '~/lib/transportClock'
 
 export interface StrudelEditorOptions {
   root: HTMLElement
-  /** 2D context of a sibling canvas for pattern-driven visuals. */
+  /**
+   * 2D context handed to @strudel/draw so a visual call in a pattern
+   * (`.pianoroll()` etc.) draws there rather than making @strudel/draw
+   * spawn its own full-viewport canvas. Pattern-driven visuals are not
+   * finished — see add-strudel-parity; for now this just contains the
+   * side effect.
+   */
   drawContext?: CanvasRenderingContext2D | null
   initialCode: string
   editable: boolean
@@ -32,8 +38,6 @@ export interface StrudelEditorOptions {
   onRequestPlay?: () => void
   /** Ctrl-. in the editor. Same idea as onRequestPlay. */
   onRequestStop?: () => void
-  /** True when the last-evaluated pattern requests a visualiser. */
-  onVisualsChange?: (hasVisuals: boolean) => void
 }
 
 export interface StrudelEditor {
@@ -79,22 +83,6 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
     },
   })
 
-  // Surface whether the running pattern draws anything. The Drawer's
-  // frame callback receives the live painter list (queried over a real
-  // time window, unlike pattern.getPainters() which queries [0,0] and
-  // misses them); wrap StrudelMirror's onDraw to observe it, then
-  // delegate to the real draw.
-  let hasVisuals = false
-  const realOnDraw = mirror.onDraw.bind(mirror)
-  mirror.onDraw = (haps: unknown, time: unknown, painters?: unknown[]) => {
-    const has = Array.isArray(painters) && painters.length > 0
-    if (has !== hasVisuals) {
-      hasVisuals = has
-      opts.onVisualsChange?.(has)
-    }
-    realOnDraw(haps, time, painters)
-  }
-
   // StrudelMirror's baked keymap calls mirror.evaluate() / mirror.stop()
   // on Ctrl-Enter / Ctrl-. In JAM those must broadcast, not fire local
   // audio — so route the keyboard path through the caller's callbacks
@@ -132,10 +120,6 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
       await nativeEvaluate()
     },
     stop() {
-      if (hasVisuals) {
-        hasVisuals = false
-        opts.onVisualsChange?.(false)
-      }
       nativeStop()
     },
     setCode(code: string) {

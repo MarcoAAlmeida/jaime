@@ -24,12 +24,12 @@ deployed, and archived, and Phase 5 has started:
   `jaime-patterns` D1 database with migrations; **User** durable across
   sessions and devices via passwordless email auth, plus an
   auth-gated docs page (`add-pattern-library`, `add-user-auth`).
-- **Phase 3** — the shared Strudel engine is at strudel.cc parity: the
-  full default sample map, `$:` documents, `setcps`, event highlight,
-  pattern-driven visuals, built on `@strudel/codemirror`'s
-  `StrudelMirror` + `app/lib/prebake.ts` / `app/lib/strudelEditor.ts`
-  (`add-jam-pattern-loading`, `add-strudel-parity`). Excludes Hydra,
-  MIDI, tool-loaded sample banks.
+- **Phase 3** — the shared Strudel engine on `@strudel/codemirror`'s
+  `StrudelMirror` + `app/lib/prebake.ts` / `app/lib/strudelEditor.ts`:
+  the full default sample map, `$:` documents, `setcps`, mini-notation
+  event highlight (`add-jam-pattern-loading`, `add-strudel-parity`).
+  Deferred: pattern-driven visuals (`@strudel/draw` loads but doesn't
+  render yet). Excludes Hydra, MIDI, tool-loaded sample banks.
 - **Phase 4** — the curated, searchable Pattern library and "Load into
   JAM" (`add-pattern-library`, `add-jam-pattern-loading`).
 - **Phase 5, part one** — the curated catalog is a version-controlled
