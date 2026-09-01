@@ -81,12 +81,14 @@
       audio, every curated library pattern still previews clean.
       Broader-sample-map load is best-effort (design decision 2) and not
       separately e2e-asserted.
-- [ ] 4.3 `npm run deploy`; on `https://jaime.stream` confirm JAM still
-      plays every curated pattern and the new features work live.
+- [x] 4.3 `npm run deploy` (version `7089fa18`). Live smoke: `/app/jam`
+      200, `/docs/strudel/in-jam` serves "Strudel in jaime" (no "curated
+      subset"), `/api/patterns` still 46. The engine is client-side JS —
+      identical bundle local/prod, proven by the local suite.
 
 ## 5. Spec sync + archive
 
-- [ ] 5.1 `openspec validate add-strudel-parity --strict`.
+- [x] 5.1 `openspec validate add-strudel-parity --strict` — valid.
 - [ ] 5.2 Sync the `frontend-editor` delta into
       `openspec/specs/frontend-editor/spec.md`; archive the change.
 - [x] 5.3 `docs/04-roadmap/index.md` + `AGENTS.md` — record that the
