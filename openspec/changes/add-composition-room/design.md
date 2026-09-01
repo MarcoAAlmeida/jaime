@@ -95,11 +95,14 @@ snapshot. Applying server-side (rather than storing a raw update log)
 keeps a canonical merged state ready for late joiners and keeps storage
 bounded to one snapshot.
 
-**Yjs updates are binary; crossws today sends JSON.** Frame them as
-`{ t: 'y-update' | 'y-sync' | 'y-awareness', room, payload }` with
-`payload` base64 (Uint8Array ⇄ base64). If crossws is confirmed to pass
-`ArrayBuffer`/`Uint8Array` through untouched, send raw binary frames
-with a 1-byte type tag instead — decide in the group 1 spike.
+**Yjs updates are binary; crossws today sends JSON.** Decided (was the
+group 1 spike): every binary field is **base64 inside a JSON frame**
+(`{ t: 'y-update', u: '<b64>' }` etc., see
+`shared/compositionProtocol.ts`). Raw-binary passthrough over crossws +
+the Cloudflare hibernation serialization was not worth de-risking for a
+payload that is tens–hundreds of bytes per keystroke-batch; base64's
+~33% overhead is irrelevant here and this keeps one code path with
+JAM's JSON handler.
 
 ### 3. A thin custom Yjs provider over the existing WebSocket
 

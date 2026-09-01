@@ -5,27 +5,36 @@
 
 ## 1. Durable Object authority + protocol
 
-- [ ] 1.1 Spike: confirm crossws passes binary (`ArrayBuffer` /
-      `Uint8Array`) frames through `peer.send` / `message`, or fall
-      back to base64. Record the frame format in `design.md` decision 2.
-- [ ] 1.2 `shared/compositionProtocol.ts` — message types: `join`
-      (role), `y-sync`, `y-update`, `y-awareness`, `presence`, `eval`,
-      `stop`, `chat`.
-- [ ] 1.3 In `server/routes/room.ts` (or a sibling handler) add a
-      composition branch: `compositions: Map<roomId, { ydoc, bpm,
-      cycleStartTimestamp, presence, chat }>`. On `y-update`:
-      `Y.applyUpdate` + relay to the room topic. Drop `y-update` from a
-      connection currently marked `viewer`.
-- [ ] 1.4 Snapshot `Y.encodeStateAsUpdate(ydoc)` to
-      `getDurableStorage()` key `composition:<id>`, debounced ~2s; seed
-      a room's `ydoc` from the snapshot on first access; evict idle
-      rooms after a quiet period (JAM-room lifecycle shape).
-- [ ] 1.5 `y-sync` handshake (`y-protocols/sync`) on connect; late
-      joiner gets the current doc state + `{ playing, atCycle }`.
-- [ ] 1.6 Unit tests (pool-workers): two simulated clients' updates
-      converge server-side; a viewer's update is dropped; a snapshot
-      round-trips a document across a simulated restart; presence/chat
-      do not persist.
+- [x] 1.1 Frame format decided: base64 binary fields inside JSON frames
+      (`shared/compositionProtocol.ts`). Raw-binary-over-crossws +
+      hibernation not worth de-risking for tiny payloads; recorded in
+      `design.md` decision 2.
+- [x] 1.2 `shared/compositionProtocol.ts` — `join` / `y-update` /
+      `awareness` / `role` / `eval` / `stop` / `chat` / `clock_ping`
+      (client), `welcome` / `y-update` / `awareness` / `presence` /
+      `eval` / `stop` / `chat` / `tempo` / `clock_pong` (server), plus
+      `toBase64` / `fromBase64` helpers.
+- [x] 1.3 `server/routes/composition.ts` (sibling handler, route
+      `/composition`). `rooms: Map<id, { ydoc, bpm, cycleStartTimestamp,
+      playing, evalAtCycle, presence, chat, timers }>`. On `y-update`:
+      viewer → dropped; else `Y.applyUpdate` + relay to the
+      `composition:<id>` topic. `eval`/`stop`/`chat`/`role`/`clock_ping`
+      handled; `clock_pong` reuses JAM's clock-sync path.
+- [x] 1.4 `scheduleSnapshot` — `Y.encodeStateAsUpdate` to
+      `composition:<id>` (base64), debounced 2s after the last update.
+      `loadRoom` seeds `ydoc` from the snapshot (bad snapshot → fresh
+      doc). `scheduleEviction` drops the in-memory room 60s after it
+      empties; `getRoom` cancels a pending eviction on re-entry.
+- [x] 1.5 `join` → `welcome` carries
+      `Y.encodeStateAsUpdate(ydoc, clientSV)` (the sync step-2 diff) plus
+      `bpm` / `cycleStartTimestamp` / `playing` / `atCycle` / presence
+      roster / chat. Full `y-protocols/sync` two-way is on the client
+      provider (2.1); the server side only needs the one-way diff.
+- [x] 1.6 `test/composition.test.ts` (5): two editors' concurrent
+      edits converge; a viewer's `y-update` is dropped; the doc is
+      snapshotted to durable storage (read back + decoded) while chat is
+      not; chat/playback clear when the room empties; `eval`/`chat`
+      broadcast to the room. 81 vitest total.
 
 ## 2. Client editor + collaborative doc
 
