@@ -17,10 +17,14 @@ export const TRACK_LABELS: Record<TrackName, string> = {
 }
 
 // Starter patterns so a fresh room isn't silent/empty — and, played
-// together, an actual house loop: A a four-on-the-floor kit off the
-// sample bank with a punchcard visual, B an offbeat filtered synth bass
-// in Cm. Deliberately generic — each track is an open deck.
+// together, a loop with some movement: A a Linn-drum kick figure that
+// doubles up every other bar, B a syncopated GM-sawtooth lead line in
+// D minor with an alternating high-pass. Both lean on sounds prebake
+// fetches in the background (the tidal-drum-machines bank + the
+// gm_lead_2_sawtooth soundfont), so the very first Play in a brand-new
+// room can be a beat or two late while those land. Deliberately
+// generic — each track is an open deck.
 export const DEFAULT_CODE: Record<TrackName, string> = {
-  a: 's("bd*4, [~ cp]*2, hh*8").gain("1 .8 .9 .8").punchcard()',
-  b: 'note("<c2 c2 eb2 g2>").struct("~ x").fast(4).s("sawtooth").lpf(sine.range(500, 1600).slow(8)).lpq(8).decay(.14).sustain(0).gain(.8)',
+  a: 'sound("<[bd bd [bd*4] [bd*4]] [bd*4]>").bank("linn").decay(0.15)',
+  b: 'stack(\n  n("<[[2 ~] [2 ~] 2 3] [[3 ~] [3 ~] 3 3]>@4 [-1 ~] -1 -1 [0 ~] 0 0 [0 ~] 0 0 [0 ~] 0 0"),\n).sound("<gm_lead_2_sawtooth>").slow(2).scale("d4:minor").attack(.05).hpf("<1000 2000>*12").gain(".4")',
 }

@@ -42,13 +42,14 @@ test('the default drum track actually plays samples', async ({ page }) => {
   await page.locator('[data-testid="track-a"] [data-testid="play-stop-button"]').click()
   await expect(page.locator('[data-testid="track-a"] [data-testid="playing-badge"]')).toBeVisible()
 
-  // Let the cycle boundary + sample fetch settle, then measure.
-  await page.waitForTimeout(6000)
+  // The default now uses bank("linn") — the tidal-drum-machines bank
+  // loads in the background, so give it longer before measuring.
+  await page.waitForTimeout(10_000)
   const { buf } = await audioNodeStarts(page, 4000)
-  expect(buf, "AudioBufferSourceNode.start() calls in 4s").toBeGreaterThan(8)
+  expect(buf, 'AudioBufferSourceNode.start() calls in 4s').toBeGreaterThan(8)
 })
 
-test('the default bass track actually plays a synth', async ({ page }) => {
+test('the default lead track actually plays a soundfont', async ({ page }) => {
   test.setTimeout(90_000)
   await roomWithTrackA(page)
   await page.locator('[data-testid="track-b"] [data-testid="claim-button"]').click()
@@ -56,7 +57,9 @@ test('the default bass track actually plays a synth', async ({ page }) => {
   await page.locator('[data-testid="track-b"] [data-testid="play-stop-button"]').click()
   await expect(page.locator('[data-testid="track-b"] [data-testid="playing-badge"]')).toBeVisible()
 
-  await page.waitForTimeout(6000)
-  const { osc } = await audioNodeStarts(page, 4000)
-  expect(osc, "OscillatorNode.start() calls in 4s").toBeGreaterThan(4)
+  // gm_lead_2_sawtooth is a General MIDI soundfont — its font data is
+  // fetched from felixroos.github.io on first note, so wait it out.
+  await page.waitForTimeout(10_000)
+  const { buf } = await audioNodeStarts(page, 4000)
+  expect(buf, 'AudioBufferSourceNode.start() calls in 4s').toBeGreaterThan(4)
 })

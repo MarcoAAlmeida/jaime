@@ -24,6 +24,11 @@ async function setCode(page: Page, code: string): Promise<void> {
   await page.keyboard.press('ControlOrMeta+a')
   await page.keyboard.press('Delete')
   await page.keyboard.insertText(code)
+  // Make sure the edit has actually landed in the editor before anyone
+  // hits play — otherwise a fast play click can evaluate the track's
+  // starter pattern instead of this code.
+  await expect(page.locator('[data-testid="track-a"] .cm-content'))
+    .toContainText(code.split('\n')[0]!.trim())
 }
 
 async function play(page: Page): Promise<void> {

@@ -43,7 +43,7 @@ test('loading a pattern into JAM seeds track A; a later joiner is not seeded', a
   await expect(pageB.locator('[data-testid="track-a"] .cm-content')).toContainText('bd*4')
   // ...but his own track B is untouched — still the default starter.
   const editorB = pageB.locator('[data-testid="track-b"] .cm-content')
-  await expect(editorB).toContainText('c2')
+  await expect(editorB).toContainText('gm_lead_2_sawtooth')
   await expect(editorB).not.toContainText('bd*4')
 
   await ctxA.close()

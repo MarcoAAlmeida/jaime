@@ -60,9 +60,10 @@ onMounted(() => {
     onRequestStop: () => emit('requestStop'),
   }).then((e) => {
     editor = e
-    // props.code can change during the async import gap (e.g. a
-    // "Load into JAM" seed lands before the editor is ready) — the
-    // watcher below bails while `editor` is undefined, so re-sync here.
+    // props.code / props.editable can change during the async import gap
+    // (a "Load into JAM" seed, or claiming the track before its editor
+    // finished loading) — the watchers below bail while `editor` is
+    // undefined, so re-sync both here.
     if (props.code !== e.view.state.doc.toString()) {
       applyingExternal = true
       try {
@@ -72,6 +73,7 @@ onMounted(() => {
         applyingExternal = false
       }
     }
+    e.setEditable(props.editable)
     // @strudel/codemirror's initTheme() forces the dark class on <html>
     // to match its editor theme — re-assert the app's real colour mode
     // on the root so the surrounding shell isn't dragged dark.
