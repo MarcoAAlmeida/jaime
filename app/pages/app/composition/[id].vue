@@ -56,8 +56,18 @@ const participants = ref<CompositionPresenceEntry[]>([])
 const chat = ref<ChatMessage[]>([])
 const chatInput = ref('')
 const chatLog = ref<HTMLDivElement>()
+// The people/chat panel docks beside the editor on wide screens and
+// overlays on demand on narrow ones (a landscape phone shouldn't lose a
+// third of its width to it). Default open only when there's room.
+const panelOpen = ref(true)
+const unread = ref(0)
 
 const isEditor = computed(() => role.value === 'editor')
+
+function togglePanel() {
+  panelOpen.value = !panelOpen.value
+  if (panelOpen.value) unread.value = 0
+}
 
 function sendChat() {
   const text = chatInput.value.trim()
@@ -123,6 +133,18 @@ async function start() {
   // user clicks something (the unlock banner covers that wait).
   void primeAudio().then(() => { audioUnlocked.value = true })
 
+  // scope() / spectrum() / pitchwheel() / spiral() bypass StrudelMirror's
+  // drawContext and call @strudel/draw's getDrawContext(), which
+  // otherwise prepends a position:fixed, full-viewport
+  // `<canvas id="test-canvas">` to <body> — visuals then bleed across the
+  // whole page (under the panel, above the editor). Claim that id for our
+  // clipped backdrop canvas so they draw inside the editor pane like
+  // punchcard does; drop any stale fixed one a previous room left behind.
+  document.querySelectorAll('canvas#test-canvas').forEach((c) => {
+    if (c !== canvasEl.value) c.remove()
+  })
+  if (canvasEl.value) canvasEl.value.id = 'test-canvas'
+
   syncCanvasSize()
   resizeObserver = new ResizeObserver(syncCanvasSize)
   if (rootEl.value) resizeObserver.observe(rootEl.value)
@@ -141,6 +163,7 @@ async function start() {
   provider.on('presence', (roster) => { participants.value = roster })
   provider.on('chat', (msg) => {
     chat.value.push(msg)
+    if (!panelOpen.value) unread.value++
     void nextTick(() => { if (chatLog.value) chatLog.value.scrollTop = chatLog.value.scrollHeight })
   })
   // Every client — editors and viewers — evaluates its own copy of the
@@ -200,11 +223,15 @@ async function start() {
   }
 }
 
-onMounted(() => { void start() })
+onMounted(() => {
+  panelOpen.value = window.matchMedia?.('(min-width: 768px)')?.matches ?? true
+  void start()
+})
 watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
+  canvasEl.value?.removeAttribute('id')
   editor?.destroy()
   undoManager?.destroy()
   provider?.destroy()
@@ -290,6 +317,16 @@ onBeforeUnmount(() => {
         >
           {{ linkCopied ? 'Copied!' : 'Copy invite link' }}
         </UButton>
+        <UButton
+          size="xs"
+          :color="unread ? 'primary' : 'neutral'"
+          :variant="panelOpen ? 'solid' : 'outline'"
+          icon="i-lucide-users"
+          data-testid="toggle-panel-button"
+          @click="togglePanel"
+        >
+          {{ participants.length }}<span v-if="unread"> · {{ unread }} new</span>
+        </UButton>
       </div>
     </div>
 
@@ -309,7 +346,7 @@ onBeforeUnmount(() => {
       :close="{ onClick: () => (error = null) }"
     />
 
-    <div class="flex min-h-0 flex-1 gap-3">
+    <div class="relative flex min-h-0 flex-1 gap-3">
       <div
         ref="rootEl"
         class="bg-elevated relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md"
@@ -324,7 +361,21 @@ onBeforeUnmount(() => {
         <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
       </div>
 
-      <aside class="hidden w-56 shrink-0 flex-col gap-3 sm:flex">
+      <!-- Docked beside the editor on md+; a right-hand overlay sheet below that. -->
+      <aside
+        v-show="panelOpen"
+        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-3 rounded-l-md border-l p-3 shadow-xl md:static md:w-56 md:max-w-none md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+        data-testid="side-panel"
+      >
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-x"
+          class="self-end md:hidden"
+          data-testid="close-panel-button"
+          @click="panelOpen = false"
+        />
         <div class="flex flex-col gap-1.5" data-testid="participants">
           <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
             In the room ({{ participants.length }})

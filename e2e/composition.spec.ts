@@ -454,3 +454,55 @@ test('three separate clients — two editors + a viewer — edit, cursor, hear, 
   await ctxB.close()
   await ctxV.close()
 })
+
+test('scope() visuals stay inside the editor pane, not a full-viewport canvas', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+  const pageA = await joinRoom(context, `scope-${Date.now()}`, 'Alice', 'editor')
+
+  await setDoc(pageA, 's("sawtooth").gain(.7).scope()')
+  await pageA.locator('[data-testid="play-stop-button"]').click()
+
+  // The oscilloscope actually renders...
+  await expect.poll(() => paintedPixels(pageA), { timeout: 45_000 }).toBeGreaterThan(200)
+
+  // ...onto the editor's own backdrop canvas — not a stray
+  // position:fixed <canvas> bolted onto <body> by @strudel/draw.
+  const strayCanvas = await pageA.evaluate(() => {
+    const pane = document.querySelector('[data-testid="composition-editor"]')
+    return [...document.querySelectorAll('canvas')].some((c) => {
+      if (pane?.contains(c)) return false
+      return getComputedStyle(c).position === 'fixed'
+    })
+  })
+  expect(strayCanvas).toBe(false)
+
+  await context.close()
+})
+
+test('the people/chat panel toggles as an overlay on a narrow screen', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext({ viewport: { width: 740, height: 400 } }) // landscape phone
+
+  const pageA = await joinRoom(context, `panel-${Date.now()}`, 'Alice', 'editor')
+
+  const panel = pageA.locator('[data-testid="side-panel"]')
+  const editor = pageA.locator('[data-testid="composition-editor"]')
+
+  // Closed by default at this width — the editor has the full width.
+  await expect(panel).toBeHidden()
+  const fullWidth = (await editor.boundingBox())!.width
+
+  // Toggle opens it as an overlay: the panel is visible but the editor
+  // pane keeps its width (it's not squeezed into a column).
+  await pageA.locator('[data-testid="toggle-panel-button"]').click()
+  await expect(panel).toBeVisible()
+  await expect(pageA.locator('[data-testid="chat-input"]')).toBeVisible()
+  expect(Math.abs((await editor.boundingBox())!.width - fullWidth)).toBeLessThan(2)
+
+  // The in-panel close button hides it again.
+  await pageA.locator('[data-testid="close-panel-button"]').click()
+  await expect(panel).toBeHidden()
+
+  await context.close()
+})
