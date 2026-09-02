@@ -6,6 +6,7 @@ import { StateEffect } from '@codemirror/state'
 import { yCollab } from 'y-codemirror.next'
 import * as Y from 'yjs'
 import { nextCycleBoundary } from '#shared/transportMath'
+import { COMPOSITION_PRESETS } from '~/lib/compositionPresets'
 import { createCompositionProvider } from '~/lib/compositionProvider'
 import { createStrudelEditor, primeAudio } from '~/lib/strudelEditor'
 import { waitForCycleBoundary } from '~/lib/transportClock'
@@ -75,6 +76,27 @@ function sendChat() {
   provider?.sendChat(text)
   chatInput.value = ''
 }
+
+// One-click starter compositions — replace the whole shared document
+// (an editor-only, collaborative action: every participant's editor
+// follows via Yjs). The `Y.Doc` transaction makes it one undo step.
+function loadPreset(code: string) {
+  if (!provider || !isEditor.value) return
+  const text = provider.text
+  provider.ydoc.transact(() => {
+    text.delete(0, text.length)
+    text.insert(0, code)
+  })
+}
+
+const presetItems = computed(() => [
+  COMPOSITION_PRESETS.map(p => ({
+    label: p.title,
+    description: p.credit,
+    icon: 'i-lucide-music',
+    onSelect: () => loadPreset(p.code),
+  })),
+])
 
 let provider: CompositionProvider | undefined
 let editor: StrudelEditor | undefined
@@ -239,7 +261,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="!displayName" class="flex h-screen flex-col items-center justify-center gap-4 p-4">
+  <div v-if="!displayName" class="flex h-dvh flex-col items-center justify-center gap-4 p-4">
     <h1 class="text-xl font-semibold">
       What should we call you?
     </h1>
@@ -258,7 +280,7 @@ onBeforeUnmount(() => {
     </div>
   </div>
 
-  <div v-else-if="!role" class="flex h-screen flex-col items-center justify-center gap-4 p-4">
+  <div v-else-if="!role" class="flex h-dvh flex-col items-center justify-center gap-4 p-4">
     <h1 class="text-xl font-semibold">
       Join as…
     </h1>
@@ -276,7 +298,7 @@ onBeforeUnmount(() => {
     </div>
   </div>
 
-  <div v-else class="flex h-screen flex-col gap-3 p-4">
+  <div v-else class="flex h-dvh flex-col gap-3 p-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <NuxtLink to="/" aria-label="jaime home">
         <Logo size="sm" />
@@ -299,6 +321,18 @@ onBeforeUnmount(() => {
         >
           {{ playing ? 'Stop' : 'Play' }}
         </UButton>
+        <UDropdownMenu v-if="isEditor" :items="presetItems" :content="{ align: 'end' }">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-library-big"
+            trailing-icon="i-lucide-chevron-down"
+            data-testid="load-preset-button"
+          >
+            Load a starter
+          </UButton>
+        </UDropdownMenu>
         <UButton
           size="xs"
           color="neutral"

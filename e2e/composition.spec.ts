@@ -506,3 +506,34 @@ test('the people/chat panel toggles as an overlay on a narrow screen', async ({ 
 
   await context.close()
 })
+
+test('an editor loads a starter composition into the shared document for everyone', async ({ browser }) => {
+  test.setTimeout(180_000)
+  const context = await browser.newContext()
+
+  const pageA = await joinRoom(context, `preset-${Date.now()}`, 'Alice', 'editor')
+  const roomId = new URL(pageA.url()).pathname.split('/').pop()!
+  const pageV = await joinRoom(context, roomId, 'Val', 'viewer')
+
+  // A viewer has no way to load one.
+  await expect(pageV.locator('[data-testid="load-preset-button"]')).toHaveCount(0)
+
+  await pageA.locator('[data-testid="load-preset-button"]').click()
+  await pageA.getByRole('menuitem', { name: /Birds of a Feather/ }).click()
+
+  // The whole script replaces the shared doc, on the loader's editor and
+  // on the viewer's.
+  for (const page of [pageA, pageV]) {
+    await expect.poll(() => docText(page), { timeout: 15_000 }).toContain('BIRDS OF A FEATHER')
+    await expect.poll(() => docText(page)).toContain('$:arrange(')
+  }
+
+  // And it evaluates without a pattern error — its gm_* voices, the
+  // LinnDrum / TR808 banks, and s_polymeter / arrange all resolve.
+  await pageA.locator(CONTENT).click()
+  await pageA.keyboard.press('ControlOrMeta+Enter')
+  await pageA.waitForTimeout(6000)
+  await expect(pageA.locator('[data-testid="composition-editor"]').getByText('Pattern error')).toHaveCount(0)
+
+  await context.close()
+})
