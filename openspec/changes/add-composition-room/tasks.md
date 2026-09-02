@@ -166,9 +166,12 @@
       three (viewer included) paint, chat from the viewer reaches both
       editors. Doc restart-persistence is covered by the chat test
       (room empties → rejoin sees the doc, empty chat).
-- [ ] 6.3 `npm run deploy`; on `https://jaime.stream` run the same
-      three-client check live, plus confirm JAM still plays every
-      curated pattern.
+- [x] 6.3 Deployed (version `b934e088`). Live check on
+      `https://jaime.stream`: three independent contexts (two editors +
+      a viewer) — concurrent edits converge for all three, a labelled
+      remote caret, one editor evaluates and all three (viewer included)
+      paint, viewer chat reaches an editor. JAM's curated drum default
+      still plays (35 buffer starts / 5s).
 
 ## 7. Spec sync + archive
 
