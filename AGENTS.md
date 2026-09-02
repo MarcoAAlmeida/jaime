@@ -13,9 +13,10 @@ implemented and shipped.
 ## Status
 
 jaime is a hub for small music-oriented tools, with JAM as the first
-tool. The site is live at `https://jaime.stream`. Phases 1–4 of the
-tools-hub roadmap (`docs/04-roadmap/index.md`) are implemented,
-deployed, and archived, and Phase 5 has started:
+tool. The site is live at `https://jaime.stream`. The tools-hub roadmap
+(Phases 1–6) is complete, deployed, and archived at
+`docs/04-roadmap/01-archive/20260902.md`; the next roadmap is **TBD**
+(`docs/04-roadmap/index.md`). What shipped:
 
 - **Phase 1** — visual identity, the three layout shells, JAM under
   `/app/jam`, the `jaime.stream` domain, click-through mocks
@@ -42,11 +43,11 @@ deployed, and archived, and Phase 5 has started:
   and an ephemeral chat panel (`add-composition-room`). Retired the
   `hub-mock-screens` mock.
 
-Phase 7 (an AI in the Composition Room's chat panel) is next. Phase 5
-carryover still open: docs full-text search, Hydra/TidalCycles pages,
-more curated patterns — no OpenSpec change for those yet — plus a
-first-class **Sample** entity and a light-mode punchcard contrast
-polish.
+Phase 7 (an AI in the Composition Room's chat panel) is deferred into
+the next roadmap. Carried over and unscheduled: docs full-text search,
+Hydra/TidalCycles pages, more curated patterns, a first-class **Sample**
+entity, "Load into the Composition Room", and a light-mode punchcard
+contrast polish.
 
 ## Source of truth
 
@@ -54,7 +55,8 @@ polish.
 - `openspec/changes/` — in-flight and archived work, one OpenSpec change
   per roadmap phase
 - `docs/04-roadmap/index.md` — phase-level index for the current
-  roadmap, evolves as work lands; the prior roadmap is archived at
+  roadmap, evolves as work lands (currently **TBD** — the next roadmap
+  is unwritten); past roadmaps are archived under
   `docs/04-roadmap/01-archive/`
 - `docs/05-domain-model/index.md` — entities, value objects,
   aggregates, and bounded contexts for the current roadmap
