@@ -176,8 +176,10 @@
 ## 7. Spec sync + archive
 
 - [x] 7.1 `openspec validate add-composition-room --strict` — valid.
-- [ ] 7.2 Sync deltas: new `composition-room` spec; `hub-mock-screens`
-      retired. Archive the change.
+- [x] 7.2 Synced: `openspec/specs/composition-room/spec.md` created from
+      the delta (10 requirements); `openspec/specs/hub-mock-screens/`
+      retired (its only requirement REMOVED → spec deleted). Change
+      archived to `openspec/changes/archive/2026-09-01-add-composition-room/`.
 - [x] 7.3 `docs/04-roadmap/index.md` — Phase 6 marked shipped
       2026-09-01 (Yjs/`y-codemirror.next`, not the `@codemirror/collab`
       the draft assumed), Phase 7 marked "next". `AGENTS.md` — Phase 6
