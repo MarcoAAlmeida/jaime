@@ -67,7 +67,7 @@ The rest turned out to be a real body of work, not "minor follow-ups":
 full strudel.cc default sample map, `$:` labelled documents, document
 `setcps`, mini-notation event highlighting, and pattern-driven visuals
 (`punchcard` / `pianoroll` / `scope` / `spectrum`, drawn behind the
-editor like strudel.cc). JAM and the coming Composition Room now share
+editor like strudel.cc). JAM and the Composition Room (Phase 6) share
 **one** engine on `@strudel/codemirror`'s `StrudelMirror`. Remaining
 exclusions: Hydra, MIDI/OSC, tool-loaded sample banks.
 
@@ -79,8 +79,9 @@ in-row Preview, and a "Load into JAM" that opens a fresh room with the
 pattern seeded into track A.
 ([`archive/2026-08-30-add-pattern-library/`](../../openspec/changes/archive/2026-08-30-add-pattern-library/),
 [`archive/2026-08-30-add-jam-pattern-loading/`](../../openspec/changes/archive/2026-08-30-add-jam-pattern-loading/)).
-Still open: a first-class **Sample** entity/library, and invoking
-patterns into the Composition Room (Phase 6-gated).
+Still open: a first-class **Sample** entity/library, and a "Load into
+the Composition Room" alongside "Load into JAM" (the Composition Room
+shipped in Phase 6).
 
 ## Phase 5 — Curated content authoring (Claude-assisted) — 🚧 part one shipped 2026-08-31
 
@@ -102,35 +103,43 @@ Still open in Phase 5: full-text docs **search** (Journey 6 story 47),
 **Hydra / TidalCycles** docs (stories 49, 57 — "once written"), and
 more curated patterns.
 
-## Phase 6 — Composition Room
+## Phase 6 — Composition Room — ✅ shipped 2026-09-01
 
 A new Room type: a single shared CodeMirror editor that one or more
 Users edit **collaboratively** (not JAM's independent-tracks model).
+Live at `/app/composition` (`add-composition-room`).
 
-- Shareable link, presence indicator, and a **viewer** join mode — you
-  can join a Composition Room without editing rights.
-- Editors get a chat panel. Its purpose is asking an AI for coding
-  help — but the AI itself is explicitly Phase 7, not this phase; the
-  panel/UI can exist before the AI behind it does.
-- Technical mechanism researched and confirmed: `@codemirror/collab`
-  (v6.1.1, same generation as the `@codemirror/state`/`@codemirror/view`
-  jaime already uses, maintained by CodeMirror's own author) handles
-  client-side operational-transform reconciliation, but requires a
-  **central authority** server-side (`getDocument`/`pushUpdates`/
-  `pullUpdates`, an ordered changeset history + version per document) —
-  a Durable Object is a natural fit for that role. This is a genuinely
-  different sync mechanism from JAM's single-owner, whole-string-replace
-  `pattern_update` — a second protocol living alongside the first, not a
-  modification of it. Live cursor/selection visibility for other editors
-  is a natural companion, not required for the core capability.
+- Shareable link, a live presence roster, and a **viewer** join mode —
+  you can join a Composition Room without editing rights, and switch
+  editor/viewer in-room with no rejoin.
+- Live remote cursors/selections per editor (name + hashed colour).
+- Room-synced playback: any editor evaluates, and every client —
+  editors and viewers — plays the shared document locked to the room's
+  transport clock; a late joiner catches the running playback.
+- An ephemeral chat panel beside the editor (not persisted). Its
+  eventual purpose is asking an AI for coding help — the AI itself is
+  Phase 7 — but the panel is live now for people to talk in.
+- **Sync mechanism, as built:** Yjs (CRDT) + `y-codemirror.next`, not
+  the `@codemirror/collab` (OT + central authority) route the earlier
+  draft assumed. The single Durable Object is the authority — it applies
+  and relays opaque binary Yjs updates (base64 in JSON frames, alongside
+  JAM's protocol) and snapshots `Y.encodeStateAsUpdate` to storage,
+  debounced. `y-codemirror.next` gives remote cursors and collaborative
+  undo out of the box; the server never orders anything. See
+  `openspec/specs/composition-room` and the archived change's `design.md`
+  for the full rationale.
 
-## Phase 7 — AI chat / agents
+## Phase 7 — AI chat / agents — ⬅ next
 
 Deliberately last — built once everything above is mature, not before.
-Wires an AI assistant into Composition Room's chat panel, aware of:
-Strudel syntax, the curated Pattern library (Phase 4), and the current
-script being edited. Any other agent-shaped feature also belongs here,
-not earlier.
+The Composition Room's chat panel (shipped in Phase 6) is where it
+lands: an AI assistant aware of Strudel syntax, the curated Pattern
+library (Phase 4), and the current script being edited. Any other
+agent-shaped feature also belongs here, not earlier.
+
+Phase 5 carryover also still open: full-text docs **search**, **Hydra /
+TidalCycles** docs, more curated patterns; plus a first-class **Sample**
+entity and a light-mode punchcard contrast polish.
 
 ---
 

@@ -175,11 +175,16 @@
 
 ## 7. Spec sync + archive
 
-- [ ] 7.1 `openspec validate add-composition-room --strict`.
+- [x] 7.1 `openspec validate add-composition-room --strict` — valid.
 - [ ] 7.2 Sync deltas: new `composition-room` spec; `hub-mock-screens`
       retired. Archive the change.
-- [ ] 7.3 `docs/04-roadmap/index.md` + `AGENTS.md` — Phase 6 shipped;
-      note Phase 7 (AI in the chat panel) is next.
-- [ ] 7.4 `docs/05-domain-model/index.md` — reconcile decision 2 / 10
-      with the Yjs choice (the `Document` entity is a Y.Doc snapshot,
-      not a `@codemirror/collab` changeset log).
+- [x] 7.3 `docs/04-roadmap/index.md` — Phase 6 marked shipped
+      2026-09-01 (Yjs/`y-codemirror.next`, not the `@codemirror/collab`
+      the draft assumed), Phase 7 marked "next". `AGENTS.md` — Phase 6
+      bullet added, Phase 7 + carryover noted.
+- [x] 7.4 `docs/05-domain-model/index.md` — decision 2 rewritten as
+      Resolved: the `Document` entity is a Yjs `Y.Doc` persisted as one
+      `Y.encodeStateAsUpdate` snapshot, no changeset log / version.
+      Decision 10's aggregate sketch, persistence notes, roles backstop,
+      and cursor/awareness line updated to match; the "Open" section
+      notes the Realtime aggregates are now shipped.

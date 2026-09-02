@@ -54,15 +54,20 @@ Room (aggregate root)
 1. **JAM Room and Composition Room are two distinct aggregate types**,
    not one `Room` aggregate with a mode flag. Their internal shape
    diverges too much — per-track ownership (JAM) vs. a single shared
-   collaboratively-edited document with changeset history (Composition)
-   — to share a consistency boundary. They share a `Room` *concept* at
-   the bounded-context level (creatable, joinable, has presence, has a
+   collaboratively-edited document (Composition) — to share a
+   consistency boundary. They share a `Room` *concept* at the
+   bounded-context level (creatable, joinable, has presence, has a
    shareable link), not a single struct.
-2. **Composition Room's script likely needs its own nested entity**
-   (a `Document`/`Script`-shaped entity holding the `@codemirror/collab`
-   changeset history + version) inside the Composition Room aggregate,
-   separate from presence and chat. Leaning yes, not fully pinned down
-   — revisit when Composition Room's design gets detailed (Phase 6).
+2. **Resolved (`add-composition-room`, Phase 6): the Composition Room's
+   script is a nested `Document` entity that is a Yjs `Y.Doc`**, not a
+   `@codemirror/collab` changeset log. The roadmap draft assumed OT + a
+   central authority; the build went CRDT (Yjs + `y-codemirror.next`).
+   The single Durable Object is the authority — it applies and relays
+   opaque binary Yjs updates and persists **one snapshot**
+   (`Y.encodeStateAsUpdate`), debounced, under `composition:<id>`. There
+   is no ordered changeset history or per-document version number to
+   model; the persisted form is the snapshot. Presence and chat stay
+   outside the Document, and are never persisted.
 3. **Resolved (revised in `add-user-auth`): the sign-in token is its
    own entity, `AuthToken`, not a value object on User.** Passwordless
    sign-in is *repeatable* — the same person requests a fresh link every
@@ -208,40 +213,51 @@ Room (aggregate root)
      name) and doesn't need to change.
 
 10. **Composition Room aggregate** (Realtime/Session context,
-    Durable-Object-backed):
+    Durable-Object-backed). Built in `add-composition-room` (Phase 6):
 
     ```
     CompositionRoom (aggregate root)
     ├─ id: RoomId
     ├─ document: Document                    (nested entity — decision 2)
-    │   Document: { version: number, changes: ChangeSet[] }   // @codemirror/collab central-authority shape
+    │   Document: a Yjs Y.Doc (one Y.Text, "strudel")
+    │   persisted form: Y.encodeStateAsUpdate(doc) — a single snapshot
+    ├─ bpm / cycleStartTimestamp            (transport clock, persisted)
+    ├─ playing / evalAtCycle                (ephemeral, cleared when empty)
     ├─ presence: PresenceEntry[]             (ephemeral, not persisted)
     │   PresenceEntry: { clientId, name, role: 'editor' | 'viewer' }
     └─ chat: ChatMessage[]                   (ephemeral, not persisted)
     ```
 
     - **Persisted** (Phase 5-style DO storage, survives restart):
-      `document` only — the shared script and its changeset history.
-    - **Not persisted**: `presence` and `chat` — both ephemeral,
-      rebuilt/cleared on restart, consistent with JAM's presence.
+      the `document` snapshot plus the transport clock (`bpm`,
+      `cycleStartTimestamp`). The DO applies each incoming Yjs update
+      and writes one debounced `Y.encodeStateAsUpdate` snapshot under
+      `composition:<id>` — no changeset log, no version counter.
+    - **Not persisted**: `presence`, `chat`, and the `playing` flag —
+      all ephemeral, rebuilt/cleared on restart or when the room
+      empties, consistent with JAM's presence.
     - **Role assignment is self-declared, one link.** A single
-      shareable link; the joiner picks editor or viewer themselves —
-      no server-enforced access control, no separate edit-link vs.
-      view-link. Mirrors JAM's existing trust model (anyone connected
-      can claim any open track, no auth) rather than introducing a new
-      access-control mechanism for just this Room type.
+      shareable link; the joiner picks editor or viewer themselves,
+      and can switch in-room — no server-enforced access control, no
+      separate edit-link vs. view-link. The server drops document
+      updates from a self-declared viewer as a light backstop. Mirrors
+      JAM's existing trust model rather than introducing new
+      access control.
     - **Chat has no persistence**, even once Phase 7 wires in AI —
       it's a live, in-session thing; history is gone after a restart or
       once everyone leaves. Revisit only if Phase 7 specifically needs
       cross-session chat context.
-    - Live cursor/selection, if built, rides on `PresenceEntry` as an
-      ephemeral field — never persisted, consistent with the
-      "companion, not core" framing in decision 2.
+    - Live cursor/selection rides on Yjs **awareness** (a
+      `y-protocols/awareness` state per client carrying
+      `{ user: { name, colour } }` + the caret), never persisted —
+      consistent with keeping it out of the persisted Document.
 
 ## Open
 
 Catalog and Realtime contexts are both fully modeled now (decisions
 1–10). The Catalog context's `Pattern` (`add-pattern-library`) and
-`User` / `AuthToken` / `Session` (`add-user-auth`) are shipped;
-`Sample` and the Realtime aggregates are modeled but not yet built out
-to this spec. Nothing outstanding in the model itself.
+`User` / `AuthToken` / `Session` (`add-user-auth`) are shipped; the
+Realtime context's JAM Room and now the Composition Room aggregate
+(`add-composition-room` — `Document` as a Yjs snapshot, per decisions
+2/10) are shipped. `Sample` is modeled but not yet built. Nothing
+outstanding in the model itself.

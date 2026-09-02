@@ -36,11 +36,17 @@ deployed, and archived, and Phase 5 has started:
   manifest (`content/patterns/*.md`, reconciled into D1 on deploy),
   grown to 46 patterns; real Strudel docs at `/docs/strudel`
   (`add-content-authoring`).
+- **Phase 6** — the Composition Room at `/app/composition`: one shared
+  Yjs document (`y-codemirror.next` + the single Durable Object as
+  authority), editor/viewer roles, live cursors, room-synced playback,
+  and an ephemeral chat panel (`add-composition-room`). Retired the
+  `hub-mock-screens` mock.
 
-Phase 5 continues with docs search and Hydra/TidalCycles pages — no
-OpenSpec change for those yet. Other open carryover: a first-class
-**Sample** entity, and invoking patterns into the Composition Room
-(Phase 6).
+Phase 7 (an AI in the Composition Room's chat panel) is next. Phase 5
+carryover still open: docs full-text search, Hydra/TidalCycles pages,
+more curated patterns — no OpenSpec change for those yet — plus a
+first-class **Sample** entity and a light-mode punchcard contrast
+polish.
 
 ## Source of truth
 
