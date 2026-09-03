@@ -12,6 +12,8 @@ export interface CompositionPresenceEntry {
   clientId: string
   name: string
   role: Role
+  /** Profile picture, server-resolved from the session. Absent for anonymous. */
+  avatarUrl?: string
 }
 
 export interface ChatMessage {
@@ -19,6 +21,8 @@ export interface ChatMessage {
   name: string
   text: string
   at: number
+  /** Profile picture of the sender, server-resolved. Absent for anonymous. */
+  avatarUrl?: string
 }
 
 // --- client -> server ---

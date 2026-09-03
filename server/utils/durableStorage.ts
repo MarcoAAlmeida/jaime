@@ -13,3 +13,17 @@ export function getDurableStorage(): DurableObjectStorage {
   }
   return storage
 }
+
+// The DO's bindings — captured by the same cloudflare:durable:init hook.
+// WebSocket handlers run inside the DO and get a `peer`, not an h3
+// event, so `usePatternsDb(event)` isn't available to them; this is how
+// they reach `PATTERNS_DB` (e.g. to authenticate a connection).
+let durableEnv: Env | undefined
+
+export function setDurableEnv(value: Env) {
+  durableEnv = value
+}
+
+export function getDurableEnv(): Env | undefined {
+  return durableEnv
+}

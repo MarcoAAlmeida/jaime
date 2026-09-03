@@ -4,6 +4,8 @@ import type { TrackName } from '#shared/tracks'
 import { defineWebSocketHandler } from 'h3'
 import { nextCycleBoundary } from '#shared/transportMath'
 import { DEFAULT_CODE, isTrackName, TRACK_NAMES } from '#shared/tracks'
+import { getSessionUser } from '../auth/sessions'
+import { getDurableEnv } from '../utils/durableStorage'
 
 const DEFAULT_BPM = 120
 
@@ -11,10 +13,11 @@ interface RoomState {
   tracks: Record<TrackName, TrackState>
   bpm: number
   cycleStartTimestamp: number
-  // clientId -> display name. Never persisted — same reasoning as
-  // presence itself already documented below: rebuilt from whichever
-  // connections are actually live, never restored stale.
-  presence: Map<string, string>
+  // clientId -> { name, avatarUrl? }. Never persisted — same reasoning
+  // as presence itself already documented below: rebuilt from whichever
+  // connections are actually live, never restored stale. avatarUrl is
+  // server-resolved from the connection's session (never client-sent).
+  presence: Map<string, { name: string, avatarUrl?: string }>
 }
 
 // What actually gets written to durable storage — deliberately excludes
@@ -114,6 +117,23 @@ function getNameFromPeer(peer: Peer): string | null {
   return name || null
 }
 
+// The signed-in account's avatar for this connection, resolved from the
+// `jaime_session` cookie on the WS upgrade. Server-resolved on purpose —
+// an image URL rendered in every other participant's roster is not
+// something to trust from the client. The display name still comes from
+// the client's editable screen name (the `name` query param).
+async function avatarFromPeer(peer: Peer): Promise<string | undefined> {
+  const sid = peer.request?.headers?.get?.('cookie')?.match(/(?:^|;\s*)jaime_session=([^;]+)/)?.[1]
+  const db = getDurableEnv()?.PATTERNS_DB
+  if (!sid || !db) return undefined
+  try {
+    return (await getSessionUser(db, decodeURIComponent(sid)))?.avatarUrl
+  }
+  catch {
+    return undefined
+  }
+}
+
 function roomTopic(roomId: string): string {
   return `room:${roomId}`
 }
@@ -170,8 +190,15 @@ export default defineWebSocketHandler({
     const room = await getRoom(roomId)
 
     peer.subscribe(roomTopic(roomId))
-    room.presence.set(peer.id, name)
-    broadcastToOthers(peer, roomId, { type: 'presence_update', clientId: peer.id, joined: true, name })
+    const avatarUrl = await avatarFromPeer(peer)
+    room.presence.set(peer.id, { name, avatarUrl })
+    broadcastToOthers(peer, roomId, {
+      type: 'presence_update',
+      clientId: peer.id,
+      joined: true,
+      name,
+      ...(avatarUrl ? { avatarUrl } : {}),
+    })
 
     send(peer, {
       type: 'room_state',
@@ -179,7 +206,11 @@ export default defineWebSocketHandler({
       tracks: { ...room.tracks },
       bpm: room.bpm,
       cycleStartTimestamp: room.cycleStartTimestamp,
-      presence: [...room.presence].map(([clientId, name]) => ({ clientId, name })),
+      presence: [...room.presence].map(([clientId, p]) => ({
+        clientId,
+        name: p.name,
+        ...(p.avatarUrl ? { avatarUrl: p.avatarUrl } : {}),
+      })),
     })
   },
   async message(peer, message) {

@@ -30,6 +30,7 @@ interface SessionUserRow {
   display_name: string
   status: string
   created_at: string
+  avatar_url: string | null
 }
 
 /**
@@ -41,7 +42,7 @@ export async function getSessionUser(db: D1Database, sessionId: string): Promise
   const nowIso = new Date(nowMs).toISOString()
   const row = await db
     .prepare(
-      `SELECT s.last_seen_at, u.id, u.email, u.display_name, u.status, u.created_at
+      `SELECT s.last_seen_at, u.id, u.email, u.display_name, u.status, u.created_at, u.avatar_url
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.id = ? AND s.expires_at > ?`,
     )
@@ -62,6 +63,7 @@ export async function getSessionUser(db: D1Database, sessionId: string): Promise
     displayName: row.display_name,
     status: row.status === 'confirmed' ? 'confirmed' : 'pending',
     createdAt: row.created_at,
+    ...(row.avatar_url ? { avatarUrl: row.avatar_url } : {}),
   }
 }
 

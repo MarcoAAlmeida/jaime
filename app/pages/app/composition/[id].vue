@@ -470,10 +470,11 @@ onBeforeUnmount(() => {
           <div
             v-for="p in participants"
             :key="p.clientId"
-            class="flex items-center justify-between gap-2 text-sm"
+            class="flex items-center gap-2 text-sm"
             data-testid="participant"
           >
-            <span class="truncate">{{ p.name }}</span>
+            <UserAvatar :name="p.name" :src="p.avatarUrl" />
+            <span class="min-w-0 flex-1 truncate">{{ p.name }}</span>
             <UBadge
               size="xs"
               :color="p.role === 'editor' ? 'primary' : 'neutral'"
@@ -496,9 +497,12 @@ onBeforeUnmount(() => {
             <p v-if="!chat.length" class="text-muted text-xs">
               Messages are visible to everyone here and aren't saved.
             </p>
-            <p v-for="(m, i) in chat" :key="i" data-testid="chat-message">
-              <span class="text-muted">{{ m.name }}:</span> {{ m.text }}
-            </p>
+            <div v-for="(m, i) in chat" :key="i" class="flex items-start gap-1.5" data-testid="chat-message-row">
+              <UserAvatar :name="m.name" :src="m.avatarUrl" class="mt-0.5 shrink-0" />
+              <p class="min-w-0" data-testid="chat-message">
+                <span class="text-muted">{{ m.name }}:</span> {{ m.text }}
+              </p>
+            </div>
           </div>
           <div class="flex gap-1.5">
             <UInput

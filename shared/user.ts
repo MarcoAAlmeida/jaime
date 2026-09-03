@@ -6,4 +6,6 @@ export interface User {
   displayName: string
   status: 'pending' | 'confirmed'
   createdAt: string
+  /** Profile picture (GitHub avatar). Absent for accounts with none. */
+  avatarUrl?: string
 }

@@ -259,7 +259,16 @@ function submitTempo() {
         <UBadge color="neutral" variant="subtle" data-testid="presence-count">
           {{ presence.length }} here
         </UBadge>
-        <span data-testid="presence-names" class="hidden max-w-[45vw] truncate text-xs text-neutral-500 sm:inline">
+        <span class="hidden items-center -space-x-1.5 sm:flex" data-testid="presence-avatars">
+          <UserAvatar
+            v-for="entry in presence"
+            :key="entry.clientId"
+            :name="entry.name"
+            :src="entry.avatarUrl"
+            class="ring-default ring-2"
+          />
+        </span>
+        <span data-testid="presence-names" class="hidden max-w-[35vw] truncate text-xs text-neutral-500 md:inline">
           {{ presence.map(entry => entry.name).join(', ') }}
         </span>
         <UButton

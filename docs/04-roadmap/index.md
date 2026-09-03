@@ -10,11 +10,18 @@ there's no sideways scroll to read code, and the invite button uses the
 native share sheet where the device has one. New `responsive-rooms`
 spec. No auth, no AI.
 
-**Phase 0 — `add-oauth-signin`:** GitHub sign-in + a minimal profile
-(screen name, avatar). A standalone win — a better front door for JAM
-and the Pattern library too — and it replaces the assumption every
-`@jah` phase rests on: that gating chat behind an emailed magic link is
-acceptable friction. It isn't, for "let me try the AI in this room".
+**Phase 0 — `add-oauth-signin`** — 🔜 code complete 2026-09-03, awaiting
+the operator deploy (register the GitHub OAuth App, `wrangler secret
+put GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`, `npm run deploy` to
+apply `0005`): GitHub sign-in + a minimal profile (screen name,
+avatar). A standalone win — a better front door for JAM and the Pattern
+library too — and it replaces the assumption every `@jah` phase rests
+on: that gating chat behind an emailed magic link is acceptable
+friction. It isn't, for "let me try the AI in this room". **The
+authenticated-WS-connection plumbing phase 1 lists as its own first
+task already landed here** — both `/composition` and `/room` read
+`jaime_session` off the upgrade headers and resolve the account
+server-side (used so far only for the avatar).
 
 ## The model, in one place
 
@@ -192,9 +199,10 @@ case-insensitive.
 **Access + credit control** — the non-negotiable slice of
 [`99-bucket-list/ai-credits-and-access-control.md`](./99-bucket-list/ai-credits-and-access-control.md):
 - The WS connection is authenticated (read `jaime_session` from the
-  upgrade headers → `getSessionUser`). This is new plumbing — the
-  Composition Room is anonymous today — and phase 3 needs it too, so
-  it's its own first task.
+  upgrade headers → `getSessionUser`). **Landed in phase 0** — both
+  `/composition` and `/room` already do this; phase 1 extends the
+  resolved account from `{ avatarUrl }` to the full `{ userId, name,
+  avatarUrl }` the gating checks need.
 - `@jah` replies only to a user with `ai_access` (a `users` flag,
   default off; an env list of GitHub logins auto-grants). A user
   without it gets "AI is invite-only right now", not silence.

@@ -136,7 +136,7 @@ export default defineNuxtPlugin(() => {
       case 'presence_update':
         if (data.joined) {
           if (!presence.value.some(entry => entry.clientId === data.clientId)) {
-            presence.value = [...presence.value, { clientId: data.clientId, name: data.name }]
+            presence.value = [...presence.value, { clientId: data.clientId, name: data.name, avatarUrl: data.avatarUrl }]
           }
         }
         else {

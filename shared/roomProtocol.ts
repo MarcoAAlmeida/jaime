@@ -18,6 +18,8 @@ export type ClientMessage =
 export interface PresenceEntry {
   clientId: string
   name: string
+  /** Profile picture, server-resolved from the session. Absent for anonymous. */
+  avatarUrl?: string
 }
 
 export type ServerMessage =
@@ -27,5 +29,5 @@ export type ServerMessage =
   | { type: 'playback_update', track: TrackName, isPlaying: boolean }
   | { type: 'clock_pong', clientSendTime: number, serverTime: number }
   | { type: 'tempo_update', bpm: number, cycleStartTimestamp: number }
-  | { type: 'presence_update', clientId: string, joined: true, name: string }
+  | { type: 'presence_update', clientId: string, joined: true, name: string, avatarUrl?: string }
   | { type: 'presence_update', clientId: string, joined: false }

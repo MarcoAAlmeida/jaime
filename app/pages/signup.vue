@@ -27,6 +27,13 @@ onMounted(() => {
 })
 
 const linkError = computed(() => route.query.error === 'link')
+const oauthError = computed(() => route.query.error === 'oauth')
+
+// GitHub does the whole handshake on this one route; `next` rides along.
+const githubHref = computed(() => {
+  const next = safeNext(route.query.next)
+  return `/auth/github${next ? `?next=${encodeURIComponent(next)}` : ''}`
+})
 
 async function submit() {
   if (!email.value.includes('@')) return
@@ -64,6 +71,30 @@ async function submit() {
         title="That link is no longer valid"
         description="Sign-in links work once and expire after 15 minutes. Request a new one below."
       />
+      <UAlert
+        v-if="oauthError"
+        class="mb-4"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-triangle-alert"
+        title="GitHub sign-in didn't complete"
+        description="Nothing was created. Try again, or use the email link below."
+      />
+
+      <template v-if="state !== 'sent'">
+        <UButton
+          :to="githubHref"
+          external
+          block
+          size="lg"
+          color="neutral"
+          icon="i-lucide-github"
+          label="Continue with GitHub"
+          data-testid="signin-github"
+          class="mb-3"
+        />
+        <USeparator label="or" class="my-3" />
+      </template>
 
       <form
         v-if="state !== 'sent'"

@@ -7,6 +7,7 @@ import {
   confirmUser,
   deleteUser,
   findOrCreateUser,
+  findOrCreateUserFromGitHub,
   getUser,
   normalizeEmail,
   updateDisplayName,
@@ -67,6 +68,54 @@ describe('users', () => {
     const tokens = await db.prepare('SELECT count(*) n FROM auth_tokens WHERE user_id = ?').bind(u.id).first<{ n: number }>()
     expect(sessions?.n).toBe(0)
     expect(tokens?.n).toBe(0)
+  })
+})
+
+describe('github sign-in', () => {
+  const gh = (over: Partial<Parameters<typeof findOrCreateUserFromGitHub>[1]> = {}) => ({
+    githubId: 999,
+    login: 'octo',
+    name: 'Octo Cat',
+    email: 'octo@example.com',
+    avatarUrl: 'https://avatars.githubusercontent.com/u/999?v=4',
+    ...over,
+  })
+
+  it('a new person gets a confirmed account with a seeded name and avatar', async () => {
+    const u = await findOrCreateUserFromGitHub(db, gh())
+    expect(u.status).toBe('confirmed')
+    expect(u.displayName).toBe('Octo Cat')
+    expect(u.avatarUrl).toBe('https://avatars.githubusercontent.com/u/999?v=4')
+  })
+
+  it('signs into an existing magic-link account for the same email, and confirms it', async () => {
+    const pending = await findOrCreateUser(db, 'octo@example.com')
+    expect(pending.status).toBe('pending')
+    const u = await findOrCreateUserFromGitHub(db, gh())
+    expect(u.id).toBe(pending.id)
+    expect(u.status).toBe('confirmed')
+    const count = await db.prepare('SELECT count(*) n FROM users').first<{ n: number }>()
+    expect(count?.n).toBe(1)
+  })
+
+  it('a returning github user with a changed login is the same account, login refreshed', async () => {
+    const first = await findOrCreateUserFromGitHub(db, gh({ login: 'octo' }))
+    const again = await findOrCreateUserFromGitHub(db, gh({ login: 'octo-renamed', email: 'different@example.com' }))
+    expect(again.id).toBe(first.id)
+    const row = await db.prepare('SELECT github_login FROM users WHERE id = ?').bind(first.id).first<{ github_login: string }>()
+    expect(row?.github_login).toBe('octo-renamed')
+  })
+
+  it('does not overwrite an edited display name on the next sign-in', async () => {
+    const u = await findOrCreateUserFromGitHub(db, gh())
+    await updateDisplayName(db, u.id, 'My Chosen Name')
+    const again = await findOrCreateUserFromGitHub(db, gh({ name: 'Octo Cat' }))
+    expect(again.displayName).toBe('My Chosen Name')
+  })
+
+  it('drops an avatar URL that is not on the GitHub avatar CDN', async () => {
+    const u = await findOrCreateUserFromGitHub(db, gh({ avatarUrl: 'https://evil.example.com/track.gif' }))
+    expect(u.avatarUrl).toBeUndefined()
   })
 })
 

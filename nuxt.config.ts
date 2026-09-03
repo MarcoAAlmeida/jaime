@@ -16,18 +16,21 @@ export default defineNuxtConfig({
         { rel: 'manifest', href: '/manifest.json' }
       ],
       meta: [
-        { name: 'msapplication-TileColor', content: '#f5f0e5' },
+        { name: 'msapplication-TileColor', content: '#f1f4ec' },
         { name: 'msapplication-TileImage', content: '/ms-icon-144x144.png' },
-        // Match the app surface (beige light / graphite dark) so a PWA
-        // launch doesn't flash white.
-        { name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#f5f0e5' },
+        // Match the app surface (green-tinted paper light / graphite dark)
+        // so a PWA launch doesn't flash white.
+        { name: 'theme-color', media: '(prefers-color-scheme: light)', content: '#f1f4ec' },
         { name: 'theme-color', media: '(prefers-color-scheme: dark)', content: '#191817' }
       ]
     }
   },
   // @nuxt/content MUST come after @nuxt/ui or the prose components the
-  // docs shell renders won't be registered.
-  modules: ['@nuxt/ui', '@nuxt/content'],
+  // docs shell renders won't be registered. nuxt-auth-utils is used
+  // only for its `defineOAuth*EventHandler` helpers (the GitHub OAuth
+  // handshake); its own session/`useUserSession` is not used — jaime's
+  // D1 `sessions` table + `jaime_session` cookie stay authoritative.
+  modules: ['@nuxt/ui', '@nuxt/content', 'nuxt-auth-utils'],
   css: ['~/assets/css/main.css'],
   // Bundle only the icons we actually use, into both the client JS and
   // the server render, so nothing is fetched from the Iconify API at

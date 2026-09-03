@@ -4,7 +4,8 @@
 // reach the storage handle given how this preset is wired, and why this
 // capture must stay synchronous (no await before it).
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook('cloudflare:durable:init', (_durable, { state }) => {
+  nitroApp.hooks.hook('cloudflare:durable:init', (_durable, { state, env }) => {
     setDurableStorage(state.storage)
+    setDurableEnv(env as Env)
   })
 })

@@ -56,12 +56,16 @@ findOrCreateUserFromGitHub(db, { githubId: gh.id, login: gh.login,
   wants to own the schema and session; fighting it to keep jaime's
   `sessions` table is more work than it saves.
 
-Routes: `server/routes/auth/github.get.ts` (the handler) and
-`server/routes/auth/github/callback.get.ts` — matching the existing
-`server/routes/auth/callback.get.ts` placement. Config
-(`GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`) passed explicitly from
+Route: **one** — `server/routes/auth/github.get.ts`.
+`defineOAuthGitHubEventHandler` handles both the authorize redirect
+(no `?code`) and the callback (`?code`) in a single handler; GitHub's
+registered callback URL is `.../auth/github` itself. (The original plan
+of two routes was wrong for this library — corrected during apply.)
+Config (`clientId` / `clientSecret`) passed explicitly from
 `event.context.cloudflare.env` rather than the `NUXT_OAUTH_*` env
 convention, so it works the same under `wrangler dev` and deployed.
+`nuxt-auth-utils` also auto-writes a gitignored `.env`
+(`NUXT_SESSION_PASSWORD`) for its own unused session feature — harmless.
 
 ### 2. Account match: `github_id` first, verified email second
 
@@ -171,7 +175,9 @@ callback, seeing `e2e`, skips the token exchange and runs
 
 ## Open Questions
 
-- Whether crossws forwards the upgrade request's `Cookie` header under
-  this Nitro preset (decision 5). Resolved by a spike in the first
-  task; both outcomes have a known implementation, so it does not
-  change the specs or the task breakdown.
+- ~~Whether crossws forwards the upgrade request's `Cookie` header under
+  this Nitro preset (decision 5).~~ **Resolved (task 1.1 spike):** it
+  does — `peer.request.headers.get('cookie')` in the WS `open` handler
+  returns the request cookies under `wrangler dev` with the
+  `cloudflare-durable` preset. The server-reads-cookie path in
+  decision 5 is used; no join-frame fallback needed.

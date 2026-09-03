@@ -10,6 +10,8 @@ import { defineWebSocketHandler } from 'h3'
 import * as Y from 'yjs'
 import { fromBase64, toBase64 } from '#shared/compositionProtocol'
 import { nextCycleBoundary } from '#shared/transportMath'
+import { getSessionUser } from '../auth/sessions'
+import { getDurableEnv } from '../utils/durableStorage'
 
 const DEFAULT_BPM = 120
 const SNAPSHOT_DEBOUNCE_MS = 2000
@@ -24,10 +26,11 @@ interface CompositionRoom {
   cycleStartTimestamp: number
   playing: boolean
   evalAtCycle: number | null
-  // clientId -> { name, role, awarenessId }. Never persisted (rebuilt
-  // from live peers). awarenessId is the peer's Yjs awareness id, used
-  // to tell the others to drop its cursor on disconnect.
-  presence: Map<string, { name: string, role: Role, awarenessId?: number }>
+  // clientId -> { name, role, awarenessId, avatarUrl }. Never persisted
+  // (rebuilt from live peers). awarenessId is the peer's Yjs awareness
+  // id, used to tell the others to drop its cursor on disconnect;
+  // avatarUrl is server-resolved from the connection's session.
+  presence: Map<string, { name: string, role: Role, awarenessId?: number, avatarUrl?: string }>
   chat: ChatMessage[]
   snapshotTimer: ReturnType<typeof setTimeout> | null
   evictTimer: ReturnType<typeof setTimeout> | null
@@ -115,7 +118,12 @@ function scheduleEviction(roomId: string, room: CompositionRoom) {
 }
 
 function roster(room: CompositionRoom): CompositionPresenceEntry[] {
-  return [...room.presence].map(([clientId, p]) => ({ clientId, name: p.name, role: p.role }))
+  return [...room.presence].map(([clientId, p]) => ({
+    clientId,
+    name: p.name,
+    role: p.role,
+    ...(p.avatarUrl ? { avatarUrl: p.avatarUrl } : {}),
+  }))
 }
 
 function send(peer: Peer, message: CompositionServerMessage) {
@@ -138,6 +146,25 @@ function roomIdOf(peer: Peer): string | null {
 
 function nameOf(peer: Peer): string | null {
   return new URL(peer.request.url).searchParams.get('name')?.trim() || null
+}
+
+// The signed-in account behind this connection, resolved from the
+// `jaime_session` cookie on the WS upgrade request. Only the avatar is
+// taken from here (server-resolved, not trusted from the client); the
+// display name still comes from the client's editable screen name.
+async function accountFor(peer: Peer): Promise<{ userId: string, avatarUrl?: string } | null> {
+  const cookie = peer.request?.headers?.get?.('cookie')
+  const sid = cookie?.match(/(?:^|;\s*)jaime_session=([^;]+)/)?.[1]
+  const db = getDurableEnv()?.PATTERNS_DB
+  if (!sid || !db) return null
+  try {
+    const user = await getSessionUser(db, decodeURIComponent(sid))
+    if (!user) return null
+    return { userId: user.id, avatarUrl: user.avatarUrl }
+  }
+  catch {
+    return null
+  }
 }
 
 export default defineWebSocketHandler({
@@ -172,7 +199,8 @@ export default defineWebSocketHandler({
     if (data.t === 'join') {
       const role: Role = data.role === 'viewer' ? 'viewer' : 'editor'
       const awarenessId = typeof data.awarenessId === 'number' ? data.awarenessId : undefined
-      room.presence.set(peer.id, { name, role, awarenessId })
+      const account = await accountFor(peer)
+      room.presence.set(peer.id, { name, role, awarenessId, avatarUrl: account?.avatarUrl })
       send(peer, {
         t: 'welcome',
         clientId: peer.id,
@@ -234,6 +262,7 @@ export default defineWebSocketHandler({
       const msg: ChatMessage = {
         clientId: peer.id,
         name,
+        ...(me.avatarUrl ? { avatarUrl: me.avatarUrl } : {}),
         text: data.text.slice(0, 2000),
         at: Date.now(),
       }
