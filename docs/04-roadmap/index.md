@@ -68,7 +68,7 @@ open models don't know Strudel/Hydra grammar well — and `@jah` is meant
 to *teach* it. Phase 1 ships behind the `ai` SDK so the provider can be
 switched without touching any phase's logic. A grammar-accuracy spike
 (does the model produce valid Strudel more than ~half the time?)
-decides it before phases 4–6 commit to model-authored writes.
+decides it before phases 4–5 commit to model-authored writes.
 
 **Grammar knowledge is layered**: the system prompt (the rules),
 **retrieval** over `content/docs/**` (Vectorize or AutoRAG — the docs
@@ -253,19 +253,23 @@ write happens).
 
 ---
 
-## 6. `add-jah-melody-tool` (stretch)
+## Next roadmap — not this one
 
-Builds on the MIDI-to-mininotation pipeline sketched separately (source
-→ note-event IR → deterministic quantizer → LLM refinement →
-`@strudel/mini` validation), exposed as a **`melodyFromMidi` tool**
-that feeds `add-jah-edit`'s `applyEdit` write path — e.g. dropping a
-MIDI file into the chat alongside an edit instruction, rather than
-typing the pattern by hand. Same pause requirement, same validation,
-same confirmation-not-dump response. The multi-second pipeline is a
-good candidate to run as a Cloudflare **Workflow** (durable steps,
-retries) rather than inline in the request.
+### `add-jah-melody-tool`
 
-**Testing fixtures already exist**: the sample MIDI files from the
-earlier Java prototype (`in_blue.mid`, `interstellar.mid`, `azul.mid`,
-`shape.mid`) have known characteristics documented alongside them —
-reuse rather than inventing new fixtures.
+Deferred. Builds on the MIDI-to-mininotation pipeline sketched
+separately (source → note-event IR → deterministic quantizer → LLM
+refinement → `@strudel/mini` validation), exposed as a **`melodyFromMidi`
+tool** that feeds `add-jah-edit`'s `applyEdit` write path — e.g.
+dropping a MIDI file into the chat alongside an edit instruction, rather
+than typing the pattern by hand. Same pause requirement, same
+validation, same confirmation-not-dump response. The multi-second
+pipeline is a good candidate to run as a Cloudflare **Workflow**
+(durable steps, retries) rather than inline in the request.
+
+Waits on this roadmap's `add-jah-edit` write path being solid, and on
+the MIDI pipeline design being written down. Testing fixtures already
+exist: the sample MIDI files from the earlier Java prototype
+(`in_blue.mid`, `interstellar.mid`, `azul.mid`, `shape.mid`) have known
+characteristics documented alongside them — reuse rather than inventing
+new fixtures.
