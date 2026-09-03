@@ -58,6 +58,12 @@ export interface StrudelEditor {
   /** Apply code from outside (a WS relay); does not fire onCodeChange. */
   setCode: (code: string) => void
   setEditable: (editable: boolean) => void
+  /**
+   * Soft-wrap long lines (true) or let them scroll horizontally
+   * (false). Driven by viewport width — narrow screens wrap so code is
+   * read by scrolling only vertically.
+   */
+  setLineWrapping: (on: boolean) => void
   destroy: () => void
 }
 
@@ -142,9 +148,15 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
   if (opts.onRequestStop) mirror.stop = async () => { opts.onRequestStop!() }
 
   const editable = new Compartment()
+  // Starts unwrapped; the caller toggles this by viewport width. A
+  // Compartment (not a static `EditorView.lineWrapping`) because the
+  // spec keeps wide viewports unwrapped, and CSS-only wrapping desyncs
+  // CodeMirror's measurement.
+  const lineWrap = new Compartment()
   mirror.editor.dispatch({
     effects: StateEffect.appendConfig.of([
       editable.of(EV.editable.of(opts.editable)),
+      lineWrap.of([]),
       // Emit local edits upward. StrudelMirror's own onChange (which
       // keeps mirror.code / the repl in sync) still runs; this is
       // additive.
@@ -186,6 +198,9 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
     },
     setEditable(next: boolean) {
       mirror.editor.dispatch({ effects: editable.reconfigure(EV.editable.of(next)) })
+    },
+    setLineWrapping(on: boolean) {
+      mirror.editor.dispatch({ effects: lineWrap.reconfigure(on ? EV.lineWrapping : []) })
     },
     destroy() {
       try {

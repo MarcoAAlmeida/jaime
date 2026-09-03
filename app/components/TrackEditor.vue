@@ -24,10 +24,16 @@ const colorMode = useColorMode()
 let editor: StrudelEditor | undefined
 let ready: Promise<StrudelEditor> | undefined
 let resizeObserver: ResizeObserver | undefined
+let wrapDebounce: ReturnType<typeof setTimeout> | undefined
 // While applying code that came from outside this editor (a WebSocket
 // relay), the factory's own guard suppresses the echo — this flag is a
 // second guard for the props.code watcher itself.
 let applyingExternal = false
+
+// Below this host width the editor soft-wraps so code is read by
+// scrolling vertically, never horizontally (Tailwind `sm`).
+const WRAP_BELOW = 640
+let wrapping = false
 
 // Keep the canvas's pixel buffer matched to its displayed size —
 // @strudel/draw's painters lay out against canvas.width / height.
@@ -42,9 +48,24 @@ function syncCanvasSize() {
   if (c.height !== h) c.height = h
 }
 
+function applyWrapping() {
+  const host = rootEl.value
+  if (!host) return
+  const next = host.clientWidth < WRAP_BELOW
+  if (next === wrapping) return
+  wrapping = next
+  editor?.setLineWrapping(next)
+}
+
+function onResize() {
+  syncCanvasSize()
+  clearTimeout(wrapDebounce)
+  wrapDebounce = setTimeout(applyWrapping, 150)
+}
+
 onMounted(() => {
   syncCanvasSize()
-  resizeObserver = new ResizeObserver(syncCanvasSize)
+  resizeObserver = new ResizeObserver(onResize)
   if (rootEl.value) resizeObserver.observe(rootEl.value)
 
   ready = createStrudelEditor({
@@ -74,6 +95,10 @@ onMounted(() => {
       }
     }
     e.setEditable(props.editable)
+    // Editor may have finished building after the last resize — apply
+    // the current width's wrapping now.
+    wrapping = (rootEl.value?.clientWidth ?? WRAP_BELOW) < WRAP_BELOW
+    e.setLineWrapping(wrapping)
     // @strudel/codemirror's initTheme() forces the dark class on <html>
     // to match its editor theme — re-assert the app's real colour mode
     // on the root so the surrounding shell isn't dragged dark.
@@ -85,6 +110,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
+  clearTimeout(wrapDebounce)
   editor?.destroy()
 })
 

@@ -52,7 +52,7 @@ const audioUnlocked = ref(false)
 const connected = ref(false)
 const playing = ref(false)
 const error = ref<string | null>(null)
-const linkCopied = ref(false)
+const { label: shareLabel, copied: linkCopied, share } = useShareLink()
 const participants = ref<CompositionPresenceEntry[]>([])
 const chat = ref<ChatMessage[]>([])
 const chatInput = ref('')
@@ -98,10 +98,32 @@ const presetItems = computed(() => [
   })),
 ])
 
+// Below `sm` the secondary header controls collapse into one "⋯" menu
+// so a phone header stays a single compact row.
+const overflowItems = computed(() => {
+  const group: Record<string, unknown>[] = []
+  if (isEditor.value) {
+    group.push({ label: 'Load a starter', icon: 'i-lucide-library-big', children: presetItems.value[0] })
+  }
+  group.push({
+    label: isEditor.value ? 'Switch to viewer' : 'Switch to editor',
+    icon: 'i-lucide-repeat',
+    onSelect: toggleRole,
+  })
+  group.push({ label: shareLabel.value, icon: 'i-lucide-share-2', onSelect: shareInvite })
+  return [group]
+})
+
 let provider: CompositionProvider | undefined
 let editor: StrudelEditor | undefined
 let undoManager: Y.UndoManager | undefined
 let resizeObserver: ResizeObserver | undefined
+let wrapDebounce: ReturnType<typeof setTimeout> | undefined
+
+// Below this editor-host width the editor soft-wraps so code is read by
+// scrolling vertically, never horizontally (Tailwind `sm`).
+const WRAP_BELOW = 640
+let wrapping = false
 
 // Keep the canvas pixel buffer matched to its displayed size —
 // @strudel/draw's painters lay out against canvas.width / height.
@@ -116,10 +138,23 @@ function syncCanvasSize() {
   if (c.height !== h) c.height = h
 }
 
-async function copyInviteLink() {
-  await navigator.clipboard.writeText(window.location.href)
-  linkCopied.value = true
-  setTimeout(() => { linkCopied.value = false }, 1500)
+function applyWrapping() {
+  const host = rootEl.value
+  if (!host) return
+  const next = host.clientWidth < WRAP_BELOW
+  if (next === wrapping) return
+  wrapping = next
+  editor?.setLineWrapping(next)
+}
+
+function onResize() {
+  syncCanvasSize()
+  clearTimeout(wrapDebounce)
+  wrapDebounce = setTimeout(applyWrapping, 150)
+}
+
+function shareInvite() {
+  void share(window.location.href, 'Join my Composition Room on jaime')
 }
 
 // Evaluate / stop are broadcast, not run locally — the server relays an
@@ -168,7 +203,7 @@ async function start() {
   if (canvasEl.value) canvasEl.value.id = 'test-canvas'
 
   syncCanvasSize()
-  resizeObserver = new ResizeObserver(syncCanvasSize)
+  resizeObserver = new ResizeObserver(onResize)
   if (rootEl.value) resizeObserver.observe(rootEl.value)
 
   provider = createCompositionProvider({
@@ -212,6 +247,8 @@ async function start() {
     onRequestPlay: requestEval,
     onRequestStop: requestStop,
   })
+  wrapping = (rootEl.value?.clientWidth ?? WRAP_BELOW) < WRAP_BELOW
+  editor.setLineWrapping(wrapping)
 
   // First person into a fresh room seeds the shared document. The length
   // check makes a same-instant double-entry the only race, and it only
@@ -253,6 +290,7 @@ watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
+  clearTimeout(wrapDebounce)
   canvasEl.value?.removeAttribute('id')
   editor?.destroy()
   undoManager?.destroy()
@@ -321,36 +359,51 @@ onBeforeUnmount(() => {
         >
           {{ playing ? 'Stop' : 'Play' }}
         </UButton>
-        <UDropdownMenu v-if="isEditor" :items="presetItems" :content="{ align: 'end' }">
+
+        <!-- Secondary controls: inline at sm+, folded into the ⋯ menu below. -->
+        <span class="hidden items-center gap-2 sm:flex">
+          <UDropdownMenu v-if="isEditor" :items="presetItems" :content="{ align: 'end' }">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-library-big"
+              trailing-icon="i-lucide-chevron-down"
+              data-testid="load-preset-button"
+            >
+              Load a starter
+            </UButton>
+          </UDropdownMenu>
           <UButton
             size="xs"
             color="neutral"
             variant="outline"
-            icon="i-lucide-library-big"
-            trailing-icon="i-lucide-chevron-down"
-            data-testid="load-preset-button"
+            data-testid="toggle-role-button"
+            @click="toggleRole"
           >
-            Load a starter
+            {{ isEditor ? 'Switch to viewer' : 'Switch to editor' }}
           </UButton>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="outline"
+            data-testid="copy-invite-button"
+            @click="shareInvite"
+          >
+            {{ linkCopied ? 'Copied!' : shareLabel }}
+          </UButton>
+        </span>
+        <UDropdownMenu :items="overflowItems" :content="{ align: 'end' }" class="sm:hidden">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-ellipsis"
+            aria-label="More room controls"
+            data-testid="room-overflow-menu"
+          />
         </UDropdownMenu>
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="outline"
-          data-testid="toggle-role-button"
-          @click="toggleRole"
-        >
-          {{ isEditor ? 'Switch to viewer' : 'Switch to editor' }}
-        </UButton>
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="outline"
-          data-testid="copy-invite-button"
-          @click="copyInviteLink"
-        >
-          {{ linkCopied ? 'Copied!' : 'Copy invite link' }}
-        </UButton>
+
         <UButton
           size="xs"
           :color="unread ? 'primary' : 'neutral'"
@@ -398,7 +451,7 @@ onBeforeUnmount(() => {
       <!-- Docked beside the editor on md+; a right-hand overlay sheet below that. -->
       <aside
         v-show="panelOpen"
-        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-3 rounded-l-md border-l p-3 shadow-xl md:static md:w-56 md:max-w-none md:rounded-none md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-3 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:w-56 md:max-w-none md:rounded-none md:border-0 md:bg-transparent md:p-0 md:pb-0 md:shadow-none"
         data-testid="side-panel"
       >
         <UButton

@@ -35,7 +35,7 @@ const editorRefs = ref<Partial<Record<TrackName, TrackEditorHandle | null>>>({})
 const muted = ref<Record<TrackName, boolean>>(
   Object.fromEntries(TRACK_NAMES.map(name => [name, false])) as Record<TrackName, boolean>,
 )
-const linkCopied = ref(false)
+const { label: shareLabel, copied: linkCopied, share } = useShareLink()
 
 function joinRoom() {
   setDisplayName(nameInput.value)
@@ -123,12 +123,8 @@ function ownerName(track: TrackName): string | null {
   return presence.value.find(entry => entry.clientId === ownerId)?.name ?? null
 }
 
-async function copyInviteLink() {
-  await navigator.clipboard.writeText(window.location.href)
-  linkCopied.value = true
-  setTimeout(() => {
-    linkCopied.value = false
-  }, 1500)
+function shareInvite() {
+  void share(window.location.href, 'Join my JAM room on jaime')
 }
 
 // --- "Load into JAM" from the pattern library -------------------------------
@@ -216,7 +212,7 @@ function submitTempo() {
 </script>
 
 <template>
-  <div v-if="!displayName" class="flex h-screen flex-col items-center justify-center gap-4 p-4">
+  <div v-if="!displayName" class="flex h-dvh flex-col items-center justify-center gap-4 p-4">
     <h1 class="text-xl font-semibold">
       What should we call you?
     </h1>
@@ -234,12 +230,12 @@ function submitTempo() {
       </UButton>
     </div>
   </div>
-  <div v-else class="flex h-screen flex-col gap-4 overflow-y-auto p-4">
+  <div v-else class="flex h-dvh flex-col gap-4 overflow-y-auto p-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <NuxtLink to="/" aria-label="jaime home">
+      <NuxtLink to="/" aria-label="jaime home" class="shrink-0">
         <Logo size="sm" />
       </NuxtLink>
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex min-w-0 flex-wrap items-center gap-2">
         <div class="flex items-center gap-1.5">
           <span class="text-xs text-neutral-500">BPM</span>
           <UInput
@@ -263,7 +259,7 @@ function submitTempo() {
         <UBadge color="neutral" variant="subtle" data-testid="presence-count">
           {{ presence.length }} here
         </UBadge>
-        <span data-testid="presence-names" class="text-xs text-neutral-500">
+        <span data-testid="presence-names" class="hidden max-w-[45vw] truncate text-xs text-neutral-500 sm:inline">
           {{ presence.map(entry => entry.name).join(', ') }}
         </span>
         <UButton
@@ -271,9 +267,9 @@ function submitTempo() {
           color="neutral"
           variant="outline"
           data-testid="copy-invite-button"
-          @click="copyInviteLink"
+          @click="shareInvite"
         >
-          {{ linkCopied ? 'Copied!' : 'Copy invite link' }}
+          {{ linkCopied ? 'Copied!' : shareLabel }}
         </UButton>
       </div>
     </div>
