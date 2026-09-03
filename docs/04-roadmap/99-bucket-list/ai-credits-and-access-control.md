@@ -93,6 +93,29 @@ gate it.
 
 ---
 
+## 5. Operator visibility — *who signed up*
+
+Distinct from usage: once `add-oauth-signin` ships, people will create
+accounts, and Marco has no in-app way to see them — which is exactly
+who he needs to know to pick the `ai_access` allowlist.
+
+- **Now / stopgap:** query D1 directly —
+  `wrangler d1 execute PATTERNS_DB --remote --command "SELECT
+  github_login, email, display_name, status, created_at FROM users
+  ORDER BY created_at DESC"` (or the Cloudflare dashboard's D1 console).
+  Zero code, works today.
+- **Later:** a `/admin` route gated to Marco's account — a list of
+  accounts (name, GitHub login, joined, `ai_access`) with a per-user
+  `ai_access` toggle, and the `ai_usage` view from §4 alongside it. One
+  page, three reads and one write. Sequenced **with or just before
+  Phase 1**, since the allowlist is unusable without a way to see who's
+  on it.
+- Marco's own identity for the gate: GitHub login `MarcoAAlmeida` /
+  email `marcoalmeida.dev.br@gmail.com` — hard-code the check, don't
+  build roles yet.
+
+---
+
 ## Trajectory notes
 
 The access model's ambition tracks where the tool is going:
@@ -120,7 +143,11 @@ so record it cleanly from day one.
 - A kill switch (env var is acceptable for phase 1; DO flag is better).
 - A per-call `ai_usage` record in D1.
 
+**With or just before Phase 1:**
+- A `/admin` route (§5) — account list + `ai_access` toggle + the
+  `ai_usage` view.
+
 **Later, from this doc, driven by trajectory:**
-- Admin toggle route / invite codes.
-- Workers Analytics Engine + a usage view.
+- Invite codes.
+- Workers Analytics Engine + a richer usage view.
 - Per-tenant / per-account budgets, billing seam.
