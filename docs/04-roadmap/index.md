@@ -3,11 +3,17 @@
 `@jah` is Composition Room's AI participant — discussion always
 available, document writes only when the room is paused.
 
-**Phase 0 comes first and is a standalone win:** GitHub sign-in + a
-minimal profile (screen name, avatar). It's a better front door for
-JAM and the Pattern library too, and it replaces the assumption every
-`@jah` phase rests on — that gating chat behind an emailed magic link
-is acceptable friction. It isn't, for "let me try the AI in this room".
+**Phase -1 — `add-responsive-rooms`** (proposed): before any of this,
+the JAM room and Composition Room have to work on a phone held
+vertically — today the header overlaps the logo and you scroll
+*sideways* to read your own code. Header reflow, editor soft-wrap (no
+horizontal scroll), one-tap share. No auth, no AI.
+
+**Phase 0 — `add-oauth-signin`:** GitHub sign-in + a minimal profile
+(screen name, avatar). A standalone win — a better front door for JAM
+and the Pattern library too — and it replaces the assumption every
+`@jah` phase rests on: that gating chat behind an emailed magic link is
+acceptable friction. It isn't, for "let me try the AI in this room".
 
 ## The model, in one place
 
