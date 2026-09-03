@@ -3,11 +3,12 @@
 `@jah` is Composition Room's AI participant — discussion always
 available, document writes only when the room is paused.
 
-**Phase -1 — `add-responsive-rooms`** (proposed): before any of this,
-the JAM room and Composition Room have to work on a phone held
-vertically — today the header overlaps the logo and you scroll
-*sideways* to read your own code. Header reflow, editor soft-wrap (no
-horizontal scroll), one-tap share. No auth, no AI.
+**Phase -1 — `add-responsive-rooms`** — ✅ shipped 2026-09-02: the JAM
+room and Composition Room work on a phone held vertically now — header
+reflows (a `⋯` overflow menu below `sm`), the editor soft-wraps so
+there's no sideways scroll to read code, and the invite button uses the
+native share sheet where the device has one. New `responsive-rooms`
+spec. No auth, no AI.
 
 **Phase 0 — `add-oauth-signin`:** GitHub sign-in + a minimal profile
 (screen name, avatar). A standalone win — a better front door for JAM

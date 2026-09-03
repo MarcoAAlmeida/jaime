@@ -64,7 +64,7 @@
 ## 6. Spec sync + archive
 
 - [x] 6.1 `openspec validate add-responsive-rooms --strict`.
-- [ ] 6.2 Sync the `responsive-rooms` delta into a new main spec;
+- [x] 6.2 Sync the `responsive-rooms` delta into a new main spec;
       archive the change.
-- [ ] 6.3 `docs/04-roadmap/index.md` — note "Phase -1" done; the `@jah`
+- [x] 6.3 `docs/04-roadmap/index.md` — note "Phase -1" done; the `@jah`
       roadmap's Phase 0 (`add-oauth-signin`) is next.
