@@ -57,13 +57,13 @@
 
 ## 5. Ship
 
-- [ ] 5.1 `npm run deploy`; on `https://jaime.stream` check both rooms
+- [x] 5.1 `npm run deploy`; on `https://jaime.stream` check both rooms
       on a real phone (portrait + landscape): no logo overlap, read code
       without sideways scroll, share a link in one tap.
 
 ## 6. Spec sync + archive
 
-- [ ] 6.1 `openspec validate add-responsive-rooms --strict`.
+- [x] 6.1 `openspec validate add-responsive-rooms --strict`.
 - [ ] 6.2 Sync the `responsive-rooms` delta into a new main spec;
       archive the change.
 - [ ] 6.3 `docs/04-roadmap/index.md` — note "Phase -1" done; the `@jah`
