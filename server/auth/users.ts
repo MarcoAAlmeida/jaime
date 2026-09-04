@@ -13,6 +13,7 @@ interface UserRow {
   github_id: number | null
   github_login: string | null
   avatar_url: string | null
+  ai_access: number
 }
 
 // A new sign-in link may only be requested this often per account.
@@ -33,7 +34,9 @@ function toUser(row: UserRow): User {
     displayName: row.display_name,
     status: row.status === 'confirmed' ? 'confirmed' : 'pending',
     createdAt: row.created_at,
+    aiAccess: row.ai_access === 1,
     ...(row.avatar_url ? { avatarUrl: row.avatar_url } : {}),
+    ...(row.github_login ? { githubLogin: row.github_login } : {}),
   }
 }
 
@@ -43,6 +46,28 @@ export async function getUser(db: D1Database, id: string): Promise<User | null> 
     .bind(id)
     .first<UserRow>()
   return row ? toUser(row) : null
+}
+
+/** Every account, newest first — for the operator's /admin roster. */
+export async function listUsers(db: D1Database): Promise<User[]> {
+  const { results } = await db
+    .prepare('SELECT * FROM users ORDER BY created_at DESC')
+    .all<UserRow>()
+  return (results ?? []).map(toUser)
+}
+
+/** Set (or clear) an account's per-user `ai_access` grant. */
+export async function setAiAccess(
+  db: D1Database,
+  id: string,
+  aiAccess: boolean,
+): Promise<User | null> {
+  const res = await db
+    .prepare('UPDATE users SET ai_access = ? WHERE id = ?')
+    .bind(aiAccess ? 1 : 0, id)
+    .run()
+  if (!res.meta.changes) return null
+  return getUser(db, id)
 }
 
 export async function findOrCreateUser(
@@ -66,7 +91,7 @@ export async function findOrCreateUser(
     )
     .bind(id, normalized, name, 'pending', now)
     .run()
-  return { id, email: normalized, displayName: name, status: 'pending', createdAt: now }
+  return { id, email: normalized, displayName: name, status: 'pending', createdAt: now, aiAccess: false }
 }
 
 export async function confirmUser(db: D1Database, id: string): Promise<void> {
@@ -151,7 +176,9 @@ export async function findOrCreateUserFromGitHub(
     displayName: name,
     status: 'confirmed',
     createdAt: now,
+    aiAccess: false,
     ...(avatar ? { avatarUrl: avatar } : {}),
+    githubLogin: profile.login,
   }
 }
 

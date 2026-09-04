@@ -31,6 +31,8 @@ interface SessionUserRow {
   status: string
   created_at: string
   avatar_url: string | null
+  github_login: string | null
+  ai_access: number
 }
 
 /**
@@ -42,7 +44,8 @@ export async function getSessionUser(db: D1Database, sessionId: string): Promise
   const nowIso = new Date(nowMs).toISOString()
   const row = await db
     .prepare(
-      `SELECT s.last_seen_at, u.id, u.email, u.display_name, u.status, u.created_at, u.avatar_url
+      `SELECT s.last_seen_at, u.id, u.email, u.display_name, u.status, u.created_at,
+              u.avatar_url, u.github_login, u.ai_access
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.id = ? AND s.expires_at > ?`,
     )
@@ -63,7 +66,9 @@ export async function getSessionUser(db: D1Database, sessionId: string): Promise
     displayName: row.display_name,
     status: row.status === 'confirmed' ? 'confirmed' : 'pending',
     createdAt: row.created_at,
+    aiAccess: row.ai_access === 1,
     ...(row.avatar_url ? { avatarUrl: row.avatar_url } : {}),
+    ...(row.github_login ? { githubLogin: row.github_login } : {}),
   }
 }
 

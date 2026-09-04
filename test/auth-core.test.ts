@@ -1,5 +1,7 @@
 import { env } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { effectiveAccess, hasAiAccess, parseAllowlist } from '../server/auth/aiAccess'
+import { isOperator } from '../shared/operator'
 import { issueToken, consumeToken } from '../server/auth/tokens'
 import { createSession, deleteSession, deleteUserSessions, getSessionUser } from '../server/auth/sessions'
 import {
@@ -116,6 +118,60 @@ describe('github sign-in', () => {
   it('drops an avatar URL that is not on the GitHub avatar CDN', async () => {
     const u = await findOrCreateUserFromGitHub(db, gh({ avatarUrl: 'https://evil.example.com/track.gif' }))
     expect(u.avatarUrl).toBeUndefined()
+  })
+
+  it('a new GitHub account starts without @jah access', async () => {
+    const u = await findOrCreateUserFromGitHub(db, gh())
+    expect(u.aiAccess).toBe(false)
+    expect(u.githubLogin).toBe('octo')
+  })
+})
+
+describe('ai access resolution', () => {
+  const u = (over: Partial<{ aiAccess: boolean, githubLogin?: string }> = {}) => ({
+    id: 'x', email: 'x@example.com', displayName: 'X', status: 'confirmed' as const,
+    createdAt: '', aiAccess: false, ...over,
+  })
+
+  it('parses the allowlist: trims, lowercases, drops blanks', () => {
+    expect([...parseAllowlist(' Ada, BOB ,,  , cLARA ')]).toEqual(['ada', 'bob', 'clara'])
+    expect(parseAllowlist(undefined).size).toBe(0)
+    expect(parseAllowlist('').size).toBe(0)
+  })
+
+  it('grants on the per-user flag alone', () => {
+    expect(hasAiAccess(u({ aiAccess: true }), parseAllowlist(''))).toBe(true)
+  })
+
+  it('grants on the allowlist alone, case-insensitively', () => {
+    expect(hasAiAccess(u({ githubLogin: 'Octo' }), parseAllowlist('octo'))).toBe(true)
+  })
+
+  it('denies when neither flag nor allowlist, and for anonymous', () => {
+    expect(hasAiAccess(u({ githubLogin: 'nope' }), parseAllowlist('octo'))).toBe(false)
+    expect(hasAiAccess(u(), parseAllowlist('octo'))).toBe(false)
+    expect(hasAiAccess(null, parseAllowlist('octo'))).toBe(false)
+  })
+
+  it('labels why access is granted (flag wins over allowlist)', () => {
+    const list = parseAllowlist('octo')
+    expect(effectiveAccess(u({ aiAccess: true, githubLogin: 'octo' }), list)).toBe('flag')
+    expect(effectiveAccess(u({ githubLogin: 'octo' }), list)).toBe('allowlist')
+    expect(effectiveAccess(u({ githubLogin: 'nope' }), list)).toBe('none')
+  })
+})
+
+describe('operator identity', () => {
+  it('matches on GitHub login or email, case-insensitively', () => {
+    expect(isOperator({ email: 'x@example.com', githubLogin: 'MarcoAAlmeida' })).toBe(true)
+    expect(isOperator({ email: 'MARCOALMEIDA.DEV.BR@gmail.com', githubLogin: undefined })).toBe(true)
+    expect(isOperator({ email: 'marcoalmeida.dev.br@gmail.com', githubLogin: 'someoneelse' })).toBe(true)
+  })
+
+  it('rejects everyone else, and null', () => {
+    expect(isOperator({ email: 'someone@example.com', githubLogin: 'someone' })).toBe(false)
+    expect(isOperator(null)).toBe(false)
+    expect(isOperator(undefined)).toBe(false)
   })
 })
 

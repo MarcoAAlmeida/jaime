@@ -46,6 +46,13 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["$DurableObject"] }
   ],
+  // GitHub logins that get `@jah` access without a per-user toggle
+  // (add-admin-console). Comma-separated, case-insensitive. The seeded
+  // "always in" tier; the /admin per-user toggle is the "add someone
+  // now" tier. Not a secret — these are public usernames.
+  "vars": {
+    "AI_ACCESS_LOGINS": "MarcoAAlmeida"
+  },
   // Transactional email for the auth magic-link. The `jaime.stream`
   // domain must be onboarded to Email Sending
   // (`wrangler email sending enable jaime.stream`) or a send returns an
