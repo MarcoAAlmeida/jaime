@@ -33,12 +33,20 @@ async function confirmDelete() {
 <template>
   <UPageSection headline="Account" title="Your account">
     <div class="mx-auto flex w-full max-w-md flex-col gap-6">
-      <div>
-        <p class="text-muted text-sm">Signed in as</p>
-        <p class="font-medium">{{ user?.email }}</p>
-        <p v-if="user?.status === 'pending'" class="text-warning text-xs mt-1">
-          Not confirmed yet — use the link we emailed you.
-        </p>
+      <div class="flex items-center gap-4">
+        <UserAvatar
+          v-if="user"
+          :name="user.displayName"
+          :src="user.avatarUrl"
+          size="3xl"
+        />
+        <div class="min-w-0">
+          <p class="text-muted text-sm">Signed in as</p>
+          <p class="truncate font-medium">{{ user?.email }}</p>
+          <p v-if="user?.status === 'pending'" class="text-warning text-xs mt-1">
+            Not confirmed yet — use the link we emailed you.
+          </p>
+        </div>
       </div>
 
       <form class="flex flex-col gap-2" @submit.prevent="saveName">

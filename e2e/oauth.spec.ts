@@ -16,6 +16,13 @@ test('the GitHub button signs in with a confirmed account', async ({ page }) => 
   expect(me.user).toBeTruthy()
   expect(me.user.status).toBe('confirmed')
   expect(me.user.displayName).toBe('E2E Octocat')
+
+  // The avatar shows on the account page and in the sidebar account
+  // link — not the abstract user icon.
+  await expect(page.locator('main img[src*="avatars.githubusercontent.com"]')).toBeVisible()
+  await expect(
+    page.getByTestId('account-link').locator('img[src*="avatars.githubusercontent.com"]'),
+  ).toBeVisible()
 })
 
 test('a second GitHub sign-in returns to the same account', async ({ browser }) => {

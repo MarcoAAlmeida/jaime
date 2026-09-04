@@ -7,14 +7,18 @@ const { user } = useAuth()
   <UButton
     v-if="user"
     :label="user.displayName"
-    icon="i-lucide-circle-user"
+    :icon="user.avatarUrl ? undefined : 'i-lucide-circle-user'"
     color="neutral"
     variant="ghost"
     size="sm"
     :block="block"
     to="/account"
     data-testid="account-link"
-  />
+  >
+    <template v-if="user.avatarUrl" #leading>
+      <UserAvatar :name="user.displayName" :src="user.avatarUrl" size="xs" />
+    </template>
+  </UButton>
   <UButton
     v-else
     label="Sign in"
