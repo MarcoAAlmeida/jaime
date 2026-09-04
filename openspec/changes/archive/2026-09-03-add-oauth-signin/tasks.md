@@ -11,9 +11,11 @@
       `github_id INTEGER`; `CREATE UNIQUE INDEX ... ON users(github_id)`.
 - [x] 1.4 `shared/user.ts` — `User` gains `avatarUrl?: string`.
       `server/auth/users.ts` `toUser` maps `avatar_url` → `avatarUrl`.
-- [ ] 1.5 GitHub OAuth App registered (dev + `jaime.stream` callback
-      URLs); `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` in `.dev.vars`
-      and (for the operator) noted for `wrangler secret put`.
+- [x] 1.5 GitHub OAuth App registered (`jaime.stream` callback URL —
+      dev uses the `OAUTH_E2E` stub, no dev app needed);
+      `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` set via
+      `wrangler secret put`. `.dev.vars` keeps the keys empty +
+      `OAUTH_E2E=1`.
 
 ## 2. GitHub sign-in
 
@@ -81,11 +83,15 @@
 
 ## 6. Ship + archive
 
-- [ ] 6.1 Operator: `wrangler secret put GITHUB_CLIENT_ID` /
+- [x] 6.1 Operator: `wrangler secret put GITHUB_CLIENT_ID` /
       `GITHUB_CLIENT_SECRET`. `npm run deploy` (applies `0005` remote).
-- [ ] 6.2 On `https://jaime.stream`: real "Continue with GitHub" sign-in
+      Deployed version `2c7facd8`; `0005` confirmed on the remote D1.
+- [x] 6.2 On `https://jaime.stream`: real "Continue with GitHub" sign-in
       (not the E2E stub); confirm the account, avatar in a room, magic
-      link still works.
+      link still works. Verified: GitHub sign-in linked to the existing
+      magic-link account by email (no duplicate), `status=confirmed`,
+      `github_id`/`github_login`/`avatar_url` attached, `display_name`
+      preserved.
 - [x] 6.3 `openspec validate add-oauth-signin --strict`.
 - [ ] 6.4 Sync the `user-account` / `presence` / `composition-room`
       deltas; archive the change.
