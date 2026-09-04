@@ -92,6 +92,6 @@
       default. Verify `/admin` on `jaime.stream` shows the real roster
       and the toggle persists.
 - [ ] 6.5 Sync the `admin-console` delta; archive the change.
-- [ ] 6.6 `docs/04-roadmap/index.md` — note `/admin` shipped and that
+- [x] 6.6 `docs/04-roadmap/index.md` — note `/admin` shipped and that
       `add-jah-chat` now consumes `hasAiAccess` + writes `ai_usage`.
       Tick the bucket-list "with or just before Phase 1" item.

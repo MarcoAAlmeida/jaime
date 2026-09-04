@@ -173,6 +173,35 @@ e2e-testable.
 
 ---
 
+## 0.5. `add-admin-console`
+
+🔜 code complete 2026-09-04, awaiting the operator deploy (`npm run
+deploy` applies migration `0006`). Sequenced here because Phase 1's
+allowlist is unusable without a surface to see accounts and flip
+access.
+
+An operator-only `/admin` page (gated to the operator's GitHub login
+**or** email, checked server-side on every `/api/admin/*` request; a
+non-operator — signed in or not — gets the not-found page). It carries:
+
+- **The account roster** — every account, its details, and its
+  effective `@jah` access with a reason (per-user flag / env allowlist
+  / none).
+- **A per-user `ai_access` toggle** — a real write, no redeploy.
+- **`AI_ACCESS_LOGINS`** — a plain `wrangler.jsonc` var (public
+  usernames, not a secret) that auto-grants without a toggle. Effective
+  access = flag **OR** allowlist, resolved at read time by
+  **`hasAiAccess(user, allowlist)`** (`server/auth/aiAccess.ts`) — the
+  single check Phase 1 calls.
+- **The `ai_usage` table + a read-only recent-calls view** — schema and
+  read side only; Phase 1 writes the rows. Denormalized on
+  `github_login`, outlives account deletion for billing attribution.
+
+Migration `0006`: `users.ai_access`, `ai_usage`. `shared/user.ts` gains
+`aiAccess` + `githubLogin`.
+
+---
+
 ## 1. `add-jah-chat`
 
 Wires `@jah` into the room's existing `chat` message type as a
@@ -203,16 +232,18 @@ case-insensitive.
   `/composition` and `/room` already do this; phase 1 extends the
   resolved account from `{ avatarUrl }` to the full `{ userId, name,
   avatarUrl }` the gating checks need.
-- `@jah` replies only to a user with `ai_access` (a `users` flag,
-  default off; an env list of GitHub logins auto-grants). A user
-  without it gets "AI is invite-only right now", not silence.
+- `@jah` replies only to a user for whom **`hasAiAccess()`** is true
+  (the `ai_access` flag OR the `AI_ACCESS_LOGINS` list — **both landed
+  in `add-admin-console`**). A user without it gets "AI is invite-only
+  right now", not silence.
 - A per-user daily request cap **and** a global daily cap,
-  server-enforced.
-- A kill switch (`JAH_ENABLED` env var for phase 1).
-- A per-call `ai_usage` record in D1 (user, room, model, tokens, cost
-  estimate).
+  server-enforced. *(New here.)*
+- A kill switch (`JAH_ENABLED` env var for phase 1). *(New here.)*
+- A per-call `ai_usage` record — the **table + `/admin` view exist**
+  (`add-admin-console`); phase 1 adds the `recordUsage()` write on
+  every model call.
 - One `@jah` request in flight per room (a lock) — also what phase 5's
-  "serialize concurrent requests" needs.
+  "serialize concurrent requests" needs. *(New here.)*
 
 **System prompt**: identity + house style + a hand-written ~2 KB
 Strudel core-function cheatsheet always in context, so phase-1

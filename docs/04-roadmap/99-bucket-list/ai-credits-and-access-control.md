@@ -138,14 +138,19 @@ so record it cleanly from day one.
 
 **Phase 1 of the `@jah` roadmap (non-negotiable):**
 - Every call through an AI Gateway.
-- `ai_access` flag + env allowlist auto-grant.
+- ~~`ai_access` flag + env allowlist auto-grant~~ — done in
+  `add-admin-console`; phase 1 just calls `hasAiAccess()`.
 - A per-user daily cap and a global daily cap.
 - A kill switch (env var is acceptable for phase 1; DO flag is better).
-- A per-call `ai_usage` record in D1.
+- A per-call `ai_usage` record in D1 — table done; phase 1 adds the
+  `recordUsage()` write.
 
-**With or just before Phase 1:**
+**With or just before Phase 1 — ✅ shipped as `add-admin-console`
+(2026-09-04):**
 - A `/admin` route (§5) — account list + `ai_access` toggle + the
-  `ai_usage` view.
+  `ai_usage` view. Also landed here: the `ai_access` flag, the
+  `AI_ACCESS_LOGINS` env allowlist, the `hasAiAccess()` check, and the
+  `ai_usage` table (write helper is Phase 1's).
 
 **Later, from this doc, driven by trajectory:**
 - Invite codes.
