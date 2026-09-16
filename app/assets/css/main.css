@@ -20,21 +20,21 @@
 @source "../../../content/**/*";
 
 /* Register jaime's brand ramps under @nuxt/ui v4 color names. app.config.ts
-   points `primary` at rust and `neutral` at graphite; @nuxt/ui then
+   points `primary` at pine and `neutral` at graphite; @nuxt/ui then
    derives every --ui-* role (buttons, focus rings, badges, accents) from
    these. Values are verbatim from design/tokens/palette.css. */
 @theme static {
-  --color-rust-50: rgb(250, 243, 238);
-  --color-rust-100: rgb(244, 226, 213);
-  --color-rust-200: rgb(232, 196, 169);
-  --color-rust-300: rgb(218, 160, 121);
-  --color-rust-400: rgb(200, 124, 77);
-  --color-rust-500: rgb(178, 94, 47);
-  --color-rust-600: rgb(152, 77, 38);
-  --color-rust-700: rgb(124, 62, 32);
-  --color-rust-800: rgb(99, 50, 28);
-  --color-rust-900: rgb(82, 44, 27);
-  --color-rust-950: rgb(45, 21, 12);
+  --color-pine-50: rgb(238, 244, 239);
+  --color-pine-100: rgb(214, 231, 220);
+  --color-pine-200: rgb(174, 207, 186);
+  --color-pine-300: rgb(125, 179, 147);
+  --color-pine-400: rgb(71, 151, 112);
+  --color-pine-500: rgb(30, 122, 80);
+  --color-pine-600: rgb(1, 102, 48);
+  --color-pine-700: rgb(12, 83, 48);
+  --color-pine-800: rgb(14, 66, 40);
+  --color-pine-900: rgb(13, 55, 35);
+  --color-pine-950: rgb(5, 32, 26);
 
   --color-graphite-50: rgb(250, 250, 249);
   --color-graphite-100: rgb(245, 244, 242);

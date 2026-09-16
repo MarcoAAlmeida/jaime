@@ -3,8 +3,8 @@
   "short_name": "jaime",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f0e5",
-  "theme_color": "#f5f0e5",
+  "background_color": "#f1f4ec",
+  "theme_color": "#f1f4ec",
   "icons": [
     {
       "src": "/android-icon-36x36.png",

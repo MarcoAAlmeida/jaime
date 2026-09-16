@@ -14,8 +14,14 @@
 /* graphite — JAiMe's own neutral ramp. Replaces slate/gray as the neutral so dark surfaces read as gray, not navy. Hue is a whisper warm (R≥G≥B) to keep it from feeling digital-cold. */
 --graphite-50:rgb(250,250,249);--graphite-100:rgb(245,244,242);--graphite-200:rgb(232,231,227);--graphite-300:rgb(213,211,206);--graphite-400:rgb(162,160,154);--graphite-500:rgb(115,113,108);--graphite-600:rgb(87,85,81);--graphite-700:rgb(64,62,59);--graphite-800:rgb(40,39,37);--graphite-900:rgb(25,24,23);--graphite-950:rgb(14,14,13);
 --white:rgb(255,255,255);--black:rgb(0,0,0);
-/* pastel light-beige surface — jaime's light-mode background, per design/assets/jaime-logo.jpg */
---beige-bg:rgb(245,240,229);
-/* rust — jaime's brand primary (warm terracotta, reads well on the beige surface). 500 is #b25e2f. */
---rust-50:rgb(250,243,238);--rust-100:rgb(244,226,213);--rust-200:rgb(232,196,169);--rust-300:rgb(218,160,121);--rust-400:rgb(200,124,77);--rust-500:rgb(178,94,47);--rust-600:rgb(152,77,38);--rust-700:rgb(124,62,32);--rust-800:rgb(99,50,28);--rust-900:rgb(82,44,27);--rust-950:rgb(45,21,12)
+/* pastel light surface — jaime's light-mode background: a low-chroma,
+   high-lightness green-tinted off-white (the logo's green, whispered).
+   Never plain white. Was --beige-bg (warm terracotta identity). */
+--paper-bg:rgb(241,244,236);
+/* pine — jaime's brand primary: a deep, muted forest green. 600 is
+   #016630, the logo's green (primary-hover / rich fills); 500 is the
+   light-mode primary (AA on --paper-bg and as a white-on-green button);
+   400 carries dark mode (AA on --graphite-900). Muted on purpose — the
+   stock --green-* ramp is too neon for the graphite/paper mood. */
+--pine-50:rgb(238,244,239);--pine-100:rgb(214,231,220);--pine-200:rgb(174,207,186);--pine-300:rgb(125,179,147);--pine-400:rgb(71,151,112);--pine-500:rgb(30,122,80);--pine-600:rgb(1,102,48);--pine-700:rgb(12,83,48);--pine-800:rgb(14,66,40);--pine-900:rgb(13,55,35);--pine-950:rgb(5,32,26)
 }

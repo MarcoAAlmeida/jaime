@@ -87,10 +87,11 @@
       second account persists across a reload.
 - [x] 6.2 `nuxt typecheck`, `vitest run`, `playwright test` green.
 - [x] 6.3 `openspec validate add-admin-console --strict`.
-- [ ] 6.4 Operator deploy: `npm run deploy` (applies `0006`); set
+- [x] 6.4 Operator deploy: `npm run deploy` (applies `0006`); set
       `AI_ACCESS_LOGINS` if it needs to differ from the committed
       default. Verify `/admin` on `jaime.stream` shows the real roster
-      and the toggle persists.
+      and the toggle persists. Deployed `7e043986`; verified live by
+      the operator — roster loads, the switch grants and persists.
 - [ ] 6.5 Sync the `admin-console` delta; archive the change.
 - [x] 6.6 `docs/04-roadmap/index.md` — note `/admin` shipped and that
       `add-jah-chat` now consumes `hasAiAccess` + writes `ai_usage`.
