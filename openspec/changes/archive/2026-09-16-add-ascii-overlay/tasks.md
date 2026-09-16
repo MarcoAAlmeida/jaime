@@ -119,7 +119,7 @@
       stopped.
 - [x] 3.9 `nuxt typecheck`, `vitest run`, `playwright test` green.
 - [x] 3.10 `openspec validate add-ascii-overlay --strict`.
-- [ ] 3.11 `npm run deploy`; manual verification on `jaime.stream`:
+- [x] 3.11 `npm run deploy`; manual verification on `jaime.stream`:
       toggle the panel in a live room, confirm real pieces render,
       scale correctly, and advance on the beat cadence during playback.
 - [ ] 3.12 Sync the `ascii-overlay` and `composition-room` deltas;
