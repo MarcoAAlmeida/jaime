@@ -42,20 +42,28 @@ applied.
 - **THEN** the sequence of pieces shown in each session is independently
   randomized, not a fixed or shared order
 
-### Requirement: The Displayed Piece Advances On A Fixed Beat Interval During Playback
+### Requirement: The Displayed Piece Advances On A Per-Viewer Beat Interval During Playback
 The system SHALL advance the panel to a newly, randomly selected
 piece every Nth scheduler event while the room's shared document is
-playing, where N is a fixed, operator-set parameter. The system SHALL
-NOT advance the displayed piece while playback is stopped.
+playing, where N is a per-viewer setting each participant controls
+independently for their own view — never synced to or shared with
+other participants in the room. The system SHALL NOT advance the
+displayed piece while playback is stopped.
 
 #### Scenario: The piece advances during playback
 - **WHEN** the room is playing and N scheduler events have elapsed
-  since the last advance
+  since the last advance, using the viewer's own current setting for N
 - **THEN** the panel advances to a new, randomly selected piece
 
 #### Scenario: The piece does not advance while stopped
 - **WHEN** the room's shared document is not playing
 - **THEN** the panel's displayed piece does not change
+
+#### Scenario: A viewer changes their own interval without affecting others
+- **WHEN** a participant changes their own swap-interval setting
+- **THEN** only their own panel's advance cadence changes; every other
+  participant's panel keeps advancing on its own independently-set
+  interval
 
 ### Requirement: The Displayed Piece Is Rendered To Fit The Panel
 The system SHALL render each piece scaled to fit the available panel

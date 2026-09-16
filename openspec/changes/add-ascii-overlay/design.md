@@ -73,11 +73,14 @@ than provisioning a new database.
 
 **Non-Goals:**
 - Category browsing, filtering, or any curation UI.
-- A settings UI for opacity or swap cadence — both are fixed constants
-  chosen once and adjusted in code if they look wrong, matching this
-  project's general bias against speculative configurability.
+- A settings UI for opacity — a fixed constant chosen once and
+  adjusted in code if it looks wrong, matching this project's general
+  bias against speculative configurability. (Swap cadence is the one
+  exception — see the per-viewer interval decision below.)
 - Re-scraping automatically on a schedule. A future re-run is a manual
   operator action, same as the first run.
+- Syncing the swap-interval setting across participants — it is
+  explicitly per-viewer, not room state.
 
 ## Decisions
 
@@ -143,15 +146,24 @@ through it locally on each beat-gated swap, refetching only when the
 batch is exhausted — so the swap itself, which happens on a musical
 cadence, never depends on network latency.
 
-**Beat gating: a fixed modulo on the existing scheduler event count,
-not new beat-detection.** `add-strudel-parity` already exposes a
-per-event callback used for pattern highlighting. This change adds one
-more subscriber: a running counter, advancing the panel when
-`count % N === 0`. `N` is a fixed constant (not a UI setting) — chosen
-during slice 3 implementation by ear alongside the actual toggle, in
-the same spirit as the fixed opacity. `N` counts scheduler events, not
-wall-clock time, so the cadence naturally follows the room's tempo/
-pattern density rather than needing separate BPM plumbing.
+**Beat gating: a modulo on the existing scheduler event count, not new
+beat-detection.** `add-strudel-parity` already exposes a per-event
+callback used for pattern highlighting. This change adds one more
+subscriber: a running counter, advancing the panel when `count % N ===
+0`. `N` counts scheduler events, not wall-clock time, so the cadence
+naturally follows the room's tempo/pattern density rather than needing
+separate BPM plumbing.
+
+**`N` is a per-viewer setting, not a fixed constant.** Unlike opacity
+(genuinely fine as a one-off code value), swap cadence is something a
+person watching wants to tune to taste in the moment — so it's a
+plain reactive `ref` in the component, adjustable via a small control
+in the panel (a stepper/slider), defaulting to a fixed value (chosen
+by ear during implementation) and optionally remembered per-browser in
+`localStorage` for convenience. It is never sent over the WS
+connection or stored in room state — purely local, per-viewer UI
+state, consistent with this being a decorative layer rather than
+something the room needs to agree on.
 
 **The scrape is a manual operator command, never deploy-hooked.**
 Unlike `scripts/sync-patterns.mjs` (which reconciles a manifest *this

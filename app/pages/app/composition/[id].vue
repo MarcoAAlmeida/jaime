@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AsciiArtPiece } from '#shared/asciiArt'
 import type { ChatMessage, CompositionPresenceEntry, Role } from '#shared/compositionProtocol'
 import type { CompositionProvider } from '~/lib/compositionProvider'
 import type { StrudelEditor } from '~/lib/strudelEditor'
@@ -41,53 +42,15 @@ $: s("bd*4, ~ cp*<1 2>").bank("RolandTR909")
 $: note("<c2 eb2 g2 bb1>").s("sawtooth").lpf(sine.range(400, 1400).slow(8)).lpq(6).gain(.7)
 `
 
-// Slice 1 of add-ascii-overlay: two hardcoded pieces so the panel's
-// layout/scaling can be reviewed before the real scrape (slice 2)
-// lands. Replaced by GET /api/ascii-art/random in slice 3.
-interface AsciiArtPiece {
-  text: string
-  width: number
-  height: number
-  title: string
-  artist: string
-  sourceUrl: string
-}
-
-function withDims(text: string): { text: string, width: number, height: number } {
-  const lines = text.split('\n')
-  return { text, width: Math.max(...lines.map(l => l.length)), height: lines.length }
-}
-
-const ASCII_FIXTURES: AsciiArtPiece[] = [
-  {
-    ...withDims([
-      ' /\\_/\\ ',
-      '( o.o )',
-      ' > ^ < ',
-    ].join('\n')),
-    title: 'Whiskers (fixture)',
-    artist: 'jaime placeholder',
-    sourceUrl: 'https://www.asciiart.eu/animals/cats',
-  },
-  {
-    ...withDims([
-      '+------------------------------------------+',
-      '|                                            |',
-      '|   #     #  ##   #  #    #  ####           |',
-      '|   #     # #  #  #  ##  ##  #              |',
-      '|   #  #  # ####  #  # ## #  ###            |',
-      '|   #  #  # #  #  #  #    #  #              |',
-      '|    ## ##  #  #  #  #    #  ####           |',
-      '|                                            |',
-      '|          C O M P O S I T I O N             |',
-      '|                                            |',
-      '+------------------------------------------+',
-    ].join('\n')),
-    title: 'JAIME banner (fixture)',
-    artist: 'jaime placeholder',
-    sourceUrl: 'https://www.asciiart.eu/art-and-design',
-  },
-]
+// add-ascii-overlay slice 3: a per-viewer-random batch fetched once
+// (and refilled when exhausted) so the beat-driven swap never depends
+// on network latency — see design.md ("Selection: ORDER BY RANDOM()
+// server-side, batched client-side").
+const ASCII_BATCH_SIZE = 30
+const SWAP_INTERVAL_KEY = 'jaime:ascii-swap-interval'
+const SWAP_INTERVAL_MIN = 1
+const SWAP_INTERVAL_MAX = 64
+const DEFAULT_SWAP_INTERVAL = 8
 
 const rootEl = ref<HTMLDivElement>()
 const editorEl = ref<HTMLDivElement>()
@@ -118,10 +81,103 @@ const unread = ref(0)
 const showAsciiPanel = ref(false)
 const asciiBodyEl = ref<HTMLDivElement>()
 const asciiFontSize = ref(16)
-const asciiFixtureIndex = ref(0)
-const currentAsciiArt = computed(() => ASCII_FIXTURES[asciiFixtureIndex.value % ASCII_FIXTURES.length]!)
+const asciiBatch = ref<AsciiArtPiece[]>([])
+const asciiCursor = ref(0)
+const asciiLoadError = ref(false)
+const currentAsciiArt = computed<AsciiArtPiece | null>(() => asciiBatch.value[asciiCursor.value] ?? null)
+// Per-viewer only — never sent over the WS connection or stored in
+// room state (design.md: swap cadence is a personal preference, not
+// something the room needs to agree on).
+const swapInterval = ref(DEFAULT_SWAP_INTERVAL)
 
 const isEditor = computed(() => role.value === 'editor')
+
+async function fetchAsciiBatch() {
+  try {
+    const batch = await $fetch<AsciiArtPiece[]>('/api/ascii-art/random', { query: { count: ASCII_BATCH_SIZE } })
+    asciiBatch.value = batch
+    asciiCursor.value = 0
+    asciiLoadError.value = false
+    void nextTick(syncAsciiFontSize)
+  }
+  catch {
+    // Scrape hasn't run yet locally, or a transient network blip —
+    // the panel shows a quiet placeholder rather than an error banner.
+    asciiLoadError.value = true
+  }
+}
+
+/** Advances to the next piece in the current batch, refilling from the
+ *  API once the batch is exhausted (keeps showing the last piece until
+ *  the refill resolves — no flicker to empty). */
+function advanceAsciiArt() {
+  if (asciiBatch.value.length === 0) {
+    void fetchAsciiBatch()
+    return
+  }
+  const next = asciiCursor.value + 1
+  if (next >= asciiBatch.value.length) {
+    void fetchAsciiBatch()
+    return
+  }
+  asciiCursor.value = next
+}
+
+function loadStoredSwapInterval(): number {
+  try {
+    const raw = Number.parseInt(localStorage.getItem(SWAP_INTERVAL_KEY) ?? '', 10)
+    return Number.isFinite(raw) && raw >= SWAP_INTERVAL_MIN && raw <= SWAP_INTERVAL_MAX ? raw : DEFAULT_SWAP_INTERVAL
+  }
+  catch {
+    return DEFAULT_SWAP_INTERVAL
+  }
+}
+
+function adjustSwapInterval(delta: number) {
+  swapInterval.value = Math.min(SWAP_INTERVAL_MAX, Math.max(SWAP_INTERVAL_MIN, swapInterval.value + delta))
+  try {
+    localStorage.setItem(SWAP_INTERVAL_KEY, String(swapInterval.value))
+  }
+  catch { /* private browsing etc. — the setting just won't persist */ }
+}
+
+// Beat-driven swap loop: a plain wall-clock timer derived from the
+// room's own bpm, not a hook into Strudel's internal scheduler (which,
+// per investigation, doesn't expose a per-hap callback to host apps —
+// see design.md). Runs only while playing; a fresh loop starts on
+// every play so it always uses the current bpm.
+let asciiSwapTimer: ReturnType<typeof setInterval> | undefined
+let beatsSinceSwap = 0
+let lastBeatAt = 0
+
+function stopAsciiSwapLoop() {
+  if (asciiSwapTimer) clearInterval(asciiSwapTimer)
+  asciiSwapTimer = undefined
+}
+
+function startAsciiSwapLoop() {
+  stopAsciiSwapLoop()
+  const bpm = provider?.getClock().bpm || 120
+  const beatMs = 60000 / bpm
+  beatsSinceSwap = 0
+  lastBeatAt = performance.now()
+  asciiSwapTimer = setInterval(() => {
+    const now = performance.now()
+    while (now - lastBeatAt >= beatMs) {
+      lastBeatAt += beatMs
+      beatsSinceSwap += 1
+      if (beatsSinceSwap >= swapInterval.value) {
+        beatsSinceSwap = 0
+        advanceAsciiArt()
+      }
+    }
+  }, 50)
+}
+
+watch(playing, (isPlaying) => {
+  if (isPlaying) startAsciiSwapLoop()
+  else stopAsciiSwapLoop()
+})
 
 function isWideViewport(): boolean {
   return window.matchMedia?.('(min-width: 768px)')?.matches ?? true
@@ -139,15 +195,9 @@ function toggleAsciiPanel() {
   showAsciiPanel.value = !showAsciiPanel.value
   if (showAsciiPanel.value) {
     if (!isWideViewport()) panelOpen.value = false
+    if (asciiBatch.value.length === 0) void fetchAsciiBatch()
     void nextTick(syncAsciiFontSize)
   }
-}
-
-// Dev-only control for slice 1 — lets the two fixtures be compared by
-// hand. Removed once slice 3 wires real, beat-driven swapping.
-function nextAsciiFixture() {
-  asciiFixtureIndex.value = (asciiFixtureIndex.value + 1) % ASCII_FIXTURES.length
-  void nextTick(syncAsciiFontSize)
 }
 
 function sendChat() {
@@ -388,6 +438,7 @@ async function start() {
 
 onMounted(() => {
   panelOpen.value = window.matchMedia?.('(min-width: 768px)')?.matches ?? true
+  swapInterval.value = loadStoredSwapInterval()
   void start()
 })
 watch([displayName, role], () => { void start() })
@@ -395,6 +446,7 @@ watch([displayName, role], () => { void start() })
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   asciiResizeObserver?.disconnect()
+  stopAsciiSwapLoop()
   clearTimeout(wrapDebounce)
   canvasEl.value?.removeAttribute('id')
   editor?.destroy()
@@ -583,9 +635,9 @@ onBeforeUnmount(() => {
               color="neutral"
               variant="ghost"
               icon="i-lucide-shuffle"
-              aria-label="Show the next fixture (dev only)"
-              data-testid="ascii-next-fixture-button"
-              @click="nextAsciiFixture"
+              aria-label="Show another piece now"
+              data-testid="ascii-shuffle-button"
+              @click="advanceAsciiArt"
             />
             <UButton
               size="xs"
@@ -599,26 +651,57 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <!-- Per-viewer only — never synced to other participants; see
+             add-ascii-overlay design.md. -->
+        <div class="text-muted flex items-center justify-center gap-1.5 text-xs">
+          <span>swap every</span>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-minus"
+            aria-label="Swap less often"
+            data-testid="ascii-interval-decrease"
+            @click="adjustSwapInterval(-1)"
+          />
+          <span class="w-5 text-center tabular-nums" data-testid="ascii-interval-value">{{ swapInterval }}</span>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-plus"
+            aria-label="Swap more often"
+            data-testid="ascii-interval-increase"
+            @click="adjustSwapInterval(1)"
+          />
+          <span>beats</span>
+        </div>
+
         <div
           ref="asciiBodyEl"
           class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-black"
           data-testid="ascii-art-body"
         >
           <pre
+            v-if="currentAsciiArt"
             class="whitespace-pre text-center font-mono leading-tight text-white"
             :style="{ fontSize: `${asciiFontSize}px` }"
             data-testid="ascii-art-text"
           >{{ currentAsciiArt.text }}</pre>
+          <p v-else class="text-xs text-white/60">
+            {{ asciiLoadError ? 'No ASCII art available yet.' : 'Loading…' }}
+          </p>
         </div>
 
         <a
+          v-if="currentAsciiArt"
           :href="currentAsciiArt.sourceUrl"
           target="_blank"
           rel="noopener noreferrer"
           class="text-muted hover:text-default truncate text-xs underline-offset-2 hover:underline"
           data-testid="ascii-attribution"
         >
-          {{ currentAsciiArt.title }} — {{ currentAsciiArt.artist }}
+          {{ currentAsciiArt.title ?? 'Untitled' }} — {{ currentAsciiArt.artist ?? 'unknown artist' }}
         </a>
       </aside>
 

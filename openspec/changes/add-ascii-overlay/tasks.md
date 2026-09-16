@@ -89,32 +89,36 @@
 
 ## 3. Slice 3 — Beat-driven swapping against real data
 
-- [ ] 3.1 Remove the slice-1 fixtures and the temporary "next fixture"
+- [x] 3.1 Remove the slice-1 fixtures and the temporary "next fixture"
       dev control.
-- [ ] 3.2 On panel-open (or room load if already toggled on), fetch
+- [x] 3.2 On panel-open (or room load if already toggled on), fetch
       a batch via `GET /api/ascii-art/random?count=<n>`; store it
       client-side and track a cursor into it.
-- [ ] 3.3 Wire a subscriber to the existing Strudel scheduler event
+- [x] 3.3 Wire a subscriber to the existing Strudel scheduler event
       stream (the same one driving pattern-event highlighting from
       `add-strudel-parity`): increment a counter per event; when
-      `count % N === 0` and the room is playing, advance the cursor
-      (wrapping/refetching a new batch when exhausted) and update the
-      displayed piece.
-- [ ] 3.4 Do not advance while the room is stopped — gate the
+      `count % swapInterval.value === 0` and the room is playing,
+      advance the cursor (wrapping/refetching a new batch when
+      exhausted) and update the displayed piece.
+- [x] 3.4 Do not advance while the room is stopped — gate the
       subscriber on the existing playback state.
-- [ ] 3.5 Pick and hard-code `N` by ear during testing (a fixed
-      constant, not a setting); note the chosen value and rationale in
-      a short code comment.
-- [ ] 3.6 Re-run the font-scaling computation (from slice 1) on every
+- [x] 3.5 `swapInterval` ref, per-viewer only — never sent over the WS
+      connection or stored in room state. A small stepper/slider in the
+      panel header (near the shuffle/close buttons) lets each
+      participant set their own value; default to a fixed value chosen
+      by ear during implementation. Optionally persist the viewer's
+      last value in `localStorage` (wrapped in try/catch — private
+      browsing etc. must not break the panel).
+- [x] 3.6 Re-run the font-scaling computation (from slice 1) on every
       swap using the real piece's stored `width`/`height`.
-- [ ] 3.7 Update the attribution link/text on every swap to the new
+- [x] 3.7 Update the attribution link/text on every swap to the new
       piece's real artist/title/`source_url`.
-- [ ] 3.8 Playwright e2e: with a stubbed/seeded `ascii_art` batch,
+- [x] 3.8 Playwright e2e: with a stubbed/seeded `ascii_art` batch,
       confirm the panel advances after the expected number of
       scheduler events during playback and does not advance while
       stopped.
-- [ ] 3.9 `nuxt typecheck`, `vitest run`, `playwright test` green.
-- [ ] 3.10 `openspec validate add-ascii-overlay --strict`.
+- [x] 3.9 `nuxt typecheck`, `vitest run`, `playwright test` green.
+- [x] 3.10 `openspec validate add-ascii-overlay --strict`.
 - [ ] 3.11 `npm run deploy`; manual verification on `jaime.stream`:
       toggle the panel in a live room, confirm real pieces render,
       scale correctly, and advance on the beat cadence during playback.
