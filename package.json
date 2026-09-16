@@ -7,6 +7,7 @@
     "dev": "npm run db:migrate:local && nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "dev:rooms": "npm run build && wrangler dev .output/server/index.mjs --assets .output/public",
     "postinstall": "nuxt prepare",
     "db:migrate:local": "wrangler d1 migrations apply PATTERNS_DB --local && node scripts/sync-patterns.mjs --local",
     "db:migrate:remote": "wrangler d1 migrations apply PATTERNS_DB --remote && node scripts/sync-patterns.mjs --remote",

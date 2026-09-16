@@ -41,6 +41,54 @@ $: s("bd*4, ~ cp*<1 2>").bank("RolandTR909")
 $: note("<c2 eb2 g2 bb1>").s("sawtooth").lpf(sine.range(400, 1400).slow(8)).lpq(6).gain(.7)
 `
 
+// Slice 1 of add-ascii-overlay: two hardcoded pieces so the panel's
+// layout/scaling can be reviewed before the real scrape (slice 2)
+// lands. Replaced by GET /api/ascii-art/random in slice 3.
+interface AsciiArtPiece {
+  text: string
+  width: number
+  height: number
+  title: string
+  artist: string
+  sourceUrl: string
+}
+
+function withDims(text: string): { text: string, width: number, height: number } {
+  const lines = text.split('\n')
+  return { text, width: Math.max(...lines.map(l => l.length)), height: lines.length }
+}
+
+const ASCII_FIXTURES: AsciiArtPiece[] = [
+  {
+    ...withDims([
+      ' /\\_/\\ ',
+      '( o.o )',
+      ' > ^ < ',
+    ].join('\n')),
+    title: 'Whiskers (fixture)',
+    artist: 'jaime placeholder',
+    sourceUrl: 'https://www.asciiart.eu/animals/cats',
+  },
+  {
+    ...withDims([
+      '+------------------------------------------+',
+      '|                                            |',
+      '|   #     #  ##   #  #    #  ####           |',
+      '|   #     # #  #  #  ##  ##  #              |',
+      '|   #  #  # ####  #  # ## #  ###            |',
+      '|   #  #  # #  #  #  #    #  #              |',
+      '|    ## ##  #  #  #  #    #  ####           |',
+      '|                                            |',
+      '|          C O M P O S I T I O N             |',
+      '|                                            |',
+      '+------------------------------------------+',
+    ].join('\n')),
+    title: 'JAIME banner (fixture)',
+    artist: 'jaime placeholder',
+    sourceUrl: 'https://www.asciiart.eu/art-and-design',
+  },
+]
+
 const rootEl = ref<HTMLDivElement>()
 const editorEl = ref<HTMLDivElement>()
 // Backdrop canvas — @strudel/draw visuals render behind the transparent
@@ -63,11 +111,43 @@ const chatLog = ref<HTMLDivElement>()
 const panelOpen = ref(true)
 const unread = ref(0)
 
+// The ASCII-art panel (add-ascii-overlay) is independent of the chat
+// panel above and off by default. Below `md` both become full-width
+// overlay sheets, so only one is shown at a time there; on `md`+ both
+// may dock side by side.
+const showAsciiPanel = ref(false)
+const asciiBodyEl = ref<HTMLDivElement>()
+const asciiFontSize = ref(16)
+const asciiFixtureIndex = ref(0)
+const currentAsciiArt = computed(() => ASCII_FIXTURES[asciiFixtureIndex.value % ASCII_FIXTURES.length]!)
+
 const isEditor = computed(() => role.value === 'editor')
+
+function isWideViewport(): boolean {
+  return window.matchMedia?.('(min-width: 768px)')?.matches ?? true
+}
 
 function togglePanel() {
   panelOpen.value = !panelOpen.value
-  if (panelOpen.value) unread.value = 0
+  if (panelOpen.value) {
+    unread.value = 0
+    if (!isWideViewport()) showAsciiPanel.value = false
+  }
+}
+
+function toggleAsciiPanel() {
+  showAsciiPanel.value = !showAsciiPanel.value
+  if (showAsciiPanel.value) {
+    if (!isWideViewport()) panelOpen.value = false
+    void nextTick(syncAsciiFontSize)
+  }
+}
+
+// Dev-only control for slice 1 — lets the two fixtures be compared by
+// hand. Removed once slice 3 wires real, beat-driven swapping.
+function nextAsciiFixture() {
+  asciiFixtureIndex.value = (asciiFixtureIndex.value + 1) % ASCII_FIXTURES.length
+  void nextTick(syncAsciiFontSize)
 }
 
 function sendChat() {
@@ -118,7 +198,27 @@ let provider: CompositionProvider | undefined
 let editor: StrudelEditor | undefined
 let undoManager: Y.UndoManager | undefined
 let resizeObserver: ResizeObserver | undefined
+let asciiResizeObserver: ResizeObserver | undefined
 let wrapDebounce: ReturnType<typeof setTimeout> | undefined
+
+const ASCII_FONT_MIN = 6
+const ASCII_FONT_MAX = 48
+// Rough monospace glyph metrics — good enough to fit text to the pane
+// without measuring the DOM (design.md decision: "computed, not
+// measured").
+const ASCII_CHAR_WIDTH_EM = 0.6
+const ASCII_LINE_HEIGHT_EM = 1.15
+
+// Fits the current piece to the panel's available space, independent
+// of the backdrop canvas's own ResizeObserver below.
+function syncAsciiFontSize() {
+  const el = asciiBodyEl.value
+  const art = currentAsciiArt.value
+  if (!el || !art || el.clientWidth <= 0 || el.clientHeight <= 0) return
+  const byWidth = el.clientWidth / (art.width * ASCII_CHAR_WIDTH_EM)
+  const byHeight = el.clientHeight / (art.height * ASCII_LINE_HEIGHT_EM)
+  asciiFontSize.value = Math.min(ASCII_FONT_MAX, Math.max(ASCII_FONT_MIN, Math.floor(Math.min(byWidth, byHeight))))
+}
 
 // Below this editor-host width the editor soft-wraps so code is read by
 // scrolling vertically, never horizontally (Tailwind `sm`).
@@ -206,6 +306,10 @@ async function start() {
   resizeObserver = new ResizeObserver(onResize)
   if (rootEl.value) resizeObserver.observe(rootEl.value)
 
+  syncAsciiFontSize()
+  asciiResizeObserver = new ResizeObserver(syncAsciiFontSize)
+  if (asciiBodyEl.value) asciiResizeObserver.observe(asciiBodyEl.value)
+
   provider = createCompositionProvider({
     roomId: roomId.value,
     name: displayName.value,
@@ -290,6 +394,7 @@ watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
+  asciiResizeObserver?.disconnect()
   clearTimeout(wrapDebounce)
   canvasEl.value?.removeAttribute('id')
   editor?.destroy()
@@ -406,6 +511,16 @@ onBeforeUnmount(() => {
 
         <UButton
           size="xs"
+          color="neutral"
+          :variant="showAsciiPanel ? 'solid' : 'outline'"
+          icon="i-lucide-scroll-text"
+          aria-label="Toggle ASCII art panel"
+          data-testid="toggle-ascii-panel-button"
+          @click="toggleAsciiPanel"
+        />
+
+        <UButton
+          size="xs"
           :color="unread ? 'primary' : 'neutral'"
           :variant="panelOpen ? 'solid' : 'outline'"
           icon="i-lucide-users"
@@ -447,6 +562,65 @@ onBeforeUnmount(() => {
         />
         <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
       </div>
+
+      <!-- Docked beside the editor on md+ (solid background at every size,
+           unlike the chat panel below, which goes transparent on md+; a bit
+           wider on lg+ since ASCII art benefits from the extra room); a
+           right-hand overlay sheet below md. Independent of the chat
+           panel's toggle — see add-ascii-overlay design.md. -->
+      <aside
+        v-show="showAsciiPanel"
+        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-2 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:w-64 md:max-w-none md:rounded-md md:border md:shadow-none lg:w-96"
+        data-testid="ascii-panel"
+      >
+        <div class="flex items-center justify-between">
+          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
+            ASCII art
+          </h2>
+          <div class="flex items-center gap-1">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-shuffle"
+              aria-label="Show the next fixture (dev only)"
+              data-testid="ascii-next-fixture-button"
+              @click="nextAsciiFixture"
+            />
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-x"
+              class="md:hidden"
+              data-testid="close-ascii-panel-button"
+              @click="showAsciiPanel = false"
+            />
+          </div>
+        </div>
+
+        <div
+          ref="asciiBodyEl"
+          class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-black"
+          data-testid="ascii-art-body"
+        >
+          <pre
+            class="whitespace-pre text-center font-mono leading-tight text-white"
+            :style="{ fontSize: `${asciiFontSize}px` }"
+            data-testid="ascii-art-text"
+          >{{ currentAsciiArt.text }}</pre>
+        </div>
+
+        <a
+          :href="currentAsciiArt.sourceUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-muted hover:text-default truncate text-xs underline-offset-2 hover:underline"
+          data-testid="ascii-attribution"
+        >
+          {{ currentAsciiArt.title }} — {{ currentAsciiArt.artist }}
+        </a>
+      </aside>
 
       <!-- Docked beside the editor on md+; a right-hand overlay sheet below that. -->
       <aside

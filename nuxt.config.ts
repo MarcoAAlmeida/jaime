@@ -49,8 +49,13 @@ export default defineNuxtConfig({
     fallbackToApi: false
   },
   routeRules: {
-    // JAM's active room is browser-only (WebSocket, Web Audio, Strudel).
+    // JAM's active room and the Composition Room are both browser-only
+    // (WebSocket, Web Audio, Strudel/CodeMirror) — and both transitively
+    // import @kabelsalat/web via @strudel/core, whose broken "main"
+    // field (see the alias below) only gets resolved correctly through
+    // Vite's client bundling, not Nitro's dev-SSR vite-node runner.
     '/app/jam/room/**': { ssr: false },
+    '/app/composition/**': { ssr: false },
     // JAM moved under the dashboard shell; keep older links alive.
     '/app': { redirect: '/app/jam' },
     '/room/**': { redirect: '/app/jam/room/**' }
