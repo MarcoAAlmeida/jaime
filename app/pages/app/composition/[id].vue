@@ -85,6 +85,11 @@ const asciiBatch = ref<AsciiArtPiece[]>([])
 const asciiCursor = ref(0)
 const asciiLoadError = ref(false)
 const currentAsciiArt = computed<AsciiArtPiece | null>(() => asciiBatch.value[asciiCursor.value] ?? null)
+// Every piece has different character dimensions — refit on every
+// change, not just when a fresh batch is fetched (a plain cursor
+// advance within an already-loaded batch used to skip this, letting
+// the font size drift wildly oversized on some swaps).
+watch(currentAsciiArt, () => { void nextTick(syncAsciiFontSize) })
 // Per-viewer only — never sent over the WS connection or stored in
 // room state (design.md: swap cadence is a personal preference, not
 // something the room needs to agree on).
@@ -98,7 +103,6 @@ async function fetchAsciiBatch() {
     asciiBatch.value = batch
     asciiCursor.value = 0
     asciiLoadError.value = false
-    void nextTick(syncAsciiFontSize)
   }
   catch {
     // Scrape hasn't run yet locally, or a transient network blip —
@@ -624,7 +628,7 @@ onBeforeUnmount(() => {
            chat panel's toggle — see add-ascii-overlay design.md. -->
       <aside
         v-show="showAsciiPanel"
-        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-2 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:min-w-0 md:max-w-none md:flex-1 md:rounded-md md:border md:shadow-none"
+        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex min-h-0 w-72 max-w-[85vw] shrink-0 flex-col gap-2 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:min-w-0 md:max-w-none md:flex-1 md:rounded-md md:border md:shadow-none"
         data-testid="ascii-panel"
       >
         <div class="flex items-center justify-between">
