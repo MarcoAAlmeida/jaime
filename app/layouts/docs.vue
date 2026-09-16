@@ -31,10 +31,15 @@ function toItem(node: DocNode): NavigationMenuItem {
   }
 }
 
+// Quick links to every tool, at menu level — not just a generic "back
+// to tools" link — so docs never dead-ends into a single room type.
+// Same TOOLS source + ordering as the dashboard sidebar and landing
+// page (Composition Room before JAM), plus Patterns.
 const items = computed<NavigationMenuItem[][]>(() => [
   sections.value.map(toItem),
   [
-    { label: 'Back to tools', icon: 'i-lucide-arrow-left', to: '/app/jam' },
+    ...TOOLS.map(tool => ({ label: tool.label, icon: tool.icon, to: tool.to })),
+    { label: 'Patterns', icon: 'i-lucide-library', to: '/app/patterns' },
   ],
 ])
 </script>

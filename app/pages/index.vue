@@ -19,6 +19,8 @@ const { displayName } = useDisplayName()
     description="jaime is a hub of small, music-oriented tools. Jam on shared patterns, compose together, and dig through a library of ideas — nothing to install."
     :links="[
       { label: 'Try JAM', to: '/app/jam', icon: 'i-lucide-radio', size: 'lg' },
+      { label: 'Composition Room', to: '/app/composition', icon: 'i-lucide-users', color: 'neutral', variant: 'subtle', size: 'lg' },
+      { label: 'Pattern library', to: '/app/patterns', icon: 'i-lucide-library', color: 'neutral', variant: 'subtle', size: 'lg' },
       { label: 'Read the docs', to: '/docs', color: 'neutral', variant: 'subtle', trailingIcon: 'i-lucide-arrow-right', size: 'lg' }
     ]"
   >

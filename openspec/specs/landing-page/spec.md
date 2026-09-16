@@ -34,6 +34,22 @@ visitor into a tool (e.g. "Try JAM"), distinct from secondary links.
 - **THEN** exactly one call-to-action is styled as primary and links
   directly into a tool
 
+### Requirement: Every Tool Is One Click From The Hero
+The system SHALL provide a secondary hero link straight into each tool
+that isn't the primary call-to-action (Composition Room, Pattern
+library), so a visitor who wants a specific tool never has to scroll
+to the tools section to find it.
+
+#### Scenario: Visitor jumps directly to Composition Room
+- **WHEN** a visitor views the landing page hero
+- **THEN** a secondary link labeled "Composition Room" goes directly
+  to `/app/composition`
+
+#### Scenario: Visitor jumps directly to the pattern library
+- **WHEN** a visitor views the landing page hero
+- **THEN** a secondary link labeled "Pattern library" goes directly to
+  `/app/patterns`
+
 ### Requirement: Docs Are Reachable From Landing
 The system SHALL provide a link from the landing page directly to the
 docs shell.

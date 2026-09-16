@@ -27,14 +27,24 @@ content is written.
 - **THEN** a Strudel entry is present and navigable, even if its
   content is a placeholder
 
-### Requirement: Docs Shell Has A Way Back To The Dashboard
-The system SHALL provide a visible path from the docs shell back into
-the dashboard/tools.
+### Requirement: Docs Shell Has Quick Links To Every Tool
+The system SHALL provide, at menu level in the docs shell's sidebar, a
+direct link into each tool (Composition Room, JAM, Pattern library) —
+not only a generic "back to tools" link — so a reader never has to
+detour through a single tool's own room to reach a different one.
 
-#### Scenario: User returns to the dashboard from docs
-- **WHEN** a user in the docs shell clicks the path back to the
-  dashboard
-- **THEN** they land back on the dashboard shell
+#### Scenario: User jumps from docs straight into Composition Room
+- **WHEN** a user in the docs shell clicks "Composition Room" in the
+  sidebar
+- **THEN** they land on `/app/composition`
+
+#### Scenario: User jumps from docs straight into JAM
+- **WHEN** a user in the docs shell clicks "JAM" in the sidebar
+- **THEN** they land on `/app/jam`
+
+#### Scenario: User jumps from docs straight into the pattern library
+- **WHEN** a user in the docs shell clicks "Patterns" in the sidebar
+- **THEN** they land on `/app/patterns`
 
 ### Requirement: A Doc Page Can Require Authentication
 The system SHALL support marking a doc page as requiring
