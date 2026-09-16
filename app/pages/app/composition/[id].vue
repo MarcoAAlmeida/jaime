@@ -50,7 +50,7 @@ const ASCII_BATCH_SIZE = 30
 const SWAP_INTERVAL_KEY = 'jaime:ascii-swap-interval'
 const SWAP_INTERVAL_MIN = 1
 const SWAP_INTERVAL_MAX = 64
-const DEFAULT_SWAP_INTERVAL = 8
+const DEFAULT_SWAP_INTERVAL = 4
 
 const rootEl = ref<HTMLDivElement>()
 const editorEl = ref<HTMLDivElement>()
@@ -604,6 +604,7 @@ onBeforeUnmount(() => {
       <div
         ref="rootEl"
         class="bg-elevated relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md"
+        :class="showAsciiPanel ? 'md:w-64 md:flex-none lg:w-96' : ''"
         data-testid="composition-editor"
       >
         <canvas
@@ -616,13 +617,14 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Docked beside the editor on md+ (solid background at every size,
-           unlike the chat panel below, which goes transparent on md+; a bit
-           wider on lg+ since ASCII art benefits from the extra room); a
-           right-hand overlay sheet below md. Independent of the chat
-           panel's toggle — see add-ascii-overlay design.md. -->
+           unlike the chat panel below, which goes transparent on md+).
+           Takes the lion's share of the row — the editor shrinks to a
+           fixed width instead — since the art is the point once this is
+           open; a right-hand overlay sheet below md. Independent of the
+           chat panel's toggle — see add-ascii-overlay design.md. -->
       <aside
         v-show="showAsciiPanel"
-        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-2 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:w-64 md:max-w-none md:rounded-md md:border md:shadow-none lg:w-96"
+        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-2 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:min-w-0 md:max-w-none md:flex-1 md:rounded-md md:border md:shadow-none"
         data-testid="ascii-panel"
       >
         <div class="flex items-center justify-between">
