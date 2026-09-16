@@ -1,4 +1,5 @@
 import type { H3Event } from 'h3'
+import { isAsciiArtMigrated } from '../catalog/asciiArt'
 import { isMigrated } from '../catalog/patterns'
 
 // The Catalog D1 binding. Present on the h3 event context in every
@@ -22,6 +23,18 @@ export async function assertPatternsMigrated(db: D1Database): Promise<void> {
     throw createError({
       statusCode: 503,
       statusMessage: 'Pattern catalog database has not been migrated',
+    })
+  }
+}
+
+/** Throws a clean 503 when the `ascii_art` table doesn't exist yet —
+ *  either the 0007 migration hasn't run, or the scrape hasn't (see
+ *  scripts/scrape-ascii-gallery.mjs). */
+export async function assertAsciiArtMigrated(db: D1Database): Promise<void> {
+  if (!(await isAsciiArtMigrated(db))) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'ASCII art gallery has not been scraped yet',
     })
   }
 }

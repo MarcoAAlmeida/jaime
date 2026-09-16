@@ -38,3 +38,6 @@ logs
 
 # Playwright MCP browser snapshots
 .playwright-mcp/
+
+# scripts/scrape-ascii-gallery.mjs resume checkpoint (add-ascii-overlay)
+.ascii-scrape-checkpoint.json

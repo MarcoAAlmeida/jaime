@@ -1,0 +1,12 @@
+<script>
+        // Collect all art IDs on the page
+        document.querySelectorAll('.art-card[data-id]').forEach(card => {
+            this.artIds.push(card.dataset.id);
+        });
+
+        // Click on card body to open modal
+        document.querySelectorAll('.art-card .card-body').forEach(body => {
+            body.addEventListener('click', (e) => {
+                // Don't open if clicking on menu button
+               
+</script>

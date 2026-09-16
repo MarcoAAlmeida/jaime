@@ -12,6 +12,7 @@
     "db:migrate:local": "wrangler d1 migrations apply PATTERNS_DB --local && node scripts/sync-patterns.mjs --local",
     "db:migrate:remote": "wrangler d1 migrations apply PATTERNS_DB --remote && node scripts/sync-patterns.mjs --remote",
     "patterns:sync": "node scripts/sync-patterns.mjs",
+    "ascii:scrape": "node scripts/scrape-ascii-gallery.mjs",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "test": "npm run test:scripts && npm run db:migrate:local && nuxt build && vitest run",
     "test:e2e": "npm run db:migrate:local && playwright test",
