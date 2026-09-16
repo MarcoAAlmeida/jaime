@@ -259,9 +259,13 @@ const ASCII_FONT_MIN = 6
 const ASCII_FONT_MAX = 48
 // Rough monospace glyph metrics — good enough to fit text to the pane
 // without measuring the DOM (design.md decision: "computed, not
-// measured").
+// measured"). CHAR_WIDTH is deliberately conservative (measured
+// ui-monospace advance is closer to 0.55em; 0.6 undershoots slightly,
+// which is safe). LINE_HEIGHT must match the `<pre>`'s actual
+// `leading-tight` (1.25) exactly — a mismatch here compounds over many
+// lines into real vertical overflow, unlike a per-character width slop.
 const ASCII_CHAR_WIDTH_EM = 0.6
-const ASCII_LINE_HEIGHT_EM = 1.15
+const ASCII_LINE_HEIGHT_EM = 1.25
 
 // Fits the current piece to the panel's available space, independent
 // of the backdrop canvas's own ResizeObserver below.
