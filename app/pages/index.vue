@@ -11,6 +11,12 @@ useSeoMeta({
 // name (JAM's per-session identity) has used a tool before — surface a
 // direct link straight to the dashboard so they skip the pitch.
 const { displayName } = useDisplayName()
+
+// add-articles — a handful of teasers here, the full list at /articles.
+const ARTICLE_TEASER_COUNT = 3
+const { data: articles } = await useAsyncData('home-articles', () =>
+  queryCollection('articles').order('publishedAt', 'DESC').limit(ARTICLE_TEASER_COUNT).all(),
+)
 </script>
 
 <template>
@@ -59,6 +65,49 @@ const { displayName } = useDisplayName()
         </template>
       </UPageCard>
     </UPageGrid>
+  </UPageSection>
+
+  <UPageSection
+    v-if="articles?.length"
+    id="articles"
+    headline="Articles"
+    title="Ideas behind the tools"
+    description="Long-form pieces on the research and decisions behind jaime — the why, not just the how."
+  >
+    <UPageGrid>
+      <UPageCard
+        v-for="article in articles"
+        :key="article.path"
+        :title="article.title"
+        :description="article.description"
+        :to="article.path"
+        :ui="{ container: 'lg:flex-col' }"
+        data-testid="article-card"
+      >
+        <template #header>
+          <img
+            :src="article.coverImage"
+            :alt="article.title"
+            class="aspect-video w-full rounded-md object-cover"
+          >
+        </template>
+        <template v-if="article.authRequired" #footer>
+          <UBadge color="neutral" variant="subtle" icon="i-lucide-lock">
+            Sign in to read
+          </UBadge>
+        </template>
+      </UPageCard>
+    </UPageGrid>
+
+    <div class="mt-6 text-center">
+      <UButton
+        label="All articles"
+        to="/articles"
+        color="neutral"
+        variant="subtle"
+        trailing-icon="i-lucide-arrow-right"
+      />
+    </div>
   </UPageSection>
 
   <UPageCTA

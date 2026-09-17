@@ -18,6 +18,29 @@ export default defineContentConfig({
         // listed with a lock, signed-out visitors get an explainer.
         authRequired: z.boolean().optional()
       })
+    }),
+    // add-articles — Diátaxis Explanation-type content: long-form,
+    // screenshot-rich pieces, flat (no nav tree, unlike docs/). See
+    // openspec/changes/add-articles/design.md for why this is a
+    // separate collection rather than a flag on `docs`.
+    articles: defineCollection({
+      type: 'page',
+      source: 'articles/*.md',
+      schema: z.object({
+        // Same contract as docs' authRequired: the article stays
+        // listed (locked) for a signed-out visitor; its body is not
+        // served to them.
+        authRequired: z.boolean().optional(),
+        // Every teaser (home section + index) shows this — required,
+        // not optional, so a card is never blank.
+        coverImage: z.string(),
+        // Loose grouping for a future browse-by-tag pass; no filtering
+        // UI reads this yet.
+        tags: z.array(z.string()).optional(),
+        // Drives sort order (newest first) — articles have no nav-tree
+        // filename numbering to order them instead.
+        publishedAt: z.string()
+      })
     })
   }
 })

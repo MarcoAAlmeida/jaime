@@ -6,6 +6,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const items: NavigationMenuItem[] = [
   { label: 'Tools', to: '/#tools' },
   { label: 'Docs', to: '/docs' },
+  { label: 'Articles', to: '/articles' },
   { label: 'Community', to: '/signup' }
 ]
 </script>
