@@ -94,10 +94,11 @@ they are rebuilt from whoever is connected now.
   presence list and chat history start empty
 
 ### Requirement: Presence Shows Who Is In The Room And Their Role
-The system SHALL show every participant a live roster of who else is in
-the room and whether each is an editor or a viewer, scoped to that
-room. Each entry SHALL show the participant's display name and, where
-they are signed in with a profile picture, their avatar.
+The system SHALL show every participant, within the room's Chat tab, a
+live roster of who else is in the room and whether each is an editor
+or a viewer, scoped to that room. Each entry SHALL show the
+participant's display name and, where they are signed in with a
+profile picture, their avatar.
 
 #### Scenario: Roster updates as people come and go
 - **WHEN** a participant joins or leaves a Composition Room
@@ -147,12 +148,12 @@ transport clock, hearing the same audio in time.
   engine stays usable for the next evaluation
 
 ### Requirement: Ephemeral Room Chat
-The system SHALL provide a text chat beside the editor for the people
-in the room. Messages are delivered to everyone currently connected and
-are not persisted — chat history is empty after a restart or once the
-room empties. Each message SHALL be attributed to the sender's display
-name and, where the sender is signed in with a profile picture, their
-avatar.
+The system SHALL provide a text chat, within the room's Chat tab
+alongside the participant roster, for the people in the room. Messages
+are delivered to everyone currently connected and are not persisted —
+chat history is empty after a restart or once the room empties. Each
+message SHALL be attributed to the sender's display name and, where
+the sender is signed in with a profile picture, their avatar.
 
 #### Scenario: A message reaches everyone present
 - **WHEN** a participant sends a chat message
@@ -162,37 +163,88 @@ avatar.
 
 #### Scenario: Chat history does not come back
 - **WHEN** the room empties or the Worker restarts and someone rejoins
-- **THEN** the chat panel is empty
+- **THEN** the chat log is empty
 
-### Requirement: Composition Room Has A Toggleable ASCII-Art Panel
-The system SHALL let a participant toggle a decorative ASCII-art panel
-on and off for the Composition Room, off by default. When on, the
-panel docks beside the editor — the editor pane shares width with it
-rather than being covered — with its own solid, editor-matching
-background at every screen size. The panel's toggle is independent of
-the existing participants/chat panel's toggle: either, both, or neither
-may be open at once. The panel SHALL NOT obscure the room's header or
-its controls, regardless of its state.
+### Requirement: Composition Room Presents Three Tabs, One Visible At A Time
+The system SHALL organize the Composition Room into exactly three
+views — Composition (the shared editor and its visual backdrop), Chat
+(the roster and messaging, per the requirements above), and ASCII Art
+(per the `ascii-overlay` capability) — presented as tabs, with exactly
+one visible at a time. Each participant's active tab is their own,
+unsynced choice: switching tabs SHALL NOT change what any other
+participant sees. The system SHALL provide a way to switch tabs by
+keyboard as well as by pointer. On a narrow viewport the tab switcher
+SHALL be reachable at the bottom of the screen; on a wider viewport it
+SHALL be reachable from the room's header.
 
-#### Scenario: Turning the panel on
-- **WHEN** a participant toggles the ASCII panel on
-- **THEN** the panel appears docked beside the editor, showing an
-  ASCII-art piece (see the `ascii-overlay` capability for what is shown
-  and when it changes), and the editor remains visible and usable in
-  the remaining space
+#### Scenario: Switching tabs shows only that view
+- **WHEN** a participant switches to a tab
+- **THEN** that tab's content is shown and the other two tabs' content
+  is not visible
 
-#### Scenario: Turning the panel off
-- **WHEN** a participant toggles the ASCII panel off
-- **THEN** the panel disappears and the editor returns to using the
-  full pane
+#### Scenario: Two participants can be on different tabs
+- **WHEN** one participant is viewing the Chat tab and another is
+  viewing the Composition tab in the same room
+- **THEN** each sees only their own selected tab; neither's choice
+  affects the other
 
-#### Scenario: The ASCII panel and chat panel are independent
-- **WHEN** a participant opens the ASCII panel while the chat panel is
-  already open (or vice versa)
-- **THEN** both panels are shown docked beside the editor, and closing
-  one leaves the other open
+#### Scenario: A tab can be switched without a pointer
+- **WHEN** a participant uses the keyboard shortcut for a tab
+- **THEN** that tab becomes active, the same as clicking it
 
-#### Scenario: The panel never covers room controls
-- **WHEN** the ASCII panel is on, at any viewport size
-- **THEN** the room's header and its controls (including the panel's
-  own toggle) remain visible and usable
+#### Scenario: The tab switcher stays reachable on a narrow viewport
+- **WHEN** the room is open on a phone-width viewport
+- **THEN** the tab switcher is reachable at the bottom of the screen
+  and every tab can be activated
+
+### Requirement: Playback State Is Always Visible
+The system SHALL show, in the room's header, whether the shared
+document is currently playing, regardless of which tab is active.
+
+#### Scenario: Playback stays visible while on a different tab
+- **WHEN** the shared document is playing and a participant is on the
+  Chat or ASCII Art tab
+- **THEN** the header still shows that playback is active
+
+#### Scenario: Stopped state is shown
+- **WHEN** the shared document is not playing
+- **THEN** the header shows that nothing is currently playing
+
+### Requirement: Inactive Tabs Indicate New Activity
+The system SHALL show an indicator on the Chat tab when a chat message
+arrives while that tab is not active, and an indicator on the
+Composition tab when the shared document is evaluated while that tab
+is not active. Both indicators SHALL clear when the participant
+switches to the corresponding tab.
+
+#### Scenario: A message arrives while Chat is not active
+- **WHEN** a chat message is received while a participant's active tab
+  is Composition or ASCII Art
+- **THEN** the Chat tab shows an activity indicator until they switch
+  to it
+
+#### Scenario: An evaluation happens while Composition is not active
+- **WHEN** any participant evaluates the shared document while another
+  participant's active tab is Chat or ASCII Art
+- **THEN** that participant's Composition tab shows an activity
+  indicator until they switch to it
+
+### Requirement: An Editor Can Clear The Shared Document
+The system SHALL let a participant with the editor role clear the
+shared document, replacing its content with an empty document for
+every participant, only after they explicitly confirm the action. A
+participant with the viewer role SHALL NOT be able to trigger this
+control.
+
+#### Scenario: An editor clears the document after confirming
+- **WHEN** an editor triggers the clear control and confirms it
+- **THEN** the shared document becomes empty for every participant
+
+#### Scenario: Canceling the confirmation leaves the document untouched
+- **WHEN** an editor triggers the clear control but does not confirm it
+- **THEN** the shared document is unchanged
+
+#### Scenario: A viewer cannot clear the document
+- **WHEN** a participant with the viewer role looks for the clear
+  control
+- **THEN** they cannot trigger it
