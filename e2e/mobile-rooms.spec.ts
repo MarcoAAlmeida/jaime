@@ -76,14 +76,16 @@ test('Composition Room: header collapses to a menu, code wraps, share reachable'
   await expect(page.locator('[data-testid="tab-switcher"]')).toBeHidden()
 
   // Secondary room-level controls are folded away; the ⋯ menu is the
-  // way to them. "Load a starter" is Composition-specific now (its own
-  // tab's toolbar, add-composition-tabs) rather than a room-level
-  // control, so it's visible directly, not folded into this menu.
-  await expect(page.locator('[data-testid="toggle-role-button"]')).toBeHidden()
+  // way to them. "Load a starter" lives in the Composition tab's own
+  // context toolbar (Zone 3, refactor-composition-header) rather than
+  // a room-level control, so it's visible directly, not folded into
+  // this menu. There is no role-switch control anywhere (role is fixed
+  // for the session, refactor-composition-header).
+  await expect(page.locator('[data-testid="toggle-role-button"]')).toHaveCount(0)
   await expect(page.locator('[data-testid="load-preset-button"]')).toBeVisible()
   await expect(page.locator('[data-testid="room-overflow-menu"]')).toBeVisible()
   await page.locator('[data-testid="room-overflow-menu"]').click()
-  await expect(page.getByRole('menuitem', { name: /Switch to viewer/ })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: /Switch to viewer/ })).toHaveCount(0)
   await expect(page.getByRole('menuitem', { name: /Share|Copy invite link/ })).toBeVisible()
   await page.keyboard.press('Escape')
 
@@ -107,9 +109,14 @@ test('Composition Room: usable on a short landscape viewport', async ({ page }) 
 
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
   expect(await noSidewaysScroll(page), 'no horizontal page scroll').toBe(true)
-  // The editor still has real height to work in (header hasn't eaten the screen).
+  // The editor still has real height to work in (header hasn't eaten the
+  // screen). Lower than before refactor-composition-header: Zone 2 (tab
+  // bar) and Zone 3 (context toolbar) are now their own rows above the
+  // content area rather than nested inside it, an accepted trade-off
+  // (see that change's design.md Risks) — ~100px is still several lines
+  // of monospace at this viewport.
   const editorHeight = (await page.locator('[data-testid="composition-editor"]').boundingBox())!.height
-  expect(editorHeight).toBeGreaterThan(120)
+  expect(editorHeight).toBeGreaterThan(90)
 })
 
 test('Share uses the native share sheet when the device has one', async ({ page }) => {
@@ -153,7 +160,7 @@ test('Composition Room: at a wide viewport lines are not force-wrapped', async (
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   // The individual controls are inline (no overflow menu) at this width.
-  await expect(page.locator('[data-testid="toggle-role-button"]')).toBeVisible()
+  await expect(page.locator('[data-testid="copy-invite-button"]')).toBeVisible()
   await expect(page.locator('[data-testid="room-overflow-menu"]')).toBeHidden()
 
   // The tab switcher lives in the header at this width, not the bottom bar.

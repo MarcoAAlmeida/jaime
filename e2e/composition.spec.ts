@@ -228,7 +228,7 @@ test('the roster shows every participant and their role, and updates on leave', 
   await context.close()
 })
 
-test('a viewer cannot edit the document; switching to editor lets them', async ({ browser }) => {
+test('a viewer cannot edit the document, and has no way to become an editor in-room', async ({ browser }) => {
   test.setTimeout(180_000)
   const context = await browser.newContext()
 
@@ -241,22 +241,16 @@ test('a viewer cannot edit the document; switching to editor lets them', async (
   await pageA.keyboard.insertText('editor-only')
   await expect.poll(() => docText(pageV), { timeout: 15_000 }).toBe('editor-only')
 
-  // A viewer has no Play button and cannot type.
+  // A viewer has no Play button, cannot type, and has no in-room
+  // control to become an editor — role is fixed for the session
+  // (refactor-composition-header).
   await expect(pageV.locator('[data-testid="play-stop-button"]')).toHaveCount(0)
+  await expect(pageV.locator('[data-testid="toggle-role-button"]')).toHaveCount(0)
   await pageV.locator(CONTENT).click()
   await pageV.keyboard.type('SNEAKY')
   await pageV.waitForTimeout(500)
   await expect.poll(() => docText(pageV)).toBe('editor-only')
   await expect.poll(() => docText(pageA)).toBe('editor-only')
-
-  // Switching to editor makes their edits land for everyone, no rejoin.
-  await pageV.locator('[data-testid="toggle-role-button"]').click()
-  await expect(pageV.locator('[data-testid="play-stop-button"]')).toBeVisible()
-  await pageV.locator(CONTENT).click()
-  await pageV.keyboard.press('ControlOrMeta+End')
-  await pageV.keyboard.type(' + viewer-now-editor')
-  await expect.poll(() => docText(pageA), { timeout: 15_000 }).toBe('editor-only + viewer-now-editor')
-  await expect(pageA.locator('[data-testid="participant"]').filter({ hasText: 'Val' })).toContainText('editor')
 
   await context.close()
 })

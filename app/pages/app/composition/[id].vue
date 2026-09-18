@@ -275,11 +275,6 @@ function clearDocument() {
 // Below `sm` the secondary header controls collapse into one "⋯" menu
 // so a phone header stays a single compact row.
 const overflowItems = computed(() => [[
-  {
-    label: isEditor.value ? 'Switch to viewer' : 'Switch to editor',
-    icon: 'i-lucide-repeat',
-    onSelect: toggleRole,
-  },
   { label: shareLabel.value, icon: 'i-lucide-share-2', onSelect: shareInvite },
   ...(canShare.value ? [{ label: 'Copy invite link', icon: 'i-lucide-link', onSelect: copyInviteLink }] : []),
 ]])
@@ -379,15 +374,6 @@ function requestEval() {
 }
 function requestStop() {
   if (isEditor.value) provider?.sendStop()
-}
-
-// Switch role live — reconfigure the editable compartment and tell the
-// room; no rejoin (design.md decision 4).
-function toggleRole() {
-  const next: Role = isEditor.value ? 'viewer' : 'editor'
-  role.value = next
-  provider?.setRole(next)
-  editor?.setEditable(next === 'editor')
 }
 
 async function start() {
@@ -545,7 +531,8 @@ onBeforeUnmount(() => {
     </h1>
     <p class="text-muted max-w-sm text-center text-sm">
       Editors change the shared script; viewers follow along and hear
-      playback. You can switch any time.
+      playback. This choice is fixed for the session — leave and
+      rejoin to pick the other one.
     </p>
     <div class="flex gap-2">
       <UButton data-testid="role-editor" @click="chooseRole('editor')">
@@ -558,6 +545,8 @@ onBeforeUnmount(() => {
   </div>
 
   <div v-else class="flex h-dvh flex-col gap-3 p-4">
+    <!-- Zone 1 — global identity & status: logo, connection/playback
+         state, Play/Stop, Share. Always visible, constant across tabs. -->
     <div class="flex flex-wrap items-center justify-between gap-2">
       <NuxtLink to="/" aria-label="jaime home">
         <Logo size="sm" />
@@ -598,15 +587,6 @@ onBeforeUnmount(() => {
             size="xs"
             color="neutral"
             variant="outline"
-            data-testid="toggle-role-button"
-            @click="toggleRole"
-          >
-            {{ isEditor ? 'Switch to viewer' : 'Switch to editor' }}
-          </UButton>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="outline"
             data-testid="copy-invite-button"
             @click="shareInvite"
           >
@@ -635,34 +615,93 @@ onBeforeUnmount(() => {
             data-testid="room-overflow-menu"
           />
         </UDropdownMenu>
+      </div>
+    </div>
 
-        <!-- Tab switcher — header placement at md+; a bottom bar takes
-             over below md (see the <nav> at the end of the template). -->
-        <div class="border-default hidden items-center gap-0.5 rounded-md border p-0.5 md:flex" role="tablist" data-testid="tab-switcher">
+    <!-- Zone 2 — tab bar: header placement at md+; a bottom bar takes
+         over below md (see the <nav> at the end of the template).
+         overflow-x-auto so it scales past 3 tabs without wrapping. -->
+    <div class="border-default hidden items-center gap-0.5 overflow-x-auto rounded-md border p-0.5 md:flex" role="tablist" data-testid="tab-switcher">
+      <UButton
+        v-for="tab in TAB_DEFS"
+        :key="tab.id"
+        size="xs"
+        :color="activeTab === tab.id ? 'primary' : 'neutral'"
+        :variant="activeTab === tab.id ? 'solid' : 'ghost'"
+        :icon="tab.icon"
+        role="tab"
+        :aria-selected="activeTab === tab.id"
+        :data-testid="`tab-${tab.id}`"
+        @click="setActiveTab(tab.id)"
+      >
+        {{ tab.label }}
+        <UBadge v-if="tab.id === 'chat' && chatUnread" size="xs" color="primary" variant="solid" class="ml-1">
+          {{ chatUnread }}
+        </UBadge>
+        <span
+          v-else-if="tab.id === 'composition' && compositionActivity"
+          class="bg-primary ml-1 size-1.5 rounded-full"
+          data-testid="composition-activity-dot"
+        />
+      </UButton>
+    </div>
+
+    <!-- Zone 3 — context toolbar: tab-specific controls. Not rendered
+         at all when the active tab (for this participant's role) has
+         none, so it costs zero space rather than an empty bar. -->
+    <div
+      v-if="(activeTab === 'composition' && isEditor) || activeTab === 'ascii'"
+      class="flex flex-wrap items-center gap-2 border-b p-2"
+      data-testid="context-toolbar"
+    >
+      <template v-if="activeTab === 'composition'">
+        <UDropdownMenu :items="presetItems" :content="{ align: 'start' }">
           <UButton
-            v-for="tab in TAB_DEFS"
-            :key="tab.id"
             size="xs"
-            :color="activeTab === tab.id ? 'primary' : 'neutral'"
-            :variant="activeTab === tab.id ? 'solid' : 'ghost'"
-            :icon="tab.icon"
-            role="tab"
-            :aria-selected="activeTab === tab.id"
-            :data-testid="`tab-${tab.id}`"
-            @click="setActiveTab(tab.id)"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-library-big"
+            trailing-icon="i-lucide-chevron-down"
+            data-testid="load-preset-button"
           >
-            {{ tab.label }}
-            <UBadge v-if="tab.id === 'chat' && chatUnread" size="xs" color="primary" variant="solid" class="ml-1">
-              {{ chatUnread }}
-            </UBadge>
-            <span
-              v-else-if="tab.id === 'composition' && compositionActivity"
-              class="bg-primary ml-1 size-1.5 rounded-full"
-              data-testid="composition-activity-dot"
-            />
+            Load a starter
+          </UButton>
+        </UDropdownMenu>
+
+        <UButton
+          v-if="!confirmingClear"
+          size="xs"
+          color="error"
+          variant="ghost"
+          icon="i-lucide-eraser"
+          data-testid="clear-document-button"
+          @click="confirmingClear = true"
+        >
+          Clear
+        </UButton>
+        <div v-else class="flex items-center gap-1.5 text-xs">
+          <span class="text-muted">Clear for everyone?</span>
+          <UButton size="xs" color="error" data-testid="clear-document-confirm" @click="clearDocument">
+            Yes, clear
+          </UButton>
+          <UButton size="xs" color="neutral" variant="ghost" data-testid="clear-document-cancel" @click="confirmingClear = false">
+            Cancel
           </UButton>
         </div>
-      </div>
+      </template>
+
+      <UButton
+        v-else-if="activeTab === 'ascii'"
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-lucide-shuffle"
+        aria-label="Show another piece now"
+        data-testid="ascii-shuffle-button"
+        @click="advanceAsciiArt"
+      >
+        Shuffle
+      </UButton>
     </div>
 
     <UAlert
@@ -688,42 +727,6 @@ onBeforeUnmount(() => {
         class="bg-elevated relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md"
         data-testid="composition-editor"
       >
-        <div v-if="isEditor" class="border-default relative z-20 flex flex-wrap items-center gap-2 border-b p-2">
-          <UDropdownMenu :items="presetItems" :content="{ align: 'start' }">
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-library-big"
-              trailing-icon="i-lucide-chevron-down"
-              data-testid="load-preset-button"
-            >
-              Load a starter
-            </UButton>
-          </UDropdownMenu>
-
-          <UButton
-            v-if="!confirmingClear"
-            size="xs"
-            color="error"
-            variant="ghost"
-            icon="i-lucide-eraser"
-            data-testid="clear-document-button"
-            @click="confirmingClear = true"
-          >
-            Clear
-          </UButton>
-          <div v-else class="flex items-center gap-1.5 text-xs">
-            <span class="text-muted">Clear for everyone?</span>
-            <UButton size="xs" color="error" data-testid="clear-document-confirm" @click="clearDocument">
-              Yes, clear
-            </UButton>
-            <UButton size="xs" color="neutral" variant="ghost" data-testid="clear-document-cancel" @click="confirmingClear = false">
-              Cancel
-            </UButton>
-          </div>
-        </div>
-
         <canvas
           ref="canvasEl"
           class="pointer-events-none absolute inset-0 z-0 size-full"
@@ -805,20 +808,9 @@ onBeforeUnmount(() => {
         class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-md p-3"
         data-testid="ascii-panel"
       >
-        <div class="flex items-center justify-between">
-          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
-            ASCII art
-          </h2>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-shuffle"
-            aria-label="Show another piece now"
-            data-testid="ascii-shuffle-button"
-            @click="advanceAsciiArt"
-          />
-        </div>
+        <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
+          ASCII art
+        </h2>
 
         <!-- Per-viewer only — never synced to other participants; see
              add-ascii-overlay design.md. -->

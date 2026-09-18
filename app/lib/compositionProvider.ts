@@ -57,7 +57,6 @@ export interface CompositionProvider {
   sendEval: (atCycle: number) => void
   sendStop: () => void
   sendChat: (text: string) => void
-  setRole: (role: Role) => void
   destroy: () => void
 }
 
@@ -83,7 +82,7 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
 
   const clock: CompositionClock = { bpm: 120, cycleStartTimestamp: Date.now() }
   let offset = 0
-  let role: Role = opts.role
+  const role: Role = opts.role
   let ws: WebSocket | undefined
   let closed = false
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
@@ -236,10 +235,6 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
     sendChat(text) {
       const t = text.trim()
       if (t) sendRaw({ t: 'chat', text: t })
-    },
-    setRole(next) {
-      role = next
-      sendRaw({ t: 'role', role: next })
     },
     destroy() {
       closed = true

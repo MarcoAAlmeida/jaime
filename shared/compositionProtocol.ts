@@ -36,8 +36,6 @@ export type CompositionClientMessage =
   | { t: 'y-update', u: string }
   // A y-protocols/awareness update (base64). Relayed, never persisted.
   | { t: 'awareness', a: string }
-  // Change this connection's role while in the room.
-  | { t: 'role', role: Role }
   // Evaluate the shared document across the room, aligned to `atCycle`.
   | { t: 'eval', atCycle: number }
   | { t: 'stop' }

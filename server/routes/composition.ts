@@ -237,12 +237,6 @@ export default defineWebSocketHandler({
       return
     }
 
-    if (data.t === 'role') {
-      me.role = data.role === 'viewer' ? 'viewer' : 'editor'
-      toAll(peer, roomId, { t: 'presence', roster: roster(room) })
-      return
-    }
-
     if (data.t === 'eval') {
       room.playing = true
       room.evalAtCycle = typeof data.atCycle === 'number' ? data.atCycle : Date.now()
