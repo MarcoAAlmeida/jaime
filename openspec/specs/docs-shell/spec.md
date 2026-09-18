@@ -17,15 +17,16 @@ the dashboard chrome, with its own navigation.
 - **THEN** the dashboard sidebar is not present — the docs shell has
   its own nav tree
 
-### Requirement: Nav Tree Lists Technology Sections
-The system SHALL list a navigation entry for each technology the docs
-will cover — starting with Strudel — even before that section's
-content is written.
+### Requirement: Nav Tree Lists Reference Topics
+The system SHALL list a navigation entry for each Reference topic the
+docs cover — currently ASCII Art, the scraped-gallery data source
+behind the Composition Room's ASCII panel — so the docs shell's
+structure holds even as the specific topics it covers change over
+time.
 
-#### Scenario: Strudel section is reachable
+#### Scenario: ASCII Art section is reachable
 - **WHEN** a user views the docs shell's nav tree
-- **THEN** a Strudel entry is present and navigable, even if its
-  content is a placeholder
+- **THEN** an ASCII Art entry is present and navigable
 
 ### Requirement: Docs Shell Has Quick Links To Every Tool
 The system SHALL provide, at menu level in the docs shell's sidebar, a
