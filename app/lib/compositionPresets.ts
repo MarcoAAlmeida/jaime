@@ -5,8 +5,6 @@
 
 import birdsOfAFeather from './compositions/birds-of-a-feather.js?raw'
 import caverave from './compositions/caverave.js?raw'
-import festivalOfFingers from './compositions/festival-of-fingers.js?raw'
-import orbit from './compositions/orbit.js?raw'
 import dinofunk from './compositions/dinofunk.js?raw'
 
 export interface CompositionPreset {
@@ -29,18 +27,6 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     title: 'Caverave',
     credit: 'Felix Roos · CC BY-NC-SA',
     code: caverave.trim(),
-  },
-  {
-    id: 'festival-of-fingers',
-    title: 'Festival of Fingers',
-    credit: 'Felix Roos · CC BY-NC-SA',
-    code: festivalOfFingers.trim(),
-  },
-  {
-    id: 'orbit',
-    title: 'Orbit',
-    credit: 'Felix Roos · CC BY-NC-SA',
-    code: orbit.trim(),
   },
   {
     id: 'dinofunk',
