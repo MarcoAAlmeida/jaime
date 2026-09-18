@@ -37,26 +37,29 @@ function articleCard(page: import('@playwright/test').Page, title: string) {
   return page.locator('[data-slot="root"]').filter({ has: articleLink(page, title) }).last()
 }
 
+const REGULAR_TITLE = 'Why Docs and Articles are two different things here'
+const LOCKED_TITLE = 'Behind the scenes'
+
 test('the home page and the articles index both list articles, linking to the same pages', async ({ page }) => {
   await page.goto('/')
-  await expect(articleCard(page, 'Test article')).toBeVisible()
-  const href = await articleLink(page, 'Test article').getAttribute('href')
+  await expect(articleCard(page, REGULAR_TITLE)).toBeVisible()
+  const href = await articleLink(page, REGULAR_TITLE).getAttribute('href')
 
   await page.goto('/articles')
-  await expect(articleLink(page, 'Test article')).toHaveAttribute('href', href!)
+  await expect(articleLink(page, REGULAR_TITLE)).toHaveAttribute('href', href!)
 })
 
 test('a locked article is listed everywhere but gated for an anonymous visitor', async ({ page }) => {
   await page.goto('/articles')
-  const lockedCard = articleCard(page, 'Test locked article')
+  const lockedCard = articleCard(page, LOCKED_TITLE)
   await expect(lockedCard).toBeVisible()
   await expect(lockedCard).toContainText('Sign in to read')
 
-  const href = await articleLink(page, 'Test locked article').getAttribute('href')
+  const href = await articleLink(page, LOCKED_TITLE).getAttribute('href')
   await page.goto(href!)
 
   await expect(page.getByTestId('article-locked')).toBeVisible()
-  expect(await page.content()).not.toContain('If you can read this')
+  expect(await page.content()).not.toContain('no passwords stored')
 })
 
 test('a signed-in visitor reads a locked article normally', async ({ browser }) => {
@@ -65,11 +68,11 @@ test('a signed-in visitor reads a locked article normally', async ({ browser }) 
 
   await signIn(page, `article-reader-${Date.now()}@example.com`, 'Reader')
   await page.goto('/articles')
-  const href = await articleLink(page, 'Test locked article').getAttribute('href')
+  const href = await articleLink(page, LOCKED_TITLE).getAttribute('href')
   await page.goto(href!)
 
   await expect(page.getByTestId('article-locked')).toHaveCount(0)
-  expect(await page.content()).toContain('If you can read this')
+  expect(await page.content()).toContain('no passwords stored')
 
   await ctx.close()
 })

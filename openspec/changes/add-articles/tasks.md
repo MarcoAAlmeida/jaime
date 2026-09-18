@@ -41,24 +41,23 @@
 
 ## 4. Docs-shell updates
 
-- [ ] 4.1 `content/docs/1.index.md` — replace the "starting with
+- [x] 4.1 `content/docs/1.index.md` — replace the "starting with
       Strudel" name-check with ASCII Art (design.md decision).
-- [ ] 4.2 Docs-shell nav tree: confirm ASCII Art appears once
-      `content/docs/ascii-art.md` exists (task 6.6) — no code change
-      expected, the nav tree is already data-driven from the
-      collection.
+- [x] 4.2 Docs-shell nav tree: confirm ASCII Art appears once
+      `content/docs/2.ascii-art.md` exists (task 6.3) — no code change
+      needed, the nav tree is data-driven from the collection.
 
 ## 5. Retire the old Strudel Reference pages
 
-- [ ] 5.1 Delete `content/docs/2.strudel/1.mini-notation.md`,
-      `2.sounds.md`, `3.effects.md`, `4.in-jam.md`, and the now-empty
+- [x] 5.1 Deleted `content/docs/2.strudel.md`,
+      `content/docs/2.strudel/1.mini-notation.md`, `2.sounds.md`,
+      `3.effects.md`, `4.in-jam.md`, and the now-empty
       `content/docs/2.strudel/` directory.
-- [ ] 5.2 `e2e/docs.spec.ts` — update/remove the assertions that
-      navigate to `/docs/strudel`, `/docs/strudel/mini-notation`, and
-      `/docs/behind-the-scenes` (moving in 5.3) to match the new
-      structure.
-- [ ] 5.3 `e2e/auth.spec.ts` — retarget the two `/docs/behind-the-scenes`
-      navigations to `/articles/behind-the-scenes`.
+- [x] 5.2 `e2e/docs.spec.ts` — rewritten around the ASCII Art doc (the
+      only remaining nav entry besides the index).
+- [x] 5.3 `e2e/auth.spec.ts` — retargeted the gated-page test from
+      `/docs/behind-the-scenes` to `/articles/behind-the-scenes`
+      (testid `article-locked`, not `doc-locked`).
 
 ## 6. Write the four articles
 
@@ -67,7 +66,7 @@ written down so the plan survives independent of any one session. Take
 real screenshots (saved under `public/` or referenced via the
 `assets` capability once published), don't stand in placeholder text.
 
-- [ ] 6.1 `content/articles/strudel.md` — **richer Explanation**.
+- [x] 6.1 `content/articles/strudel.md` — **richer Explanation**.
       Replaces the current terse `2.strudel.md` landing blurb. Angle:
       not "what is Strudel" (that's a one-liner) but *why* a
       live-coding pattern language feels the way it does to write in —
@@ -76,14 +75,14 @@ real screenshots (saved under `public/` or referenced via the
       DAW timeline. Should make someone who's never live-coded
       understand the appeal, not just the syntax (syntax is gone —
       that content is deleted, not moved here).
-- [ ] 6.2 `content/articles/behind-the-scenes.md` — **enhanced
+- [x] 6.2 `content/articles/behind-the-scenes.md` — **enhanced
       Explanation**, `authRequired: true` (unchanged gate). Builds on
       the current stack/OpenSpec-loop content; angle: make the
       spec-driven loop itself the interesting part — why write specs
       before code at all for a solo/small project, what it's actually
       bought this project (the `add-ascii-overlay` slices are a real,
       recent example to draw from), where it's been overkill.
-- [ ] 6.3 `content/docs/ascii-art.md` — **rich Reference**, lives in
+- [x] 6.3 `content/docs/2.ascii-art.md` — **rich Reference**, lives in
       Docs, not Articles. Angle: factual/lookup material about
       asciiart.eu as jaime's data source — the site's category
       structure, the `data-id`/`data-width`/`data-height` card format
@@ -91,7 +90,7 @@ real screenshots (saved under `public/` or referenced via the
       and how jaime honors it (the per-piece link in the panel). This
       is the one page in this change that should read like Reference,
       not a story — save the narrative for 6.1/6.2/6.4.
-- [ ] 6.4 `content/articles/animation-libraries.md` — **rich
+- [x] 6.4 `content/articles/animation-libraries.md` — **rich
       Explanation, with a real screenshot of each library's own demo
       site**. Content already researched in this project: the top-10
       popularity ranking (Animate.css, Anime.js, Motion, Lottie, React
@@ -102,23 +101,25 @@ real screenshots (saved under `public/` or referenced via the
       specific job. The angle is that conclusion, not the ranking
       table alone: "most popular" and "right tool for this job" are
       different questions, shown with a concrete example.
-- [ ] 6.5 `content/articles/diataxis.md` — **rich Explanation**. Angle:
+- [x] 6.5 `content/articles/diataxis.md` — **rich Explanation**. Angle:
       why jaime splits Docs/Reference from Articles/Explanation at all
       — walk through the Diátaxis framework's four types, then the
       actual before/after audit done in this project (every existing
       Strudel sub-page was Reference, only one thin gated page was
       Explanation, zero Tutorial/How-to) as the concrete case study
       that motivated this change. Cite diataxis.fr.
-- [ ] 6.6 Once 6.1–6.5 land: delete `content/articles/_test.md` (task
-      1.2) and `content/docs/2.strudel.md` (superseded by 6.1).
+- [x] 6.6 Deleted `content/articles/_test.md` / `_test-locked.md`
+      (task 1.2) and `content/docs/2.strudel.md` (superseded by 6.1).
 
 ## 7. Verify + ship
 
-- [ ] 7.1 `nuxt typecheck`, `vitest run` green.
-- [ ] 7.2 `npm run test:e2e` — full suite, not just the two touched
-      files (a content/route change like this can surface unrelated
-      nav assumptions).
-- [ ] 7.3 `openspec validate add-articles --strict`.
+- [x] 7.1 `nuxt typecheck`, `vitest run` green (114/114).
+- [x] 7.2 `npm run test:e2e` — full suite: 58/59 passing; the one
+      failure (`oauth.spec.ts`'s avatar/room test) reproduces
+      identically on a clean checkout with none of this change's
+      files present — confirmed pre-existing/environmental, not a
+      regression from this change.
+- [x] 7.3 `openspec validate add-articles --strict` — passes.
 - [ ] 7.4 `npm run deploy`; manually verify on `jaime.stream`: home
       page teasers, `/articles` index, each article page, the
       `behind-the-scenes` lock for a signed-out visit, `/docs` still

@@ -97,23 +97,19 @@ test('a signed-in user keeps their account name in a JAM room (no name gate)', a
   await ctx.close()
 })
 
-test('gated doc: locked for anon (no prose in the HTML), open when signed in', async ({ browser }) => {
+test('gated article: locked for anon (no prose in the HTML), open when signed in', async ({ browser }) => {
   const ctx = await browser.newContext()
   const page = await ctx.newPage()
 
-  await page.goto('/docs/behind-the-scenes')
-  await expect(page.locator('[data-testid="doc-locked"]')).toBeVisible()
+  await page.goto('/articles/behind-the-scenes')
+  await expect(page.locator('[data-testid="article-locked"]')).toBeVisible()
   const anonHtml = await page.content()
-  expect(anonHtml).not.toContain('no passwords are stored')
-
-  // Nav still lists it.
-  await page.goto('/docs')
-  await expect(page.getByRole('link', { name: /Behind the scenes/ })).toBeVisible()
+  expect(anonHtml).not.toContain('no passwords stored')
 
   await signIn(page, 'docreader@example.com')
-  await page.goto('/docs/behind-the-scenes')
-  await expect(page.locator('[data-testid="doc-locked"]')).toHaveCount(0)
-  await expect(page.getByText('no passwords are stored')).toBeVisible()
+  await page.goto('/articles/behind-the-scenes')
+  await expect(page.locator('[data-testid="article-locked"]')).toHaveCount(0)
+  await expect(page.getByText('no passwords stored')).toBeVisible()
 
   await ctx.close()
 })
