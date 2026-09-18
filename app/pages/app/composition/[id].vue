@@ -234,8 +234,12 @@ function sendChat() {
 // One-click starter compositions — replace the whole shared document
 // (an editor-only, collaborative action: every participant's editor
 // follows via Yjs). The `Y.Doc` transaction makes it one undo step.
+// Swapping in a whole new script while the old one is still playing
+// would leave the room hearing stale audio for whatever's mid-loop —
+// stop playback for everyone first and require an explicit Play.
 function loadPreset(code: string) {
   if (!provider || !isEditor.value) return
+  if (playing.value) requestStop()
   const text = provider.text
   provider.ydoc.transact(() => {
     text.delete(0, text.length)
@@ -260,6 +264,7 @@ const presetItems = computed(() => [
 const confirmingClear = ref(false)
 function clearDocument() {
   if (!provider || !isEditor.value) return
+  if (playing.value) requestStop()
   const text = provider.text
   provider.ydoc.transact(() => {
     text.delete(0, text.length)
