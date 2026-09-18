@@ -35,7 +35,7 @@ const editorRefs = ref<Partial<Record<TrackName, TrackEditorHandle | null>>>({})
 const muted = ref<Record<TrackName, boolean>>(
   Object.fromEntries(TRACK_NAMES.map(name => [name, false])) as Record<TrackName, boolean>,
 )
-const { label: shareLabel, copied: linkCopied, share } = useShareLink()
+const { label: shareLabel, copied: linkCopied, canShare, share, copyLink } = useShareLink()
 
 function joinRoom() {
   setDisplayName(nameInput.value)
@@ -125,6 +125,14 @@ function ownerName(track: TrackName): string | null {
 
 function shareInvite() {
   void share(window.location.href, 'Join my JAM room on jaime')
+}
+
+// On a device with a native share sheet, `shareInvite` opens the OS
+// picker — there's no way to just grab the raw link without it. This
+// is a second, direct path shown only alongside "Share"; without a
+// share sheet, the single button already copies directly.
+function copyInviteLink() {
+  copyLink(window.location.href)
 }
 
 // --- "Load into JAM" from the pattern library -------------------------------
@@ -280,6 +288,18 @@ function submitTempo() {
         >
           {{ linkCopied ? 'Copied!' : shareLabel }}
         </UButton>
+        <!-- Only alongside "Share" (a device with a share sheet) — a
+             direct path to the raw link without the OS picker. -->
+        <UButton
+          v-if="canShare"
+          size="xs"
+          color="neutral"
+          variant="outline"
+          :icon="linkCopied ? 'i-lucide-check' : 'i-lucide-link'"
+          aria-label="Copy invite link"
+          data-testid="copy-invite-link-button"
+          @click="copyInviteLink"
+        />
       </div>
     </div>
     <UAlert

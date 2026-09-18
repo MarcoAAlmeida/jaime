@@ -2,6 +2,8 @@
  * Share a URL in one action: the device's native share sheet where it
  * exists, otherwise copy-to-clipboard with a short-lived "copied"
  * confirmation. Used for room invite links (add-responsive-rooms).
+ * Also exposes a direct `copyLink` for devices with a share sheet —
+ * some people just want the raw link, not the OS picker every time.
  */
 export function useShareLink() {
   // Decided once at mount — `navigator.share` presence doesn't change
@@ -40,5 +42,5 @@ export function useShareLink() {
     setTimeout(() => { copied.value = false }, 1500)
   }
 
-  return { label, copied, canShare, share }
+  return { label, copied, canShare, share, copyLink: copyToClipboard }
 }

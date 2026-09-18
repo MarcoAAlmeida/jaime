@@ -63,7 +63,7 @@ const audioUnlocked = ref(false)
 const connected = ref(false)
 const playing = ref(false)
 const error = ref<string | null>(null)
-const { label: shareLabel, copied: linkCopied, share } = useShareLink()
+const { label: shareLabel, copied: linkCopied, canShare, share, copyLink } = useShareLink()
 const participants = ref<CompositionPresenceEntry[]>([])
 const chat = ref<ChatMessage[]>([])
 const chatInput = ref('')
@@ -276,6 +276,7 @@ const overflowItems = computed(() => [[
     onSelect: toggleRole,
   },
   { label: shareLabel.value, icon: 'i-lucide-share-2', onSelect: shareInvite },
+  ...(canShare.value ? [{ label: 'Copy invite link', icon: 'i-lucide-link', onSelect: copyInviteLink }] : []),
 ]])
 
 let provider: CompositionProvider | undefined
@@ -349,6 +350,15 @@ function onResize() {
 
 function shareInvite() {
   void share(window.location.href, 'Join my Composition Room on jaime')
+}
+
+// On a device with a native share sheet, `shareInvite` opens the OS
+// picker — there's no way to just grab the raw link without it. This
+// is a second, direct path that's only shown alongside "Share" (when
+// there's a share sheet to bypass); without one, the single button
+// already copies directly.
+function copyInviteLink() {
+  copyLink(window.location.href)
 }
 
 // Evaluate / stop are broadcast, not run locally — the server relays an
@@ -597,6 +607,18 @@ onBeforeUnmount(() => {
           >
             {{ linkCopied ? 'Copied!' : shareLabel }}
           </UButton>
+          <!-- Only alongside "Share" (a device with a share sheet) —
+               a direct path to the raw link without the OS picker. -->
+          <UButton
+            v-if="canShare"
+            size="xs"
+            color="neutral"
+            variant="outline"
+            :icon="linkCopied ? 'i-lucide-check' : 'i-lucide-link'"
+            aria-label="Copy invite link"
+            data-testid="copy-invite-link-button"
+            @click="copyInviteLink"
+          />
         </span>
         <UDropdownMenu :items="overflowItems" :content="{ align: 'end' }" class="sm:hidden">
           <UButton
