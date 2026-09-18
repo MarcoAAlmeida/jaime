@@ -120,9 +120,9 @@ real screenshots (saved under `public/` or referenced via the
       files present — confirmed pre-existing/environmental, not a
       regression from this change.
 - [x] 7.3 `openspec validate add-articles --strict` — passes.
-- [ ] 7.4 `npm run deploy`; manually verify on `jaime.stream`: home
-      page teasers, `/articles` index, each article page, the
-      `behind-the-scenes` lock for a signed-out visit, `/docs` still
-      reachable with only `ascii-art` in its nav.
+- [x] 7.4 `npm run deploy`; manually verified on `jaime.stream`: home
+      page teasers, `/articles` index (all 4 cards, lock badge on
+      Behind the scenes), the lock gate for a signed-out visit, and
+      `/docs` with only ASCII Art in its nav.
 - [ ] 7.5 Sync the `articles`, `landing-page`, and `docs-shell` deltas;
       archive the change.
