@@ -6,8 +6,9 @@ import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 
 // add-ascii-overlay — the Composition Room's decorative ASCII-art
-// panel: toggled independently of chat, swaps on a per-viewer beat
-// interval while the room plays, never while stopped.
+// content, reached via the ASCII Art tab (add-composition-tabs):
+// swaps on a per-viewer beat interval while the room plays, never
+// while stopped.
 test.use({ launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] } })
 test.describe.configure({ retries: 2 })
 
@@ -47,26 +48,28 @@ async function joinRoom(context: BrowserContext, roomId: string, name: string): 
   return page
 }
 
-test('the panel toggles independently of chat and never covers the header', async ({ browser }) => {
+test('the ASCII Art tab is exclusive of Composition and Chat, and never covers the header', async ({ browser }) => {
   test.setTimeout(120_000)
   const context = await browser.newContext()
   const page = await joinRoom(context, `ascii-toggle-${Date.now()}`, 'Alice')
 
   const panel = page.locator('[data-testid="ascii-panel"]')
-  const chat = page.locator('[data-testid="side-panel"]')
-  const header = page.locator('[data-testid="toggle-ascii-panel-button"]')
+  const chatPanel = page.locator('[data-testid="chat-panel"]')
+  const editor = page.locator('[data-testid="composition-editor"]')
+  const asciiTab = page.locator('[data-testid="tab-ascii"]')
 
   await expect(panel).toBeHidden()
-  await header.click()
+  await asciiTab.click()
   await expect(panel).toBeVisible()
-  // Chat was open by default (desktop) and stays open — independent toggles.
-  await expect(chat).toBeVisible()
-  await expect(header).toBeVisible()
+  // Switching tabs is exclusive — Composition and Chat are hidden
+  // while ASCII Art is active — and the room header stays reachable.
+  await expect(chatPanel).toBeHidden()
+  await expect(editor).toBeHidden()
+  await expect(page.locator('[data-testid="tab-switcher"]')).toBeVisible()
 
-  // The in-panel close button only shows below `md`; at this (desktop)
-  // viewport the header toggle is the way to close it.
-  await header.click()
+  await page.locator('[data-testid="tab-composition"]').click()
   await expect(panel).toBeHidden()
+  await expect(editor).toBeVisible()
 
   await context.close()
 })
@@ -81,7 +84,7 @@ test('advances on a beat interval during playback, supports manual shuffle, and 
   await page.keyboard.press('Delete')
   await page.keyboard.insertText('s("bd*4")')
 
-  await page.locator('[data-testid="toggle-ascii-panel-button"]').click()
+  await page.locator('[data-testid="tab-ascii"]').click()
   const artText = page.locator('[data-testid="ascii-art-text"]')
   await expect(artText).toBeVisible({ timeout: 15_000 })
 

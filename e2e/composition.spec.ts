@@ -56,6 +56,12 @@ async function clearDoc(page: Page): Promise<void> {
   await page.keyboard.press('Delete')
 }
 
+/** Switches tabs — matches whichever placement (header vs. mobile bottom
+ *  bar) is visible at the current viewport (add-composition-tabs). */
+async function openTab(page: Page, tab: 'composition' | 'chat' | 'ascii'): Promise<void> {
+  await page.locator(`[data-testid="tab-${tab}"]:visible, [data-testid="tab-mobile-${tab}"]:visible`).click()
+}
+
 /**
  * The actual document text, excluding y-codemirror.next's remote-cursor
  * widgets — a peer's caret renders a `cm-ySelectionCaret` span carrying
@@ -368,6 +374,7 @@ test('a chat message reaches everyone; chat is gone once the room empties', asyn
   await setDoc(pageA, 's("bd sd")')
   await expect.poll(() => docText(pageB), { timeout: 15_000 }).toBe('s("bd sd")')
 
+  await openTab(pageA, 'chat')
   await pageA.locator('[data-testid="chat-input"]').fill('hey room')
   await pageA.locator('[data-testid="chat-send"]').click()
 
@@ -444,6 +451,7 @@ test('three separate clients — two editors + a viewer — edit, cursor, hear, 
   }
 
   // Chat from the viewer reaches both editors.
+  await openTab(pageV, 'chat')
   await pageV.locator('[data-testid="chat-input"]').fill('sounds good')
   await pageV.locator('[data-testid="chat-send"]').click()
   for (const page of [pageA, pageB]) {
@@ -480,29 +488,28 @@ test('scope() visuals stay inside the editor pane, not a full-viewport canvas', 
   await context.close()
 })
 
-test('the people/chat panel toggles as an overlay on a narrow screen', async ({ browser }) => {
+test('Composition, Chat, and ASCII Art tabs are mutually exclusive on a narrow screen', async ({ browser }) => {
   test.setTimeout(180_000)
   const context = await browser.newContext({ viewport: { width: 740, height: 400 } }) // landscape phone
 
   const pageA = await joinRoom(context, `panel-${Date.now()}`, 'Alice', 'editor')
 
-  const panel = pageA.locator('[data-testid="side-panel"]')
   const editor = pageA.locator('[data-testid="composition-editor"]')
+  const chatPanel = pageA.locator('[data-testid="chat-panel"]')
 
-  // Closed by default at this width — the editor has the full width.
-  await expect(panel).toBeHidden()
-  const fullWidth = (await editor.boundingBox())!.width
+  // Composition is the default tab; the header switcher is hidden at
+  // this width (`md:flex`) — the bottom bar is what's reachable.
+  await expect(editor).toBeVisible()
+  await expect(chatPanel).toBeHidden()
 
-  // Toggle opens it as an overlay: the panel is visible but the editor
-  // pane keeps its width (it's not squeezed into a column).
-  await pageA.locator('[data-testid="toggle-panel-button"]').click()
-  await expect(panel).toBeVisible()
+  await pageA.locator('[data-testid="tab-mobile-chat"]').click()
+  await expect(chatPanel).toBeVisible()
   await expect(pageA.locator('[data-testid="chat-input"]')).toBeVisible()
-  expect(Math.abs((await editor.boundingBox())!.width - fullWidth)).toBeLessThan(2)
+  await expect(editor).toBeHidden()
 
-  // The in-panel close button hides it again.
-  await pageA.locator('[data-testid="close-panel-button"]').click()
-  await expect(panel).toBeHidden()
+  await pageA.locator('[data-testid="tab-mobile-composition"]').click()
+  await expect(editor).toBeVisible()
+  await expect(chatPanel).toBeHidden()
 
   await context.close()
 })

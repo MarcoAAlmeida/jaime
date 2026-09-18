@@ -71,12 +71,19 @@ test('Composition Room: header collapses to a menu, code wraps, share reachable'
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
   expect(await noSidewaysScroll(page), 'no horizontal page scroll').toBe(true)
 
-  // Secondary controls are folded away; the ⋯ menu is the way to them.
+  // The tab switcher moves to the bottom bar below `md`, not the header.
+  await expect(page.locator('[data-testid="tab-switcher-mobile"]')).toBeVisible()
+  await expect(page.locator('[data-testid="tab-switcher"]')).toBeHidden()
+
+  // Secondary room-level controls are folded away; the ⋯ menu is the
+  // way to them. "Load a starter" is Composition-specific now (its own
+  // tab's toolbar, add-composition-tabs) rather than a room-level
+  // control, so it's visible directly, not folded into this menu.
   await expect(page.locator('[data-testid="toggle-role-button"]')).toBeHidden()
+  await expect(page.locator('[data-testid="load-preset-button"]')).toBeVisible()
   await expect(page.locator('[data-testid="room-overflow-menu"]')).toBeVisible()
   await page.locator('[data-testid="room-overflow-menu"]').click()
   await expect(page.getByRole('menuitem', { name: /Switch to viewer/ })).toBeVisible()
-  await expect(page.getByRole('menuitem', { name: /Load a starter/ })).toBeVisible()
   await expect(page.getByRole('menuitem', { name: /Share|Copy invite link/ })).toBeVisible()
   await page.keyboard.press('Escape')
 
@@ -148,6 +155,10 @@ test('Composition Room: at a wide viewport lines are not force-wrapped', async (
   // The individual controls are inline (no overflow menu) at this width.
   await expect(page.locator('[data-testid="toggle-role-button"]')).toBeVisible()
   await expect(page.locator('[data-testid="room-overflow-menu"]')).toBeHidden()
+
+  // The tab switcher lives in the header at this width, not the bottom bar.
+  await expect(page.locator('[data-testid="tab-switcher"]')).toBeVisible()
+  await expect(page.locator('[data-testid="tab-switcher-mobile"]')).toBeHidden()
 
   await page.locator('[data-testid="composition-editor"] .cm-content').click()
   await page.keyboard.press('ControlOrMeta+a')

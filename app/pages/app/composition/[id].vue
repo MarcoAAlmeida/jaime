@@ -68,17 +68,56 @@ const participants = ref<CompositionPresenceEntry[]>([])
 const chat = ref<ChatMessage[]>([])
 const chatInput = ref('')
 const chatLog = ref<HTMLDivElement>()
-// The people/chat panel docks beside the editor on wide screens and
-// overlays on demand on narrow ones (a landscape phone shouldn't lose a
-// third of its width to it). Default open only when there's room.
-const panelOpen = ref(true)
-const unread = ref(0)
 
-// The ASCII-art panel (add-ascii-overlay) is independent of the chat
-// panel above and off by default. Below `md` both become full-width
-// overlay sheets, so only one is shown at a time there; on `md`+ both
-// may dock side by side.
-const showAsciiPanel = ref(false)
+// add-composition-tabs: Composition (editor + canvas), Chat (roster +
+// messages), and ASCII Art are three mutually-exclusive tabs rather
+// than independently-toggleable docked panels — exactly one is visible
+// per viewer at a time, and the choice is local/unsynced (design.md).
+type TabId = 'composition' | 'chat' | 'ascii'
+const activeTab = ref<TabId>('composition')
+const TAB_DEFS: { id: TabId, label: string, icon: string }[] = [
+  { id: 'composition', label: 'Composition', icon: 'i-lucide-code-2' },
+  { id: 'chat', label: 'Chat', icon: 'i-lucide-message-circle' },
+  { id: 'ascii', label: 'ASCII Art', icon: 'i-lucide-scroll-text' },
+]
+// Per-tab activity indicators, cleared on switching to that tab.
+// chatUnread existed before (moved off the old toggle button);
+// compositionActivity is new.
+const chatUnread = ref(0)
+const compositionActivity = ref(false)
+
+function setActiveTab(id: TabId) {
+  activeTab.value = id
+  if (id !== 'composition') confirmingClear.value = false
+  if (id === 'chat') chatUnread.value = 0
+  if (id === 'composition') {
+    compositionActivity.value = false
+    // The editor pane is hidden (display:none) while another tab is
+    // active, so its measured size goes stale — refresh on return.
+    void nextTick(() => { syncCanvasSize(); applyWrapping() })
+  }
+  if (id === 'ascii') {
+    if (asciiBatch.value.length === 0) void fetchAsciiBatch()
+    void nextTick(syncAsciiFontSize)
+  }
+}
+
+// Bare 1/2/3 switch tabs — ignored while typing in the editor or any
+// text input, so a shortcut never steals a literal "1" from a pattern
+// or a chat message.
+function isTypingTarget(el: EventTarget | null): boolean {
+  if (!(el instanceof HTMLElement)) return false
+  return !!el.closest('.cm-editor, input, textarea, [contenteditable="true"]')
+}
+function onKeydown(e: KeyboardEvent) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return
+  if (isTypingTarget(e.target)) return
+  const index = ['1', '2', '3'].indexOf(e.key)
+  if (index === -1) return
+  e.preventDefault()
+  setActiveTab(TAB_DEFS[index]!.id)
+}
+
 const asciiBodyEl = ref<HTMLDivElement>()
 const asciiFontSize = ref(16)
 const asciiBatch = ref<AsciiArtPiece[]>([])
@@ -149,7 +188,9 @@ function adjustSwapInterval(delta: number) {
 // room's own bpm, not a hook into Strudel's internal scheduler (which,
 // per investigation, doesn't expose a per-hap callback to host apps —
 // see design.md). Runs only while playing; a fresh loop starts on
-// every play so it always uses the current bpm.
+// every play so it always uses the current bpm. Keeps running
+// regardless of which tab is active — only the visual fitting is
+// skipped while the ASCII Art tab isn't visible (see syncAsciiFontSize).
 let asciiSwapTimer: ReturnType<typeof setInterval> | undefined
 let beatsSinceSwap = 0
 let lastBeatAt = 0
@@ -183,27 +224,6 @@ watch(playing, (isPlaying) => {
   else stopAsciiSwapLoop()
 })
 
-function isWideViewport(): boolean {
-  return window.matchMedia?.('(min-width: 768px)')?.matches ?? true
-}
-
-function togglePanel() {
-  panelOpen.value = !panelOpen.value
-  if (panelOpen.value) {
-    unread.value = 0
-    if (!isWideViewport()) showAsciiPanel.value = false
-  }
-}
-
-function toggleAsciiPanel() {
-  showAsciiPanel.value = !showAsciiPanel.value
-  if (showAsciiPanel.value) {
-    if (!isWideViewport()) panelOpen.value = false
-    if (asciiBatch.value.length === 0) void fetchAsciiBatch()
-    void nextTick(syncAsciiFontSize)
-  }
-}
-
 function sendChat() {
   const text = chatInput.value.trim()
   if (!text) return
@@ -232,21 +252,31 @@ const presetItems = computed(() => [
   })),
 ])
 
+// Blanks the shared document for everyone — same collaborative-action
+// path as loadPreset, just with nothing to insert. Destructive and
+// irreversible across clients, so it's role-gated and requires an
+// explicit confirm step (design.md), mirroring the account page's
+// inline confirm/cancel pattern rather than a modal.
+const confirmingClear = ref(false)
+function clearDocument() {
+  if (!provider || !isEditor.value) return
+  const text = provider.text
+  provider.ydoc.transact(() => {
+    text.delete(0, text.length)
+  })
+  confirmingClear.value = false
+}
+
 // Below `sm` the secondary header controls collapse into one "⋯" menu
 // so a phone header stays a single compact row.
-const overflowItems = computed(() => {
-  const group: Record<string, unknown>[] = []
-  if (isEditor.value) {
-    group.push({ label: 'Load a starter', icon: 'i-lucide-library-big', children: presetItems.value[0] })
-  }
-  group.push({
+const overflowItems = computed(() => [[
+  {
     label: isEditor.value ? 'Switch to viewer' : 'Switch to editor',
     icon: 'i-lucide-repeat',
     onSelect: toggleRole,
-  })
-  group.push({ label: shareLabel.value, icon: 'i-lucide-share-2', onSelect: shareInvite })
-  return [group]
-})
+  },
+  { label: shareLabel.value, icon: 'i-lucide-share-2', onSelect: shareInvite },
+]])
 
 let provider: CompositionProvider | undefined
 let editor: StrudelEditor | undefined
@@ -267,9 +297,11 @@ const ASCII_FONT_MAX = 48
 const ASCII_CHAR_WIDTH_EM = 0.6
 const ASCII_LINE_HEIGHT_EM = 1.25
 
-// Fits the current piece to the panel's available space, independent
-// of the backdrop canvas's own ResizeObserver below.
+// Fits the current piece to the panel's available space. A no-op while
+// the ASCII Art tab isn't active — its host is display:none then, so
+// clientWidth/Height read 0 and would otherwise corrupt the font size.
 function syncAsciiFontSize() {
+  if (activeTab.value !== 'ascii') return
   const el = asciiBodyEl.value
   const art = currentAsciiArt.value
   if (!el || !art || el.clientWidth <= 0 || el.clientHeight <= 0) return
@@ -284,8 +316,11 @@ const WRAP_BELOW = 640
 let wrapping = false
 
 // Keep the canvas pixel buffer matched to its displayed size —
-// @strudel/draw's painters lay out against canvas.width / height.
+// @strudel/draw's painters lay out against canvas.width / height. A
+// no-op while the Composition tab isn't active, for the same
+// display:none-reads-as-zero reason as syncAsciiFontSize above.
 function syncCanvasSize() {
+  if (activeTab.value !== 'composition') return
   const c = canvasEl.value
   const host = rootEl.value
   if (!c || !host) return
@@ -297,6 +332,7 @@ function syncCanvasSize() {
 }
 
 function applyWrapping() {
+  if (activeTab.value !== 'composition') return
   const host = rootEl.value
   if (!host) return
   const next = host.clientWidth < WRAP_BELOW
@@ -382,13 +418,17 @@ async function start() {
   provider.on('presence', (roster) => { participants.value = roster })
   provider.on('chat', (msg) => {
     chat.value.push(msg)
-    if (!panelOpen.value) unread.value++
+    if (activeTab.value !== 'chat') chatUnread.value++
     void nextTick(() => { if (chatLog.value) chatLog.value.scrollTop = chatLog.value.scrollHeight })
   })
   // Every client — editors and viewers — evaluates its own copy of the
   // shared document, aligned to the room clock by the editor's
   // beforeStart. The broadcast carries only { atCycle }, never code.
-  provider.on('eval', () => { playing.value = true; void editor?.evaluate() })
+  provider.on('eval', () => {
+    playing.value = true
+    if (activeTab.value !== 'composition') compositionActivity.value = true
+    void editor?.evaluate()
+  })
   provider.on('stop', () => { playing.value = false; editor?.stop() })
 
   await provider.ready
@@ -445,13 +485,14 @@ async function start() {
 }
 
 onMounted(() => {
-  panelOpen.value = window.matchMedia?.('(min-width: 768px)')?.matches ?? true
   swapInterval.value = loadStoredSwapInterval()
+  window.addEventListener('keydown', onKeydown)
   void start()
 })
 watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
   resizeObserver?.disconnect()
   asciiResizeObserver?.disconnect()
   stopAsciiSwapLoop()
@@ -514,6 +555,17 @@ onBeforeUnmount(() => {
         >
           {{ connected ? 'Connected' : 'Connecting…' }}
         </UBadge>
+        <!-- Visible to editors and viewers alike, regardless of active
+             tab — the only playback signal once the editor/canvas is
+             just one tab among three. -->
+        <UBadge
+          :color="playing ? 'success' : 'neutral'"
+          variant="subtle"
+          data-testid="playback-status"
+        >
+          <UIcon :name="playing ? 'i-lucide-play' : 'i-lucide-square'" class="size-3" />
+          {{ playing ? 'Playing' : 'Stopped' }}
+        </UBadge>
         <UButton
           v-if="isEditor"
           size="xs"
@@ -527,18 +579,6 @@ onBeforeUnmount(() => {
 
         <!-- Secondary controls: inline at sm+, folded into the ⋯ menu below. -->
         <span class="hidden items-center gap-2 sm:flex">
-          <UDropdownMenu v-if="isEditor" :items="presetItems" :content="{ align: 'end' }">
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-library-big"
-              trailing-icon="i-lucide-chevron-down"
-              data-testid="load-preset-button"
-            >
-              Load a starter
-            </UButton>
-          </UDropdownMenu>
           <UButton
             size="xs"
             color="neutral"
@@ -569,26 +609,32 @@ onBeforeUnmount(() => {
           />
         </UDropdownMenu>
 
-        <UButton
-          size="xs"
-          color="neutral"
-          :variant="showAsciiPanel ? 'solid' : 'outline'"
-          icon="i-lucide-scroll-text"
-          aria-label="Toggle ASCII art panel"
-          data-testid="toggle-ascii-panel-button"
-          @click="toggleAsciiPanel"
-        />
-
-        <UButton
-          size="xs"
-          :color="unread ? 'primary' : 'neutral'"
-          :variant="panelOpen ? 'solid' : 'outline'"
-          icon="i-lucide-users"
-          data-testid="toggle-panel-button"
-          @click="togglePanel"
-        >
-          {{ participants.length }}<span v-if="unread"> · {{ unread }} new</span>
-        </UButton>
+        <!-- Tab switcher — header placement at md+; a bottom bar takes
+             over below md (see the <nav> at the end of the template). -->
+        <div class="border-default hidden items-center gap-0.5 rounded-md border p-0.5 md:flex" role="tablist" data-testid="tab-switcher">
+          <UButton
+            v-for="tab in TAB_DEFS"
+            :key="tab.id"
+            size="xs"
+            :color="activeTab === tab.id ? 'primary' : 'neutral'"
+            :variant="activeTab === tab.id ? 'solid' : 'ghost'"
+            :icon="tab.icon"
+            role="tab"
+            :aria-selected="activeTab === tab.id"
+            :data-testid="`tab-${tab.id}`"
+            @click="setActiveTab(tab.id)"
+          >
+            {{ tab.label }}
+            <UBadge v-if="tab.id === 'chat' && chatUnread" size="xs" color="primary" variant="solid" class="ml-1">
+              {{ chatUnread }}
+            </UBadge>
+            <span
+              v-else-if="tab.id === 'composition' && compositionActivity"
+              class="bg-primary ml-1 size-1.5 rounded-full"
+              data-testid="composition-activity-dot"
+            />
+          </UButton>
+        </div>
       </div>
     </div>
 
@@ -608,13 +654,49 @@ onBeforeUnmount(() => {
       :close="{ onClick: () => (error = null) }"
     />
 
-    <div class="relative flex min-h-0 flex-1 gap-3">
+    <div class="relative flex min-h-0 flex-1 gap-3 pb-[calc(3.5rem_+_env(safe-area-inset-bottom))] md:pb-0">
       <div
+        v-show="activeTab === 'composition'"
         ref="rootEl"
         class="bg-elevated relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-md"
-        :class="showAsciiPanel ? 'md:w-64 md:flex-none lg:w-96' : ''"
         data-testid="composition-editor"
       >
+        <div v-if="isEditor" class="border-default relative z-20 flex flex-wrap items-center gap-2 border-b p-2">
+          <UDropdownMenu :items="presetItems" :content="{ align: 'start' }">
+            <UButton
+              size="xs"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-library-big"
+              trailing-icon="i-lucide-chevron-down"
+              data-testid="load-preset-button"
+            >
+              Load a starter
+            </UButton>
+          </UDropdownMenu>
+
+          <UButton
+            v-if="!confirmingClear"
+            size="xs"
+            color="error"
+            variant="ghost"
+            icon="i-lucide-eraser"
+            data-testid="clear-document-button"
+            @click="confirmingClear = true"
+          >
+            Clear
+          </UButton>
+          <div v-else class="flex items-center gap-1.5 text-xs">
+            <span class="text-muted">Clear for everyone?</span>
+            <UButton size="xs" color="error" data-testid="clear-document-confirm" @click="clearDocument">
+              Yes, clear
+            </UButton>
+            <UButton size="xs" color="neutral" variant="ghost" data-testid="clear-document-cancel" @click="confirmingClear = false">
+              Cancel
+            </UButton>
+          </div>
+        </div>
+
         <canvas
           ref="canvasEl"
           class="pointer-events-none absolute inset-0 z-0 size-full"
@@ -624,112 +706,11 @@ onBeforeUnmount(() => {
         <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
       </div>
 
-      <!-- Docked beside the editor on md+ (solid background at every size,
-           unlike the chat panel below, which goes transparent on md+).
-           Takes the lion's share of the row — the editor shrinks to a
-           fixed width instead — since the art is the point once this is
-           open; a right-hand overlay sheet below md. Independent of the
-           chat panel's toggle — see add-ascii-overlay design.md. -->
-      <aside
-        v-show="showAsciiPanel"
-        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex min-h-0 w-72 max-w-[85vw] shrink-0 flex-col gap-2 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:min-w-0 md:max-w-none md:flex-1 md:rounded-md md:border md:shadow-none"
-        data-testid="ascii-panel"
+      <div
+        v-show="activeTab === 'chat'"
+        class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-md p-3"
+        data-testid="chat-panel"
       >
-        <div class="flex items-center justify-between">
-          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
-            ASCII art
-          </h2>
-          <div class="flex items-center gap-1">
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-shuffle"
-              aria-label="Show another piece now"
-              data-testid="ascii-shuffle-button"
-              @click="advanceAsciiArt"
-            />
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-x"
-              class="md:hidden"
-              data-testid="close-ascii-panel-button"
-              @click="showAsciiPanel = false"
-            />
-          </div>
-        </div>
-
-        <!-- Per-viewer only — never synced to other participants; see
-             add-ascii-overlay design.md. -->
-        <div class="text-muted flex items-center justify-center gap-1.5 text-xs">
-          <span>swap every</span>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-minus"
-            aria-label="Swap less often"
-            data-testid="ascii-interval-decrease"
-            @click="adjustSwapInterval(-1)"
-          />
-          <span class="w-5 text-center tabular-nums" data-testid="ascii-interval-value">{{ swapInterval }}</span>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-plus"
-            aria-label="Swap more often"
-            data-testid="ascii-interval-increase"
-            @click="adjustSwapInterval(1)"
-          />
-          <span>beats</span>
-        </div>
-
-        <div
-          ref="asciiBodyEl"
-          class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-black"
-          data-testid="ascii-art-body"
-        >
-          <pre
-            v-if="currentAsciiArt"
-            class="whitespace-pre text-center font-mono leading-tight text-white"
-            :style="{ fontSize: `${asciiFontSize}px` }"
-            data-testid="ascii-art-text"
-          >{{ currentAsciiArt.text }}</pre>
-          <p v-else class="text-xs text-white/60">
-            {{ asciiLoadError ? 'No ASCII art available yet.' : 'Loading…' }}
-          </p>
-        </div>
-
-        <a
-          v-if="currentAsciiArt"
-          :href="currentAsciiArt.sourceUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-muted hover:text-default truncate text-xs underline-offset-2 hover:underline"
-          data-testid="ascii-attribution"
-        >
-          {{ currentAsciiArt.title ?? 'Untitled' }} — {{ currentAsciiArt.artist ?? 'unknown artist' }}
-        </a>
-      </aside>
-
-      <!-- Docked beside the editor on md+; a right-hand overlay sheet below that. -->
-      <aside
-        v-show="panelOpen"
-        class="bg-elevated border-default absolute inset-y-0 right-0 z-30 flex w-72 max-w-[85vw] shrink-0 flex-col gap-3 rounded-l-md border-l p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl md:static md:w-56 md:max-w-none md:rounded-none md:border-0 md:bg-transparent md:p-0 md:pb-0 md:shadow-none"
-        data-testid="side-panel"
-      >
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-x"
-          class="self-end md:hidden"
-          data-testid="close-panel-button"
-          @click="panelOpen = false"
-        />
         <div class="flex flex-col gap-1.5" data-testid="participants">
           <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
             In the room ({{ participants.length }})
@@ -785,8 +766,116 @@ onBeforeUnmount(() => {
             </UButton>
           </div>
         </div>
-      </aside>
+
+        <!-- Reserved for add-jah-chat's future controls (file upload,
+             model/parameter selection) — deliberately empty and
+             zero-height until that change lands. -->
+        <div class="h-0 overflow-hidden" data-testid="chat-control-strip" />
+      </div>
+
+      <div
+        v-show="activeTab === 'ascii'"
+        class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-md p-3"
+        data-testid="ascii-panel"
+      >
+        <div class="flex items-center justify-between">
+          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
+            ASCII art
+          </h2>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-shuffle"
+            aria-label="Show another piece now"
+            data-testid="ascii-shuffle-button"
+            @click="advanceAsciiArt"
+          />
+        </div>
+
+        <!-- Per-viewer only — never synced to other participants; see
+             add-ascii-overlay design.md. -->
+        <div class="text-muted flex items-center justify-center gap-1.5 text-xs">
+          <span>swap every</span>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-minus"
+            aria-label="Swap less often"
+            data-testid="ascii-interval-decrease"
+            @click="adjustSwapInterval(-1)"
+          />
+          <span class="w-5 text-center tabular-nums" data-testid="ascii-interval-value">{{ swapInterval }}</span>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-plus"
+            aria-label="Swap more often"
+            data-testid="ascii-interval-increase"
+            @click="adjustSwapInterval(1)"
+          />
+          <span>beats</span>
+        </div>
+
+        <div
+          ref="asciiBodyEl"
+          class="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-md bg-black"
+          data-testid="ascii-art-body"
+        >
+          <pre
+            v-if="currentAsciiArt"
+            class="whitespace-pre text-center font-mono leading-tight text-white"
+            :style="{ fontSize: `${asciiFontSize}px` }"
+            data-testid="ascii-art-text"
+          >{{ currentAsciiArt.text }}</pre>
+          <p v-else class="text-xs text-white/60">
+            {{ asciiLoadError ? 'No ASCII art available yet.' : 'Loading…' }}
+          </p>
+        </div>
+
+        <a
+          v-if="currentAsciiArt"
+          :href="currentAsciiArt.sourceUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-muted hover:text-default truncate text-xs underline-offset-2 hover:underline"
+          data-testid="ascii-attribution"
+        >
+          {{ currentAsciiArt.title ?? 'Untitled' }} — {{ currentAsciiArt.artist ?? 'unknown artist' }}
+        </a>
+      </div>
     </div>
+
+    <!-- Tab switcher — bottom-bar placement below md, thumb-reachable. -->
+    <nav
+      class="bg-elevated border-default fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t px-2 pt-1 pb-[env(safe-area-inset-bottom)] md:hidden"
+      role="tablist"
+      data-testid="tab-switcher-mobile"
+    >
+      <button
+        v-for="tab in TAB_DEFS"
+        :key="tab.id"
+        type="button"
+        class="relative flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-xs"
+        :class="activeTab === tab.id ? 'text-primary' : 'text-muted'"
+        role="tab"
+        :aria-selected="activeTab === tab.id"
+        :data-testid="`tab-mobile-${tab.id}`"
+        @click="setActiveTab(tab.id)"
+      >
+        <UIcon :name="tab.icon" class="size-5" />
+        {{ tab.label }}
+        <UBadge v-if="tab.id === 'chat' && chatUnread" size="xs" color="primary" variant="solid" class="absolute top-0 right-3">
+          {{ chatUnread }}
+        </UBadge>
+        <span
+          v-else-if="tab.id === 'composition' && compositionActivity"
+          class="bg-primary absolute top-0.5 right-4 size-1.5 rounded-full"
+        />
+      </button>
+    </nav>
   </div>
 </template>
 

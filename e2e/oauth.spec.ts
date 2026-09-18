@@ -80,6 +80,7 @@ test('a signed-in GitHub user joins rooms with no name prompt, avatar shown', as
   await expect(anonRow.locator('img')).toHaveCount(0)
 
   // And in chat.
+  await page.getByTestId('tab-chat').click()
   await page.getByTestId('chat-input').fill('hi from github')
   await page.getByTestId('chat-send').click()
   const msgRow = anon.locator('[data-testid="chat-message-row"]').filter({ hasText: 'hi from github' })
