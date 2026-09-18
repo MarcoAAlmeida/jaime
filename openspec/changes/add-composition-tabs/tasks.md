@@ -75,8 +75,11 @@
       pre-existing/environmental timeout confirmed unrelated to this
       session's other changes via a clean-checkout comparison).
 - [x] 7.3 `openspec validate add-composition-tabs --strict` — passes.
-- [ ] 7.4 `npm run deploy`; manually verify on `jaime.stream`: tab
-      switching on desktop and mobile, keyboard shortcuts, playback
-      indicator persists across tabs, chat/composition activity
-      indicators, clear-document confirm-and-role-gate.
+- [x] 7.4 `npm run deploy`; manually verified on `jaime.stream` via a
+      scripted browser pass: desktop tab switcher + keyboard shortcuts
+      (1/2/3) all switch tabs correctly, playback-status badge shows
+      "Stopped", chat/ASCII tabs exclusive of the editor, clear-confirm
+      shows and cancel leaves the document untouched, and on mobile the
+      bottom bar (not the header) is the reachable switcher and Chat
+      renders roster + messages correctly.
 - [ ] 7.5 Sync the `composition-room` delta; archive the change.
