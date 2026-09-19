@@ -11,7 +11,7 @@
 // machines, piano, VCSL, GM soundfonts, …) load in the background and a
 // pattern that names one makes sound as soon as its bank arrives.
 
-import { evalScope } from '@strudel/core'
+import { evalScope, Pattern } from '@strudel/core'
 import { miniAllStrings } from '@strudel/mini'
 import { aliasBank, registerSynthSounds, registerZZFXSounds, samples } from '@strudel/webaudio'
 
@@ -39,6 +39,75 @@ async function loadBank(url: string): Promise<void> {
   }
 }
 
+// The underscore-prefixed widget methods (_pianoroll, _punchcard,
+// _spiral, _scope, _pitchwheel, _spectrum) are normally registered by
+// @strudel/codemirror as a side effect of StrudelMirror mounting — real
+// hosts for its own visual gutter (Composition Room, JAM). The Pattern
+// Library's standalone preview (audioEngine.ts) never mounts a
+// CodeMirror instance, so those methods were simply missing there: any
+// curated pattern chaining one (e.g. Birds of a Feather's
+// ._pitchwheel(...)) threw "is not a function" on Preview despite
+// evaluating fine as a Composition Room starter (add-favorite-patterns
+// migrated it into the shared catalog, which is what first exercised
+// this path). Registered here — shared by every prebake() consumer —
+// against a detached canvas: the draw happens, just nowhere visible,
+// which is fine, since nothing outside the real editor surfaces
+// per-widget UI anyway. Mirrors @strudel/codemirror/widget.mjs's own
+// option-shaping exactly, minus its CodeMirror decoration wiring.
+function headlessCanvas(width: number, height: number): CanvasRenderingContext2D | null {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  return canvas.getContext('2d')
+}
+
+// Composition Room and JAM import @strudel/codemirror (for
+// StrudelMirror) before this ever runs, which registers the *real*
+// versions — wired to the visible editor gutter — as a module-load
+// side effect. Only fill in a stub where nothing is registered yet
+// (the Pattern Library preview); never clobber the real one.
+function defineIfMissing(proto: Record<string, unknown>, name: string, fn: unknown): void {
+  if (typeof proto[name] !== 'function') proto[name] = fn
+}
+
+function registerHeadlessWidgets(): void {
+  const proto = Pattern.prototype as Record<string, unknown>
+
+  defineIfMissing(proto, '_pianoroll', function (this: typeof Pattern.prototype, id: string, options: Record<string, unknown> = {}) {
+    const shaped = { fold: 1, width: 500, height: 60, ...options }
+    const ctx = headlessCanvas(Number(shaped.width), Number(shaped.height))
+    return this.tag(id).pianoroll({ ...shaped, ctx, id })
+  })
+  defineIfMissing(proto, '_punchcard', function (this: typeof Pattern.prototype, id: string, options: Record<string, unknown> = {}) {
+    const shaped = { fold: 1, width: 500, height: 60, ...options }
+    const ctx = headlessCanvas(Number(shaped.width), Number(shaped.height))
+    return this.tag(id).punchcard({ ...shaped, ctx, id })
+  })
+  defineIfMissing(proto, '_spiral', function (this: typeof Pattern.prototype, id: string, options: Record<string, unknown> = {}) {
+    const size = Number(options.size) || 275
+    const shaped = { width: size, height: size, ...options, size: size / 5 }
+    const ctx = headlessCanvas(Number(shaped.width), Number(shaped.height))
+    return this.spiral({ ...shaped, ctx, id })
+  })
+  defineIfMissing(proto, '_scope', function (this: typeof Pattern.prototype, id: string, options: Record<string, unknown> = {}) {
+    const shaped = { width: 500, height: 60, pos: 0.5, scale: 1, ...options }
+    const ctx = headlessCanvas(Number(shaped.width), Number(shaped.height))
+    return this.scope({ ...shaped, ctx, id })
+  })
+  defineIfMissing(proto, '_pitchwheel', function (this: typeof Pattern.prototype, id: string, options: Record<string, unknown> = {}) {
+    const size = Number(options.size) || 200
+    const shaped = { width: size, height: size, ...options, size: size / 5 }
+    const ctx = headlessCanvas(Number(shaped.width), Number(shaped.height))
+    return this.pitchwheel({ ...shaped, ctx, id })
+  })
+  defineIfMissing(proto, '_spectrum', function (this: typeof Pattern.prototype, id: string, options: Record<string, unknown> = {}) {
+    const size = Number(options.size) || 200
+    const shaped = { width: size, height: size, ...options, size: size / 5 }
+    const ctx = headlessCanvas(Number(shaped.width), Number(shaped.height))
+    return this.spectrum({ ...shaped, ctx, id })
+  })
+}
+
 async function run(): Promise<void> {
   await evalScope(
     import('@strudel/core'),
@@ -50,6 +119,7 @@ async function run(): Promise<void> {
   miniAllStrings()
   registerSynthSounds()
   registerZZFXSounds()
+  registerHeadlessWidgets()
 
   // General MIDI soundfont voices — `gm_*` names (gm_lead_2_sawtooth,
   // gm_epiano1, …). @strudel/soundfonts must be a *dynamic* import: a

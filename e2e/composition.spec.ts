@@ -520,7 +520,7 @@ test('an editor loads a starter composition into the shared document for everyon
   await expect(pageV.locator('[data-testid="load-preset-button"]')).toHaveCount(0)
 
   await pageA.locator('[data-testid="load-preset-button"]').click()
-  await pageA.getByRole('menuitem', { name: /Birds of a Feather/ }).click()
+  await pageA.getByRole('option', { name: /Birds of a Feather/ }).click()
 
   // The whole script replaces the shared doc, on the loader's editor and
   // on the viewer's.

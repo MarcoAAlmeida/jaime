@@ -1,3 +1,12 @@
+---
+title: Caverave
+tags: ["starter", "techno", "dark"]
+source_url: https://strudel.cc/examples/
+source_author: Felix Roos
+favorite: true
+---
+
+```strudel
 // "Caverave"
 // @license CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
 // @by Felix Roos
@@ -41,3 +50,4 @@ stack(
   synths
 ).slow(2)
   //.pianoroll({fold:1})
+```

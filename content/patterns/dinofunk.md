@@ -1,3 +1,12 @@
+---
+title: Dinofunk
+tags: ["starter", "funk", "bass"]
+source_url: https://strudel.cc/examples/
+source_author: Felix Roos
+favorite: true
+---
+
+```strudel
 // "Dinofunk"
 // @license CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/
 // @by Felix Roos
@@ -27,3 +36,4 @@ chord("Abm7")
 .degradeBy(.4).room(1),
 note("<b4 eb4>").s('dino').delay(.8).slow(8).room(.5)
 )
+```

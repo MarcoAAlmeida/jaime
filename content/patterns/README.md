@@ -18,6 +18,7 @@ Frontmatter, then exactly one fenced code block with the pattern code:
     source_url: https://strudel.cc/workshop/first-sounds/
     source_author: Alice        # optional
     description: A plain 4/4 kick with off-beat hats.   # optional
+    favorite: false             # optional, defaults to false
     ---
 
     ```strudel
@@ -35,6 +36,12 @@ Frontmatter, then exactly one fenced code block with the pattern code:
   deterministic value from the id-sorted position, matching the
   original seed convention. Existing rows keep whatever `created_at`
   they already have — the sync never rewrites it.
+- **favorite** — optional boolean, defaults to `false`. A pattern with
+  `favorite: true` is eligible to appear in the Composition Room's
+  starter picker (still gated to patterns, not a separate system —
+  see `add-favorite-patterns`). Long-form patterns meant as starters
+  typically also carry a `starter` tag so they're identifiable in the
+  general catalog grid too.
 - **body** — exactly one fenced code block (```` ```strudel ```` or a
   bare fence) holding the pattern code. Nothing else in the body is
   read.

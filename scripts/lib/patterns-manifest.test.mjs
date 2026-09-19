@@ -45,8 +45,23 @@ describe('readManifest', () => {
       sourceUrl: 'https://strudel.cc/x',
       sourceAuthor: null,
       createdAt: entries[0].createdAt,
+      favorite: false,
     })
     assert.match(entries[0].createdAt, /^\d{4}-\d{2}-\d{2}T/)
+  })
+
+  test('parses favorite: true', () => {
+    write('starter.md', OK.replace('source_url: https://strudel.cc/x', 'source_url: https://strudel.cc/x\nfavorite: true'))
+    assert.equal(readManifest(dir)[0].favorite, true)
+  })
+
+  test('rejects a non-boolean favorite', () => {
+    write('bad-favorite.md', OK.replace('source_url: https://strudel.cc/x', 'source_url: https://strudel.cc/x\nfavorite: 1'))
+    assert.throws(() => readManifest(dir), (err) => {
+      assert.ok(err instanceof ManifestError)
+      assert.ok(err.problems.some(p => p.includes('favorite')))
+      return true
+    })
   })
 
   test('coerces numeric tags to strings', () => {
@@ -104,9 +119,16 @@ describe('validateManifest', () => {
 
 describe('toReconcileSql', () => {
   const entries = [
-    { id: 'p1', title: "O'Brien", code: 's("bd")', tags: ['a', 'b'], sourceUrl: 'u', sourceAuthor: null, createdAt: '2026-09-01T00:00:00.000Z' },
-    { id: 'p2', title: 'Two', code: 's("sd")', tags: [], sourceUrl: 'u2', sourceAuthor: 'Ann', createdAt: '2026-09-01T00:00:01.000Z' },
+    { id: 'p1', title: "O'Brien", code: 's("bd")', tags: ['a', 'b'], sourceUrl: 'u', sourceAuthor: null, createdAt: '2026-09-01T00:00:00.000Z', favorite: true },
+    { id: 'p2', title: 'Two', code: 's("sd")', tags: [], sourceUrl: 'u2', sourceAuthor: 'Ann', createdAt: '2026-09-01T00:00:01.000Z', favorite: false },
   ]
+
+  test('encodes favorite as 0/1 and updates it on conflict', () => {
+    const sql = toReconcileSql(entries)
+    assert.ok(sql.includes("'2026-09-01T00:00:00.000Z', 'curated', 1)"))
+    assert.ok(sql.includes("'2026-09-01T00:00:01.000Z', 'curated', 0)"))
+    assert.ok(sql.includes('favorite=excluded.favorite'))
+  })
 
   test('escapes single quotes in values', () => {
     const sql = toReconcileSql(entries)

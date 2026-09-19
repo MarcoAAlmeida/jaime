@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Pattern, PatternListResult } from '#shared/catalog'
 import { nanoid } from 'nanoid'
+import { toStrudelUrl } from '~/lib/strudelShareLink'
 
 definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'Pattern library — jaime' })
@@ -275,6 +276,15 @@ onBeforeUnmount(() => {
                   color="neutral"
                   variant="outline"
                   @click="copyCode(pattern)"
+                />
+                <UButton
+                  label="Open in strudel.cc"
+                  icon="i-lucide-external-link"
+                  size="xs"
+                  color="neutral"
+                  variant="outline"
+                  :to="toStrudelUrl(pattern.code)"
+                  target="_blank"
                 />
                 <span class="text-dimmed ml-auto text-xs">
                   Source:

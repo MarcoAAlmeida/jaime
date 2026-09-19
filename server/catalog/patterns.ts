@@ -11,6 +11,8 @@ export interface ListPatternsQuery {
   tags?: string[]
   /** Free-text query, matched case-insensitively against title and tags. */
   q?: string
+  /** When true, restrict the listing to patterns with favorite = true. */
+  favorite?: boolean
   /** 1-based page number. */
   page?: number
   /** Requested page size; clamped to [1, MAX_LIMIT], default DEFAULT_LIMIT. */
@@ -27,6 +29,7 @@ interface PatternRow {
   source_url: string
   source_author: string | null
   created_at: string
+  favorite: number
 }
 
 function clampLimit(limit: number | undefined): number {
@@ -44,9 +47,13 @@ function clampPage(page: number | undefined): number {
  * filter + text search. Used by both the count and the page query so
  * they always agree.
  */
-function buildFilter(tags: string[], q: string): { sql: string, params: unknown[] } {
+function buildFilter(tags: string[], q: string, favorite: boolean | undefined): { sql: string, params: unknown[] } {
   const clauses: string[] = []
   const params: unknown[] = []
+
+  if (favorite) {
+    clauses.push('p.favorite = 1')
+  }
 
   if (tags.length > 0) {
     const placeholders = tags.map(() => '?').join(', ')
@@ -99,6 +106,7 @@ function rowToPattern(row: PatternRow, tags: string[]): Pattern {
     tags,
     source: { url: row.source_url, author: row.source_author },
     createdAt: row.created_at,
+    favorite: row.favorite === 1,
   }
 }
 
@@ -112,7 +120,7 @@ export async function listPatterns(
   const pageSize = clampLimit(query.limit)
   const offset = (page - 1) * pageSize
 
-  const filter = buildFilter(tags, q)
+  const filter = buildFilter(tags, q, query.favorite)
 
   const totalRow = await db
     .prepare(`SELECT count(*) AS n FROM patterns p ${filter.sql}`)
@@ -122,7 +130,7 @@ export async function listPatterns(
 
   const { results } = await db
     .prepare(
-      `SELECT p.id, p.title, p.code, p.source_url, p.source_author, p.created_at
+      `SELECT p.id, p.title, p.code, p.source_url, p.source_author, p.created_at, p.favorite
        FROM patterns p
        ${filter.sql}
        ORDER BY p.created_at DESC, p.id
@@ -140,7 +148,7 @@ export async function listPatterns(
 export async function getPattern(db: D1Database, id: string): Promise<Pattern | null> {
   const row = await db
     .prepare(
-      `SELECT id, title, code, source_url, source_author, created_at
+      `SELECT id, title, code, source_url, source_author, created_at, favorite
        FROM patterns WHERE id = ?`,
     )
     .bind(id)

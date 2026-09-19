@@ -8,6 +8,7 @@ export interface Pattern {
   tags: string[]
   source: { url: string, author: string | null }
   createdAt: string
+  favorite: boolean
 }
 
 export interface PatternListResult {

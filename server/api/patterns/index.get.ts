@@ -1,6 +1,6 @@
 import { listPatterns } from '../../catalog/patterns'
 
-// GET /api/patterns?tag=<t>&tag=<t2>&q=<text>&page=<n>&limit=<n>
+// GET /api/patterns?tag=<t>&tag=<t2>&q=<text>&favorite=true&page=<n>&limit=<n>
 export default defineEventHandler(async (event) => {
   const db = usePatternsDb(event)
   await assertPatternsMigrated(db)
@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
   return listPatterns(db, {
     tags,
     q: query.q ? String(query.q) : undefined,
+    favorite: query.favorite === 'true' ? true : undefined,
     page: Number.isNaN(page) ? undefined : page,
     limit: Number.isNaN(limit) ? undefined : limit,
   })

@@ -31,8 +31,13 @@ test('every curated pattern evaluates without a pattern error', async ({ page })
   for (const [i, { title }] of patterns.entries()) {
     await search.fill(title)
 
+    // The row's accessible name is "<title> <tag1> <tag2> …" — match the
+    // title followed by whitespace or end-of-string, not `\b`: a title
+    // ending in punctuation (e.g. "Birds of a Feather (remake)") has no
+    // word-boundary before the following space, since neither side is a
+    // word character.
     const row = page
-      .getByRole('button', { name: new RegExp(`^${escapeRegExp(title)}\\b`) })
+      .getByRole('button', { name: new RegExp(`^${escapeRegExp(title)}(?:\\s|$)`) })
       .first()
     await row.click() // expand — the first one lazy-loads engine + samples
     await page.waitForTimeout(i === 0 ? 5000 : 400)

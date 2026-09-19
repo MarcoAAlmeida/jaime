@@ -1,3 +1,12 @@
+---
+title: Birds of a Feather (remake)
+tags: ["starter", "melodic", "gm-soundfonts"]
+source_url: https://strudel.cc/?yTnr825wyd9V
+source_author: saga_3k
+favorite: true
+---
+
+```strudel
 /*
 @title BIRDS OF A FEATHER (REMAKE)
 @by saga_3k <https://linktr.ee/saga3k>
@@ -86,3 +95,4 @@ $:arrange(
 //.color("<pink cyan green orange>").punchcard({labels:1,vertical:1,flipTime:1,fill:0,strokeActive:1,filpValue:1,fontFamily:'teletext'})
 
 // @version 1.1
+```

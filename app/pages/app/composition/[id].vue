@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import type { AsciiArtPiece } from '#shared/asciiArt'
 import type { ChatMessage, CompositionPresenceEntry, Role } from '#shared/compositionProtocol'
+import type { Pattern, PatternListResult } from '#shared/catalog'
 import type { CompositionProvider } from '~/lib/compositionProvider'
 import type { StrudelEditor } from '~/lib/strudelEditor'
 import { StateEffect } from '@codemirror/state'
 import { yCollab } from 'y-codemirror.next'
 import * as Y from 'yjs'
 import { nextCycleBoundary } from '#shared/transportMath'
-import { COMPOSITION_PRESETS } from '~/lib/compositionPresets'
 import { createCompositionProvider } from '~/lib/compositionProvider'
 import { createStrudelEditor, primeAudio } from '~/lib/strudelEditor'
+import { toStrudelUrl } from '~/lib/strudelShareLink'
 import { waitForCycleBoundary } from '~/lib/transportClock'
 
 // Immersive full-screen tool view — no dashboard chrome, same as a JAM
@@ -247,14 +248,54 @@ function loadPreset(code: string) {
   })
 }
 
-const presetItems = computed(() => [
-  COMPOSITION_PRESETS.map(p => ({
-    label: p.title,
-    description: p.credit,
-    icon: 'i-lucide-music',
-    onSelect: () => loadPreset(p.code),
-  })),
-])
+// Composition Room starters are just favorited patterns from the
+// pattern-library (add-favorite-patterns) — fetched once on mount,
+// filtered client-side by the picker's own search box (the favorites
+// list is a small curated showcase, not worth a request per keystroke).
+const favoritePatterns = ref<Pattern[]>([])
+async function loadFavoritePatterns() {
+  try {
+    const res = await $fetch<PatternListResult>('/api/patterns', { query: { favorite: true, limit: 60 } })
+    favoritePatterns.value = res.patterns
+  }
+  catch {
+    // Picker just shows nothing to pick — non-critical, no error banner.
+  }
+}
+
+function sourceLabel(pattern: Pattern): string {
+  if (pattern.source.author) return pattern.source.author
+  try {
+    return new URL(pattern.source.url).hostname.replace(/^www\./, '')
+  }
+  catch {
+    return 'source'
+  }
+}
+
+// Reset after every pick so the trigger keeps showing its placeholder
+// rather than looking like a persistent "selected starter" control.
+const starterPickerValue = ref<string | null>(null)
+const starterItems = computed(() => favoritePatterns.value.map(p => ({
+  label: p.title,
+  description: sourceLabel(p),
+  icon: 'i-lucide-music',
+  value: p.id,
+  onSelect: () => {
+    loadPreset(p.code)
+    // Reka UI applies its own v-model update around this same
+    // selection event; resetting synchronously gets clobbered by it,
+    // so wait a tick before clearing back to the placeholder.
+    void nextTick(() => { starterPickerValue.value = null })
+  },
+})))
+
+// "Open in strudel.cc" links the room's *current* document (whatever's
+// live right now), not just a freshly-loaded starter.
+function openCurrentInStrudel() {
+  if (!provider) return
+  window.open(toStrudelUrl(provider.text.toString()), '_blank', 'noopener')
+}
 
 // Blanks the shared document for everyone — same collaborative-action
 // path as loadPreset, just with nothing to insert. Destructive and
@@ -277,6 +318,7 @@ function clearDocument() {
 const overflowItems = computed(() => [[
   { label: shareLabel.value, icon: 'i-lucide-share-2', onSelect: shareInvite },
   ...(canShare.value ? [{ label: 'Copy invite link', icon: 'i-lucide-link', onSelect: copyInviteLink }] : []),
+  { label: 'Open in strudel.cc', icon: 'i-lucide-external-link', onSelect: openCurrentInStrudel },
 ]])
 
 let provider: CompositionProvider | undefined
@@ -488,6 +530,7 @@ async function start() {
 onMounted(() => {
   swapInterval.value = loadStoredSwapInterval()
   window.addEventListener('keydown', onKeydown)
+  void loadFavoritePatterns()
   void start()
 })
 watch([displayName, role], () => { void start() })
@@ -604,6 +647,15 @@ onBeforeUnmount(() => {
             data-testid="copy-invite-link-button"
             @click="copyInviteLink"
           />
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-external-link"
+            aria-label="Open in strudel.cc"
+            data-testid="open-in-strudel-button"
+            @click="openCurrentInStrudel"
+          />
         </span>
         <UDropdownMenu :items="overflowItems" :content="{ align: 'end' }" class="sm:hidden">
           <UButton
@@ -655,18 +707,18 @@ onBeforeUnmount(() => {
       data-testid="context-toolbar"
     >
       <template v-if="activeTab === 'composition'">
-        <UDropdownMenu :items="presetItems" :content="{ align: 'start' }">
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-library-big"
-            trailing-icon="i-lucide-chevron-down"
-            data-testid="load-preset-button"
-          >
-            Load a starter
-          </UButton>
-        </UDropdownMenu>
+        <USelectMenu
+          v-model="starterPickerValue"
+          :items="starterItems"
+          value-key="value"
+          placeholder="Load a starter"
+          icon="i-lucide-library-big"
+          size="xs"
+          color="neutral"
+          variant="outline"
+          class="w-56"
+          data-testid="load-preset-button"
+        />
 
         <UButton
           v-if="!confirmingClear"
