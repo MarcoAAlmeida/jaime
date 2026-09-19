@@ -162,7 +162,19 @@ export function validateManifest(entries, problems) {
 
 function sq(value) {
   if (value == null) return 'NULL'
-  return `'${String(value).replace(/'/g, '\'\'')}'`
+  const str = String(value)
+  if (!str.includes('\n')) return `'${str.replace(/'/g, '\'\'')}'`
+  // A multi-line pattern's code would otherwise embed a raw newline in
+  // the generated SQL text. Both consumers of this output — D1's
+  // `exec()` binding (used by the vitest test-DB seed) and, in
+  // principle, any other line-oriented SQL runner — treat '\n' as the
+  // separator between statements, so a literal newline here would
+  // split one INSERT into unparseable fragments. A char(10)-concat
+  // chain avoids that but hits SQLite's expression-tree depth limit on
+  // a long pattern; a hex blob literal sidesteps newlines, quoting,
+  // and depth entirely — it's just bytes, decoded back to text.
+  const hex = Buffer.from(str, 'utf8').toString('hex')
+  return `CAST(x'${hex}' AS TEXT)`
 }
 
 /**

@@ -1,3 +1,4 @@
+import type { ModelMessage } from 'ai'
 import type { Peer } from 'crossws'
 import type {
   ChatMessage,
@@ -10,7 +11,12 @@ import { defineWebSocketHandler } from 'h3'
 import * as Y from 'yjs'
 import { fromBase64, toBase64 } from '#shared/compositionProtocol'
 import { nextCycleBoundary } from '#shared/transportMath'
+import { hasAiAccess, parseAllowlist } from '../auth/aiAccess'
+import { recordUsage } from '../auth/aiUsage'
 import { getSessionUser } from '../auth/sessions'
+import { underCaps } from '../jah/caps'
+import { generateJahReply } from '../jah/reply'
+import { classifyMention, isJahEnabled } from '../jah/route'
 import { getDurableEnv } from '../utils/durableStorage'
 
 const DEFAULT_BPM = 120
@@ -20,20 +26,57 @@ const CHAT_KEEP = 200
 // The Y.Text field name the client editor binds to.
 export const DOC_TEXT = 'strudel'
 
+// `@jah` (add-jah-chat) — sender identity for its chat messages, daily
+// spend caps (proposal.md), and the fixed decline replies for every
+// gate a request can fail. Kill-switch-off and anonymous-sender are
+// NOT here: both mean total silence, no reply at all (see jah-chat
+// spec's "A Kill Switch Can Disable @jah Entirely" and "@jah Requires
+// A Signed-In, Access-Granted Account").
+const JAH_NAME = '@jah'
+const JAH_AVATAR_URL = '/jah-avatar.svg'
+const JAH_CAP_LIMITS = { perUser: 25, global: 150 }
+const JAH_REPLY_NO_ACCESS = 'Sorry, I\'m invite-only right now — ask the room operator for access.'
+const JAH_REPLY_OVER_CAP = 'I\'ve hit my daily reply limit — try again after it resets (UTC midnight).'
+const JAH_REPLY_BUSY = 'Still working on the last one in this room, one sec.'
+const JAH_REPLY_FIX_NOT_SUPPORTED = 'Fixing patterns isn\'t something I can do yet — just discussion for now.'
+const JAH_REPLY_EDIT_NOT_SUPPORTED = 'Editing patterns isn\'t something I can do yet — just discussion for now.'
+// Posted once as a room's chat starts (design decision 10) — free,
+// static text, shown regardless of sign-in/access/kill-switch state,
+// so it never calls the model or touches ai_usage.
+const JAH_WELCOME_TEXT = 'Hi, I\'m @jah! Mention me — "@jah " followed by a question — '
+  + 'and I\'ll join the discussion. Strudel questions are my specialty.'
+
 interface CompositionRoom {
   ydoc: Y.Doc
   bpm: number
   cycleStartTimestamp: number
   playing: boolean
   evalAtCycle: number | null
-  // clientId -> { name, role, awarenessId, avatarUrl }. Never persisted
-  // (rebuilt from live peers). awarenessId is the peer's Yjs awareness
-  // id, used to tell the others to drop its cursor on disconnect;
-  // avatarUrl is server-resolved from the connection's session.
-  presence: Map<string, { name: string, role: Role, awarenessId?: number, avatarUrl?: string }>
+  // clientId -> presence entry. Never persisted (rebuilt from live
+  // peers). awarenessId is the peer's Yjs awareness id, used to tell
+  // the others to drop its cursor on disconnect; avatarUrl is
+  // server-resolved from the connection's session. userId/aiAccess/
+  // githubLogin are resolved once at join (add-jah-chat design
+  // decision 1) — the chat handler reads them to decide whether the
+  // sender could even get an `@jah` reply, without re-querying D1 per
+  // message.
+  presence: Map<string, {
+    name: string
+    role: Role
+    awarenessId?: number
+    avatarUrl?: string
+    userId?: string
+    aiAccess?: boolean
+    githubLogin?: string
+  }>
   chat: ChatMessage[]
   snapshotTimer: ReturnType<typeof setTimeout> | null
   evictTimer: ReturnType<typeof setTimeout> | null
+  // Whether a real `@jah` model call is currently in flight for this
+  // room (add-jah-chat design decision 4) — in-memory only, reset on
+  // room reload. A second addressed message while true is declined,
+  // never queued.
+  jahBusy: boolean
 }
 
 const rooms = new Map<string, CompositionRoom>()
@@ -58,6 +101,7 @@ function createRoom(): CompositionRoom {
     chat: [],
     snapshotTimer: null,
     evictTimer: null,
+    jahBusy: false,
   }
 }
 
@@ -140,6 +184,18 @@ function toOthers(peer: Peer, roomId: string, message: CompositionServerMessage)
   peer.publish(topic(roomId), JSON.stringify(message))
 }
 
+// Appends to the room's (bounded, in-memory) chat log and broadcasts —
+// shared by human messages and `@jah`'s own (add-jah-chat).
+function postChatMessage(peer: Peer, roomId: string, room: CompositionRoom, msg: ChatMessage) {
+  room.chat.push(msg)
+  if (room.chat.length > CHAT_KEEP) room.chat.splice(0, room.chat.length - CHAT_KEEP)
+  toAll(peer, roomId, { t: 'chat', message: msg })
+}
+
+function jahChatMessage(text: string): ChatMessage {
+  return { clientId: JAH_NAME, name: JAH_NAME, avatarUrl: JAH_AVATAR_URL, text, at: Date.now() }
+}
+
 function roomIdOf(peer: Peer): string | null {
   return new URL(peer.request.url).searchParams.get('id')
 }
@@ -149,21 +205,101 @@ function nameOf(peer: Peer): string | null {
 }
 
 // The signed-in account behind this connection, resolved from the
-// `jaime_session` cookie on the WS upgrade request. Only the avatar is
-// taken from here (server-resolved, not trusted from the client); the
-// display name still comes from the client's editable screen name.
-async function accountFor(peer: Peer): Promise<{ userId: string, avatarUrl?: string } | null> {
+// `jaime_session` cookie on the WS upgrade request. The avatar and
+// `@jah` access are taken from here (server-resolved, not trusted from
+// the client); the display name still comes from the client's
+// editable screen name. `aiAccess` is *effective* access (the
+// per-user flag OR the AI_ACCESS_LOGINS allowlist, add-jah-chat design
+// decision 1) — callers never need to re-check the allowlist.
+async function accountFor(peer: Peer): Promise<
+  { userId: string, avatarUrl?: string, aiAccess: boolean, githubLogin?: string } | null
+> {
   const cookie = peer.request?.headers?.get?.('cookie')
   const sid = cookie?.match(/(?:^|;\s*)jaime_session=([^;]+)/)?.[1]
-  const db = getDurableEnv()?.PATTERNS_DB
+  const env = getDurableEnv()
+  const db = env?.PATTERNS_DB
   if (!sid || !db) return null
   try {
     const user = await getSessionUser(db, decodeURIComponent(sid))
     if (!user) return null
-    return { userId: user.id, avatarUrl: user.avatarUrl }
+    const allowlist = parseAllowlist(env?.AI_ACCESS_LOGINS)
+    return {
+      userId: user.id,
+      avatarUrl: user.avatarUrl,
+      aiAccess: hasAiAccess(user, allowlist),
+      githubLogin: user.githubLogin,
+    }
   }
   catch {
     return null
+  }
+}
+
+// Handles a `@jah`-addressed chat message, once the human's own
+// message has already been broadcast as usual. Every gate that
+// declines does so with a fixed chat message from `@jah`, except the
+// two that mean total silence — the kill switch being off, and an
+// anonymous sender (add-jah-chat jah-chat spec: "A Kill Switch Can
+// Disable @jah Entirely", "@jah Requires A Signed-In, Access-Granted
+// Account"). Only a real discussion request touches `jahBusy`,
+// `env.AI`, and `ai_usage`.
+async function handleJahMention(
+  peer: Peer,
+  roomId: string,
+  room: CompositionRoom,
+  sender: { userId?: string, aiAccess?: boolean, githubLogin?: string },
+  mention: ReturnType<typeof classifyMention>,
+): Promise<void> {
+  const env = getDurableEnv()
+  if (!env) return // no bindings in this context — never crash the room over it
+  if (!isJahEnabled(env)) return
+  if (!sender.userId) return
+
+  if (!sender.aiAccess) {
+    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_NO_ACCESS))
+    return
+  }
+
+  const db = env.PATTERNS_DB
+  const capCheck = await underCaps(db, sender.userId, JAH_CAP_LIMITS)
+  if (!capCheck.ok) {
+    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_OVER_CAP))
+    return
+  }
+
+  if (room.jahBusy) {
+    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_BUSY))
+    return
+  }
+
+  if (mention.kind === 'fix') {
+    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_FIX_NOT_SUPPORTED))
+    return
+  }
+  if (mention.kind === 'edit') {
+    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_EDIT_NOT_SUPPORTED))
+    return
+  }
+
+  room.jahBusy = true
+  toAll(peer, roomId, { t: 'jah_typing', typing: true })
+  try {
+    const userMessage: ModelMessage = { role: 'user', content: mention.rest || 'Hello!' }
+    const reply = await generateJahReply(env, [userMessage])
+    postChatMessage(peer, roomId, room, jahChatMessage(reply.text))
+    await recordUsage(db, {
+      userId: sender.userId,
+      githubLogin: sender.githubLogin ?? null,
+      roomId,
+      model: reply.model,
+      promptTokens: reply.promptTokens,
+      completionTokens: reply.completionTokens,
+      costEstimateUsd: reply.costEstimateUsd,
+    })
+  }
+  finally {
+    room.jahBusy = false
+    toAll(peer, roomId, { t: 'jah_typing', typing: false })
   }
 }
 
@@ -200,7 +336,23 @@ export default defineWebSocketHandler({
       const role: Role = data.role === 'viewer' ? 'viewer' : 'editor'
       const awarenessId = typeof data.awarenessId === 'number' ? data.awarenessId : undefined
       const account = await accountFor(peer)
-      room.presence.set(peer.id, { name, role, awarenessId, avatarUrl: account?.avatarUrl })
+      room.presence.set(peer.id, {
+        name,
+        role,
+        awarenessId,
+        avatarUrl: account?.avatarUrl,
+        userId: account?.userId,
+        aiAccess: account?.aiAccess,
+        githubLogin: account?.githubLogin,
+      })
+      // A brand-new room (or one whose chat reset after emptying) gets
+      // @jah's one-time welcome as its first entry, in place before
+      // the `welcome` payload below is built — the joiner sees it
+      // immediately, with no extra round trip (add-jah-chat design
+      // decision 10).
+      if (room.chat.length === 0) {
+        room.chat.push(jahChatMessage(JAH_WELCOME_TEXT))
+      }
       send(peer, {
         t: 'welcome',
         clientId: peer.id,
@@ -253,16 +405,18 @@ export default defineWebSocketHandler({
 
     if (data.t === 'chat') {
       if (typeof data.text !== 'string' || !data.text.trim()) return
+      const text = data.text.slice(0, 2000)
       const msg: ChatMessage = {
         clientId: peer.id,
         name,
         ...(me.avatarUrl ? { avatarUrl: me.avatarUrl } : {}),
-        text: data.text.slice(0, 2000),
+        text,
         at: Date.now(),
       }
-      room.chat.push(msg)
-      if (room.chat.length > CHAT_KEEP) room.chat.splice(0, room.chat.length - CHAT_KEEP)
-      toAll(peer, roomId, { t: 'chat', message: msg })
+      postChatMessage(peer, roomId, room, msg)
+
+      const mention = classifyMention(text)
+      if (mention.addressed) void handleJahMention(peer, roomId, room, me, mention)
       return
     }
 

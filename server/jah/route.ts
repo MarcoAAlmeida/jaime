@@ -1,0 +1,44 @@
+// Whether a chat message addresses `@jah`, and what kind of request it
+// is — a pure function, called before any account, cap, or model work
+// (add-jah-chat design decision 6), so an unaddressed message costs
+// nothing beyond this check.
+
+export type MentionKind = 'discussion' | 'fix' | 'edit'
+
+export interface MentionClassification {
+  addressed: boolean
+  kind: MentionKind
+  /** Everything after the leading "@jah" token, trimmed. Only meaningful when `addressed`. */
+  rest: string
+}
+
+const RESERVED_KEYWORDS = new Set(['fix', 'edit'])
+
+/** First token, case-insensitively, must be exactly `@jah` to address it. */
+export function classifyMention(text: string): MentionClassification {
+  const trimmed = text.trim()
+  const tokens = trimmed.split(/\s+/)
+  const first = tokens[0]?.toLowerCase()
+  if (first !== '@jah') return { addressed: false, kind: 'discussion', rest: '' }
+
+  const rest = trimmed.slice(tokens[0]!.length).trim()
+  const second = tokens[1]?.toLowerCase()
+  const kind: MentionKind = second && RESERVED_KEYWORDS.has(second)
+    ? second as MentionKind
+    : 'discussion'
+  return { addressed: true, kind, rest }
+}
+
+/**
+ * The kill switch (design decision 3): `JAH_ENABLED` must be exactly
+ * `'1'`, OR `JAH_E2E` is set (so a single flag fully unlocks `@jah`
+ * for local dev/e2e, matching the `AUTH_E2E`/`OAUTH_E2E` precedent).
+ * A pure function over the two flags so this one-line decision is
+ * unit-testable without standing up a WebSocket connection — the
+ * "kill switch off" case can't otherwise be exercised in this
+ * project's pool-workers test env, where `.dev.vars`' `JAH_E2E=1` is
+ * always present.
+ */
+export function isJahEnabled(env: { JAH_ENABLED?: string, JAH_E2E?: string }): boolean {
+  return env.JAH_ENABLED === '1' || !!env.JAH_E2E
+}

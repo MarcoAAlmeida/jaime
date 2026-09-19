@@ -46,12 +46,25 @@
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["$DurableObject"] }
   ],
+  // Workers AI (add-jah-chat) — every call goes through the
+  // AI_GATEWAY_ID gateway below via workers-ai-provider, never called
+  // directly.
+  "ai": { "binding": "AI" },
   // GitHub logins that get `@jah` access without a per-user toggle
   // (add-admin-console). Comma-separated, case-insensitive. The seeded
   // "always in" tier; the /admin per-user toggle is the "add someone
   // now" tier. Not a secret — these are public usernames.
   "vars": {
-    "AI_ACCESS_LOGINS": "MarcoAAlmeida"
+    "AI_ACCESS_LOGINS": "MarcoAAlmeida",
+    // The Cloudflare AI Gateway every `@jah` model call is routed
+    // through (logging on, caching off, no gateway authentication
+    // since it's only ever reached via the env.AI binding, never a
+    // public REST call — see design.md decision 11).
+    "AI_GATEWAY_ID": "jaime-jah",
+    // Kill switch (add-jah-chat design decision 3) — must be exactly
+    // "1". Remove this key (not just blank it) to silence `@jah`
+    // again; there is no other way to flip it.
+    "JAH_ENABLED": "1"
   },
   // Transactional email for the auth magic-link. The `jaime.stream`
   // domain must be onboarded to Email Sending

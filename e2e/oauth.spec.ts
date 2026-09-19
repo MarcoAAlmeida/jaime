@@ -58,10 +58,11 @@ test('a signed-in GitHub user joins rooms with no name prompt, avatar shown', as
   await page.waitForURL(/\/account/)
 
   // Composition Room — straight in, no "what should we call you".
+  // Chat is the default landing tab (add-jah-chat).
   const roomId = `oauth-${Date.now()}`
   await page.goto(`/app/composition/${roomId}`)
   await expect(page.getByTestId('display-name-input')).toHaveCount(0)
-  await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
 
   // An anonymous second person joins the same room as a viewer.
   // ?role=viewer is the only way left to reach that role — the
@@ -70,7 +71,7 @@ test('a signed-in GitHub user joins rooms with no name prompt, avatar shown', as
   await anon.goto(`/app/composition/${roomId}?role=viewer`)
   await anon.getByTestId('display-name-input').fill('Nobody')
   await anon.getByTestId('submit-name-button').click()
-  await expect(anon.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
+  await expect(anon.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
 
   // The signed-in user's roster entry (seen by the anon) has a real
   // avatar image; the anon's own entry falls back to an initial.
@@ -79,8 +80,7 @@ test('a signed-in GitHub user joins rooms with no name prompt, avatar shown', as
   const anonRow = anon.locator('[data-testid="participant"]').filter({ hasText: 'Nobody' })
   await expect(anonRow.locator('img')).toHaveCount(0)
 
-  // And in chat.
-  await page.getByTestId('tab-chat').click()
+  // And in chat — already the active tab for both, by default.
   await page.getByTestId('chat-input').fill('hi from github')
   await page.getByTestId('chat-send').click()
   const msgRow = anon.locator('[data-testid="chat-message-row"]').filter({ hasText: 'hi from github' })

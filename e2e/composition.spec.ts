@@ -45,6 +45,11 @@ async function joinRoom(
   await page.locator('[data-testid="display-name-input"]').fill(name)
   await page.locator('[data-testid="submit-name-button"]').click()
   await expect(page.locator('[data-testid="display-name-input"]')).toHaveCount(0)
+  // Chat is the default landing tab (add-jah-chat); most of this suite
+  // exercises the editor, so switch there once, centrally, rather than
+  // repeating it in every test. The default-tab behavior itself has
+  // its own dedicated coverage below.
+  await openTab(page, 'composition')
   // Editor is mounted once the CodeMirror content node exists. A fresh
   // page pays the same cold-start cost as JAM's editor (dynamic import +
   // the dirt-samples fetch) — see strudel-parity.spec.ts.
@@ -100,6 +105,7 @@ test('the sidebar links to the real room; create + join-by-link land in the same
   const roomUrl = pageA.url()
   await pageA.getByTestId('display-name-input').fill('Alice')
   await pageA.getByTestId('submit-name-button').click()
+  await openTab(pageA, 'composition') // Chat is the default landing tab (add-jah-chat)
   await expect(pageA.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
 
   // B joins by pasting the link into the join box.
@@ -110,6 +116,7 @@ test('the sidebar links to the real room; create + join-by-link land in the same
   await expect(pageB).toHaveURL(roomUrl)
   await pageB.getByTestId('display-name-input').fill('Bob')
   await pageB.getByTestId('submit-name-button').click()
+  await openTab(pageB, 'composition')
   await expect(pageB.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
 
   await setDoc(pageA, 'shared("here")')
@@ -374,7 +381,12 @@ test('a chat message reaches everyone; chat is gone once the room empties', asyn
   await pageA.locator('[data-testid="chat-send"]').click()
 
   for (const page of [pageA, pageB]) {
-    await expect(page.locator('[data-testid="chat-message"]')).toHaveText('Alice: hey room', { timeout: 15_000 })
+    // Presence, not visibility — pageB hasn't switched to the Chat tab
+    // itself, but the message still reached it (chat-panel is hidden
+    // via v-show, not removed from the DOM).
+    await expect(
+      page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'Alice: hey room' }),
+    ).toHaveCount(1, { timeout: 15_000 })
   }
 
   // Let the doc snapshot debounce (2s) land, then everyone leaves.
@@ -384,11 +396,14 @@ test('a chat message reaches everyone; chat is gone once the room empties', asyn
   await context.close()
 
   // A fresh visitor (new context = no stored name) opens the same link:
-  // the persisted document is back, the ephemeral chat is not.
+  // the persisted document is back, the ephemeral chat is not — Alice's
+  // message is gone, leaving only @jah's welcome (add-jah-chat), reset
+  // and re-posted since the room's chat is empty again.
   const context2 = await browser.newContext()
   const pageC = await joinRoom(context2, roomId, 'Cara', 'viewer')
   await expect.poll(() => docText(pageC), { timeout: 15_000 }).toBe('s("bd sd")')
-  await expect(pageC.locator('[data-testid="chat-message"]')).toHaveCount(0)
+  await expect(pageC.locator('[data-testid="chat-message-row"]').filter({ hasText: 'hey room' })).toHaveCount(0)
+  await expect(pageC.locator('[data-testid="chat-message-row"]').filter({ hasText: '@jah:' })).toHaveCount(1)
 
   await context2.close()
 })
@@ -450,7 +465,10 @@ test('three separate clients — two editors + a viewer — edit, cursor, hear, 
   await pageV.locator('[data-testid="chat-input"]').fill('sounds good')
   await pageV.locator('[data-testid="chat-send"]').click()
   for (const page of [pageA, pageB]) {
-    await expect(page.locator('[data-testid="chat-message"]')).toHaveText('Vic: sounds good', { timeout: 15_000 })
+    // Presence, not visibility — neither has switched to the Chat tab.
+    await expect(
+      page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'Vic: sounds good' }),
+    ).toHaveCount(1, { timeout: 15_000 })
   }
 
   await ctxA.close()
@@ -485,15 +503,20 @@ test('scope() visuals stay inside the editor pane, not a full-viewport canvas', 
 
 test('Composition, Chat, and ASCII Art tabs are mutually exclusive on a narrow screen', async ({ browser }) => {
   test.setTimeout(180_000)
-  const context = await browser.newContext({ viewport: { width: 740, height: 400 } }) // landscape phone
+  // `joinRoom` switches to the Composition tab via the desktop
+  // switcher, which is hidden below `md` — join at the default
+  // (desktop) viewport, then resize down for the narrow-screen checks.
+  const context = await browser.newContext()
 
   const pageA = await joinRoom(context, `panel-${Date.now()}`, 'Alice', 'editor')
+  await pageA.setViewportSize({ width: 740, height: 400 }) // landscape phone
 
   const editor = pageA.locator('[data-testid="composition-editor"]')
   const chatPanel = pageA.locator('[data-testid="chat-panel"]')
 
-  // Composition is the default tab; the header switcher is hidden at
-  // this width (`md:flex`) — the bottom bar is what's reachable.
+  // Composition is where `joinRoom` left us; the header switcher is
+  // hidden at this width (`md:flex`) — the bottom bar is what's
+  // reachable.
   await expect(editor).toBeVisible()
   await expect(chatPanel).toBeHidden()
 
@@ -505,6 +528,10 @@ test('Composition, Chat, and ASCII Art tabs are mutually exclusive on a narrow s
   await pageA.locator('[data-testid="tab-mobile-composition"]').click()
   await expect(editor).toBeVisible()
   await expect(chatPanel).toBeHidden()
+
+  await pageA.locator('[data-testid="tab-mobile-chat"]').click()
+  await expect(chatPanel).toBeVisible()
+  await expect(editor).toBeHidden()
 
   await context.close()
 })

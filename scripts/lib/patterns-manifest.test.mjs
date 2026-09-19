@@ -152,4 +152,27 @@ describe('toReconcileSql', () => {
     assert.ok(sql.includes("id NOT IN ('')"))
     assert.ok(!sql.includes('INSERT INTO patterns'))
   })
+
+  test('keeps a multi-line code value on one output line', () => {
+    // A generated statement must stay on a single line: both the
+    // vitest test-DB seed (test/apply-migrations.ts) and D1's exec()
+    // binding split their input on '\n' to find statement boundaries,
+    // so a raw embedded newline would corrupt one INSERT into
+    // unparseable fragments (caught while implementing add-jah-chat,
+    // via "Birds of a Feather"'s /* ... */-commented multi-line code).
+    const multiline = [{ ...entries[0], code: '/*\n@title X\n*/\nsetcps(1)\nstack(\n  s("bd")\n)' }]
+    const sql = toReconcileSql(multiline)
+    const insertLine = sql.split('\n').find(line => line.startsWith('INSERT INTO patterns'))
+    assert.ok(insertLine, 'the INSERT statement is a single line')
+    assert.ok(insertLine.includes("CAST(x'"))
+  })
+
+  test('a hex-encoded multi-line value decodes back to the original text', () => {
+    const original = 'line one\nline two\nline three'
+    const multiline = [{ ...entries[0], code: original }]
+    const sql = toReconcileSql(multiline)
+    const match = /CAST\(x'([0-9a-f]+)' AS TEXT\)/.exec(sql)
+    assert.ok(match, 'the code value was hex-encoded')
+    assert.equal(Buffer.from(match[1], 'hex').toString('utf8'), original)
+  })
 })

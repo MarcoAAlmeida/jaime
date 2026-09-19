@@ -67,6 +67,11 @@ export type CompositionServerMessage =
   | { t: 'chat', message: ChatMessage }
   | { t: 'tempo', bpm: number, cycleStartTimestamp: number }
   | { t: 'clock_pong', clientSendTime: number, serverTime: number }
+  // `@jah` is preparing a reply (add-jah-chat) — sent `true` once a
+  // request passes every gate and the model call starts, `false` once
+  // the reply lands or is declined. Not sent for a decline that never
+  // reaches the model (those are synchronous enough not to need it).
+  | { t: 'jah_typing', typing: boolean }
 
 export function toBase64(bytes: Uint8Array): string {
   let s = ''

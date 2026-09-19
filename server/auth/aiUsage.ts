@@ -1,4 +1,5 @@
 import type { AiUsageRecord } from '#shared/admin'
+import { nanoid } from 'nanoid'
 
 // `@jah` usage records (add-admin-console owns the read side; the write
 // helper `recordUsage` lands with add-jah-chat / Phase 1). Rows are
@@ -40,4 +41,36 @@ export async function listRecentUsage(db: D1Database, limit = 50): Promise<AiUsa
     .bind(limit)
     .all<AiUsageRow>()
   return (results ?? []).map(toRecord)
+}
+
+export interface RecordUsageInput {
+  userId: string
+  githubLogin: string | null
+  roomId: string | null
+  model: string
+  promptTokens: number
+  completionTokens: number
+  costEstimateUsd: number
+}
+
+/** One row per real `@jah` model call — never written for a decline (design decision 2/6). */
+export async function recordUsage(db: D1Database, input: RecordUsageInput): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO ai_usage
+        (id, user_id, github_login, room_id, model, prompt_tokens, completion_tokens, cost_estimate_usd, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      nanoid(12),
+      input.userId,
+      input.githubLogin,
+      input.roomId,
+      input.model,
+      input.promptTokens,
+      input.completionTokens,
+      input.costEstimateUsd,
+      new Date().toISOString(),
+    )
+    .run()
 }

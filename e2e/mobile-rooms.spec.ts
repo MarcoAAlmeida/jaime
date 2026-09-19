@@ -65,14 +65,19 @@ test('Composition Room: header collapses to a menu, code wraps, share reachable'
   await page.goto(`/app/composition/mob-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('Mo')
   await page.locator('[data-testid="submit-name-button"]').click()
-  await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
-
-  expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
-  expect(await noSidewaysScroll(page), 'no horizontal page scroll').toBe(true)
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
 
   // The tab switcher moves to the bottom bar below `md`, not the header.
   await expect(page.locator('[data-testid="tab-switcher-mobile"]')).toBeVisible()
   await expect(page.locator('[data-testid="tab-switcher"]')).toBeHidden()
+
+  // Chat is the default landing tab (add-jah-chat) — switch to
+  // Composition for the rest of this test.
+  await page.locator('[data-testid="tab-mobile-composition"]').click()
+  await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
+
+  expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
+  expect(await noSidewaysScroll(page), 'no horizontal page scroll').toBe(true)
 
   // Secondary room-level controls are folded away; the ⋯ menu is the
   // way to them. "Load a starter" lives in the Composition tab's own
@@ -103,6 +108,10 @@ test('Composition Room: usable on a short landscape viewport', async ({ page }) 
   await page.goto(`/app/composition/land-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('La')
   await page.locator('[data-testid="submit-name-button"]').click()
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
+  // Chat is the default landing tab (add-jah-chat) — switch to
+  // Composition for the rest of this test.
+  await page.locator('[data-testid="tab-mobile-composition"]').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
@@ -154,7 +163,7 @@ test('Composition Room: at a wide viewport lines are not force-wrapped', async (
   await page.goto(`/app/composition/wide-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('Wide')
   await page.locator('[data-testid="submit-name-button"]').click()
-  await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
 
   // The individual controls are inline (no overflow menu) at this width.
   await expect(page.locator('[data-testid="copy-invite-button"]')).toBeVisible()
@@ -163,6 +172,11 @@ test('Composition Room: at a wide viewport lines are not force-wrapped', async (
   // The tab switcher lives in the header at this width, not the bottom bar.
   await expect(page.locator('[data-testid="tab-switcher"]')).toBeVisible()
   await expect(page.locator('[data-testid="tab-switcher-mobile"]')).toBeHidden()
+
+  // Chat is the default landing tab (add-jah-chat) — switch to
+  // Composition for the rest of this test.
+  await page.locator('[data-testid="tab-composition"]').click()
+  await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   await page.locator('[data-testid="composition-editor"] .cm-content').click()
   await page.keyboard.press('ControlOrMeta+a')

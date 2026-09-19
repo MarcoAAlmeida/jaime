@@ -44,6 +44,8 @@ interface Events {
   chat: (message: ChatMessage) => void
   tempo: (clock: CompositionClock) => void
   status: (connected: boolean) => void
+  /** `@jah` is preparing a reply (add-jah-chat) — see `jah_typing`. */
+  jahTyping: (typing: boolean) => void
 }
 
 export interface CompositionProvider {
@@ -211,6 +213,9 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
         offset = computeOffset(msg.clientSendTime, msg.serverTime, roundTrip)
         break
       }
+      case 'jah_typing':
+        emit('jahTyping', msg.typing)
+        break
     }
   }
 

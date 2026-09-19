@@ -78,16 +78,22 @@ const participants = ref<CompositionPresenceEntry[]>([])
 const chat = ref<ChatMessage[]>([])
 const chatInput = ref('')
 const chatLog = ref<HTMLDivElement>()
+// @jah is generating a reply (add-jah-chat) — cleared once the reply
+// (or a decline) lands, or immediately by the next 'jah_typing: false'.
+const jahTyping = ref(false)
 
 // add-composition-tabs: Composition (editor + canvas), Chat (roster +
 // messages), and ASCII Art are three mutually-exclusive tabs rather
 // than independently-toggleable docked panels — exactly one is visible
 // per viewer at a time, and the choice is local/unsynced (design.md).
 type TabId = 'composition' | 'chat' | 'ascii'
-const activeTab = ref<TabId>('composition')
+// Chat is first and the default landing tab (add-jah-chat) — @jah
+// lives there, including its one-time welcome message, so a new
+// entrant sees it immediately rather than behind an extra click.
+const activeTab = ref<TabId>('chat')
 const TAB_DEFS: { id: TabId, label: string, icon: string }[] = [
-  { id: 'composition', label: 'Composition', icon: 'i-lucide-code-2' },
   { id: 'chat', label: 'Chat', icon: 'i-lucide-message-circle' },
+  { id: 'composition', label: 'Composition', icon: 'i-lucide-code-2' },
   { id: 'ascii', label: 'ASCII Art', icon: 'i-lucide-scroll-text' },
 ]
 // Per-tab activity indicators, cleared on switching to that tab.
@@ -473,6 +479,7 @@ async function start() {
     if (activeTab.value !== 'chat') chatUnread.value++
     void nextTick(() => { if (chatLog.value) chatLog.value.scrollTop = chatLog.value.scrollHeight })
   })
+  provider.on('jahTyping', (typing) => { jahTyping.value = typing })
   // Every client — editors and viewers — evaluates its own copy of the
   // shared document, aligned to the room clock by the editor's
   // beforeStart. The broadcast carries only { atCycle }, never code.
@@ -844,6 +851,9 @@ onBeforeUnmount(() => {
               </p>
             </div>
           </div>
+          <p v-if="jahTyping" class="text-muted text-xs italic" data-testid="jah-typing">
+            @jah is thinking…
+          </p>
           <div class="flex gap-1.5">
             <UInput
               v-model="chatInput"

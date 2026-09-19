@@ -115,12 +115,10 @@ describe('composition room', () => {
     Y.applyUpdate(restored, fromBase64(snapshot!))
     expect(restored.getText(DOC_TEXT).toString()).toBe('s("bd sd")')
 
-    // A late joiner sees the doc + an empty chat (chat is in-memory only).
+    // A late joiner sees the doc (chat is in-memory only, never in the
+    // snapshot — the assertion above already proves that).
     const b = await join(roomId, 'Bo')
     expect(b.doc.getText(DOC_TEXT).toString()).toBe('s("bd sd")')
-    // Ada's chat is still in the live room's memory (she's still here in
-    // this process), but it is never written to storage — the snapshot
-    // above proves that.
   })
 
   it('clears chat and stops playback when the room empties', { timeout: 10_000 }, async () => {
@@ -137,7 +135,10 @@ describe('composition room', () => {
     const b = await connect(roomId, 'Bo')
     b.ws.send(JSON.stringify({ t: 'join', role: 'editor', name: 'Bo', color: '#00f', sv: toBase64(Y.encodeStateVector(new Y.Doc())) }))
     const welcome = await b.next()
-    expect(welcome.chat).toEqual([])
+    // Ada's "ephemeral" message is gone — the empty chat immediately
+    // gets @jah's one-time welcome again (add-jah-chat), since the
+    // room's chat is empty at the moment Bo joins.
+    expect(welcome.chat).toMatchObject([{ name: '@jah' }])
     expect(welcome.playing).toBe(false)
   })
 

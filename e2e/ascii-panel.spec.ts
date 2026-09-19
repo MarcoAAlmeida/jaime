@@ -43,6 +43,9 @@ async function joinRoom(context: BrowserContext, roomId: string, name: string): 
   await page.goto(`/app/composition/${roomId}`)
   await page.locator('[data-testid="display-name-input"]').fill(name)
   await page.locator('[data-testid="submit-name-button"]').click()
+  // Chat is the default landing tab (add-jah-chat); both tests below
+  // interact with Composition first, so switch there once, centrally.
+  await page.locator('[data-testid="tab-composition"]').click()
   await expect(page.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
   return page
 }
