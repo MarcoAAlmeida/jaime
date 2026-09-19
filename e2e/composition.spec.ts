@@ -37,10 +37,13 @@ async function joinRoom(
   role: 'editor' | 'viewer' = 'editor',
 ): Promise<Page> {
   const page = await context.newPage()
-  await page.goto(`/app/composition/${roomId}`)
+  // Editor is the automatic default now (simplify-room-entry) — no
+  // button to click. ?role=viewer keeps the viewer path reachable for
+  // this test without any UI leading to it.
+  const query = role === 'viewer' ? '?role=viewer' : ''
+  await page.goto(`/app/composition/${roomId}${query}`)
   await page.locator('[data-testid="display-name-input"]').fill(name)
   await page.locator('[data-testid="submit-name-button"]').click()
-  await page.locator(`[data-testid="role-${role}"]`).click()
   await expect(page.locator('[data-testid="display-name-input"]')).toHaveCount(0)
   // Editor is mounted once the CodeMirror content node exists. A fresh
   // page pays the same cold-start cost as JAM's editor (dynamic import +
@@ -97,7 +100,6 @@ test('the sidebar links to the real room; create + join-by-link land in the same
   const roomUrl = pageA.url()
   await pageA.getByTestId('display-name-input').fill('Alice')
   await pageA.getByTestId('submit-name-button').click()
-  await pageA.getByTestId('role-editor').click()
   await expect(pageA.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
 
   // B joins by pasting the link into the join box.
@@ -108,7 +110,6 @@ test('the sidebar links to the real room; create + join-by-link land in the same
   await expect(pageB).toHaveURL(roomUrl)
   await pageB.getByTestId('display-name-input').fill('Bob')
   await pageB.getByTestId('submit-name-button').click()
-  await pageB.getByTestId('role-editor').click()
   await expect(pageB.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
 
   await setDoc(pageA, 'shared("here")')

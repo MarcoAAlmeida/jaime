@@ -94,6 +94,12 @@ function loadIntoJam(pattern: Pattern) {
   navigateTo(`/app/jam/room/${nanoid(10)}?load=${encodeURIComponent(pattern.id)}`)
 }
 
+// Open a fresh Composition Room seeded with this pattern's code
+// instead of the generic starter document (simplify-room-entry).
+function loadIntoCompositionRoom(pattern: Pattern) {
+  navigateTo(`/app/composition/${nanoid(10)}?load=${encodeURIComponent(pattern.id)}`)
+}
+
 const copiedId = ref<string | null>(null)
 async function copyCode(pattern: Pattern) {
   await navigator.clipboard.writeText(pattern.code)
@@ -259,6 +265,15 @@ onBeforeUnmount(() => {
                   color="primary"
                   data-testid="load-into-jam"
                   @click="loadIntoJam(pattern)"
+                />
+                <UButton
+                  label="Load into Composition Room"
+                  icon="i-lucide-users"
+                  size="xs"
+                  color="primary"
+                  variant="outline"
+                  data-testid="load-into-composition"
+                  @click="loadIntoCompositionRoom(pattern)"
                 />
                 <UButton
                   :label="previewingId === pattern.id ? 'Stop' : 'Preview'"

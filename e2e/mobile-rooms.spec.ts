@@ -65,7 +65,6 @@ test('Composition Room: header collapses to a menu, code wraps, share reachable'
   await page.goto(`/app/composition/mob-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('Mo')
   await page.locator('[data-testid="submit-name-button"]').click()
-  await page.locator('[data-testid="role-editor"]').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
@@ -104,7 +103,6 @@ test('Composition Room: usable on a short landscape viewport', async ({ page }) 
   await page.goto(`/app/composition/land-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('La')
   await page.locator('[data-testid="submit-name-button"]').click()
-  await page.locator('[data-testid="role-editor"]').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
@@ -156,7 +154,6 @@ test('Composition Room: at a wide viewport lines are not force-wrapped', async (
   await page.goto(`/app/composition/wide-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('Wide')
   await page.locator('[data-testid="submit-name-button"]').click()
-  await page.locator('[data-testid="role-editor"]').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   // The individual controls are inline (no overflow menu) at this width.

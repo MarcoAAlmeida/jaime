@@ -43,7 +43,6 @@ async function joinRoom(context: BrowserContext, roomId: string, name: string): 
   await page.goto(`/app/composition/${roomId}`)
   await page.locator('[data-testid="display-name-input"]').fill(name)
   await page.locator('[data-testid="submit-name-button"]').click()
-  await page.locator('[data-testid="role-editor"]').click()
   await expect(page.locator(CONTENT)).toBeVisible({ timeout: 60_000 })
   return page
 }

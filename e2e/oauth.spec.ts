@@ -61,15 +61,15 @@ test('a signed-in GitHub user joins rooms with no name prompt, avatar shown', as
   const roomId = `oauth-${Date.now()}`
   await page.goto(`/app/composition/${roomId}`)
   await expect(page.getByTestId('display-name-input')).toHaveCount(0)
-  await page.getByTestId('role-editor').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
-  // An anonymous second person joins the same room.
+  // An anonymous second person joins the same room as a viewer.
+  // ?role=viewer is the only way left to reach that role — the
+  // in-room button is gone (simplify-room-entry).
   const anon = await (await browser.newContext()).newPage()
-  await anon.goto(`/app/composition/${roomId}`)
+  await anon.goto(`/app/composition/${roomId}?role=viewer`)
   await anon.getByTestId('display-name-input').fill('Nobody')
   await anon.getByTestId('submit-name-button').click()
-  await anon.getByTestId('role-viewer').click()
   await expect(anon.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   // The signed-in user's roster entry (seen by the anon) has a real

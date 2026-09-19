@@ -2,6 +2,7 @@
 import type { TrackName } from '#shared/tracks'
 import { TRACK_LABELS, TRACK_NAMES } from '#shared/tracks'
 import { primeAudio } from '~/lib/strudelEditor'
+import { randomDisplayName } from '~/lib/suggestedName'
 import {
   sendClaimTrack,
   sendPatternUpdate,
@@ -20,7 +21,12 @@ useSeoMeta({ title: 'JAM room — jaime' })
 
 const { clientId, tracks, playRequestSeq, presence, bpm } = useJamSession()
 const { displayName, setDisplayName } = useDisplayName()
-const nameInput = ref('')
+const nameInput = ref(randomDisplayName())
+// This route is `ssr:false` (nuxt.config.ts), so the SSR-only auth
+// plugin (app/plugins/auth.ts) never runs for a direct/hard navigation
+// here — a signed-in user's account name would otherwise never load,
+// and they'd wrongly see the name-entry gate. Fetch it client-side.
+const { user: authUser, refresh: refreshAuth } = useAuth()
 
 const route = useRoute()
 const router = useRouter()
@@ -51,6 +57,7 @@ function joinRoom() {
 const audioUnlocked = ref(false)
 
 onMounted(async () => {
+  if (!authUser.value) void refreshAuth()
   await primeAudio()
   audioUnlocked.value = true
 })

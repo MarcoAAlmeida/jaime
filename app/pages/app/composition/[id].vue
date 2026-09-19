@@ -10,6 +10,7 @@ import * as Y from 'yjs'
 import { nextCycleBoundary } from '#shared/transportMath'
 import { createCompositionProvider } from '~/lib/compositionProvider'
 import { createStrudelEditor, primeAudio } from '~/lib/strudelEditor'
+import { randomDisplayName } from '~/lib/suggestedName'
 import { toStrudelUrl } from '~/lib/strudelShareLink'
 import { waitForCycleBoundary } from '~/lib/transportClock'
 
@@ -20,16 +21,24 @@ definePageMeta({ layout: false })
 useSeoMeta({ title: 'Composition Room — jaime' })
 
 const route = useRoute()
+const router = useRouter()
 const roomId = computed(() => String(route.params.id))
 
 const { displayName, setDisplayName } = useDisplayName()
-const nameInput = ref('')
+const nameInput = ref(randomDisplayName())
+// This route is `ssr:false` (nuxt.config.ts), so the SSR-only auth
+// plugin (app/plugins/auth.ts) never runs for a direct/hard navigation
+// here — a signed-in user's account name would otherwise never load,
+// and they'd wrongly see the name-entry gate. Fetch it client-side.
+const { user: authUser, refresh: refreshAuth } = useAuth()
 function submitName() {
   setDisplayName(nameInput.value)
 }
 
-// Self-declared, one link, no server-enforced access control — see
-// design.md decision 4. Chosen on join, switchable in-room.
+// Every joiner is automatically an editor — no UI choice
+// (simplify-room-entry). `?role=viewer` keeps the viewer path
+// genuinely reachable (and testable) without any button leading to
+// it; nothing in the UI surfaces or hints at that link.
 const role = ref<Role>()
 function chooseRole(next: Role) {
   role.value = next
@@ -476,10 +485,28 @@ async function start() {
 
   await provider.ready
 
+  // ?load=<patternId> seeds a genuinely new room from a Pattern Library
+  // pattern instead of the generic starter (simplify-room-entry) —
+  // mirrors JAM's loader, but simpler: no ownership/claiming step,
+  // since any editor can already write to the shared document.
+  let seedCode = STARTER_DOC
+  const loadId = route.query.load
+  if (provider.text.length === 0 && typeof loadId === 'string' && loadId) {
+    try {
+      const pattern = await $fetch<{ code: string }>(`/api/patterns/${encodeURIComponent(loadId)}`)
+      seedCode = pattern.code
+    }
+    catch {
+      // Bad or missing pattern id — fall back to the generic starter
+      // rather than leaving the room un-enterable.
+    }
+  }
+  if (loadId) void router.replace({ query: {} }) // strip for a clean, shareable link
+
   editor = await createStrudelEditor({
     root: editorEl.value!,
     drawContext: canvasEl.value?.getContext('2d', { willReadFrequently: true }) ?? null,
-    initialCode: provider.text.length > 0 ? provider.text.toString() : STARTER_DOC,
+    initialCode: provider.text.length > 0 ? provider.text.toString() : seedCode,
     editable: isEditor.value,
     // Align every scheduler start to this room's shared cycle grid,
     // using the provider's own ping/pong offset (a client that came
@@ -500,7 +527,7 @@ async function start() {
   // duplicates this canned text — no edits are lost. A viewer never
   // seeds (they can't originate document changes).
   if (isEditor.value && provider.text.length === 0) {
-    provider.text.insert(0, STARTER_DOC)
+    provider.text.insert(0, seedCode)
   }
 
   // yCollab makes the Y.Text authoritative for the editor and brings
@@ -528,9 +555,11 @@ async function start() {
 }
 
 onMounted(() => {
+  if (!authUser.value) void refreshAuth()
   swapInterval.value = loadStoredSwapInterval()
   window.addEventListener('keydown', onKeydown)
   void loadFavoritePatterns()
+  chooseRole(route.query.role === 'viewer' ? 'viewer' : 'editor')
   void start()
 })
 watch([displayName, role], () => { void start() })
@@ -564,25 +593,6 @@ onBeforeUnmount(() => {
       />
       <UButton data-testid="submit-name-button" @click="submitName">
         Next
-      </UButton>
-    </div>
-  </div>
-
-  <div v-else-if="!role" class="flex h-dvh flex-col items-center justify-center gap-4 p-4">
-    <h1 class="text-xl font-semibold">
-      Join as…
-    </h1>
-    <p class="text-muted max-w-sm text-center text-sm">
-      Editors change the shared script; viewers follow along and hear
-      playback. This choice is fixed for the session — leave and
-      rejoin to pick the other one.
-    </p>
-    <div class="flex gap-2">
-      <UButton data-testid="role-editor" @click="chooseRole('editor')">
-        Editor
-      </UButton>
-      <UButton data-testid="role-viewer" color="neutral" variant="outline" @click="chooseRole('viewer')">
-        Viewer
       </UButton>
     </div>
   </div>
