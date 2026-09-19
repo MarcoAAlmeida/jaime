@@ -158,6 +158,36 @@ function broadcastToOthers(peer: Peer, roomId: string, message: ServerMessage) {
   peer.publish(roomTopic(roomId), JSON.stringify(message))
 }
 
+// Cloudflare's Hibernatable WebSocket API has both a `webSocketClose`
+// and a `webSocketError` lifecycle hook — an abrupt disconnect (network
+// drop, a redeploy severing a connection mid-session) without a clean
+// close handshake fires only the latter. Nitro's cloudflare-durable
+// preset (the generated $DurableObject class) only wires up
+// `webSocketClose`, so that path never reaches close() below — leaving
+// a ghost presence entry, and worse, a track permanently locked to a
+// dead connection (nobody else could ever claim or stop it again,
+// since close()'s ownership release never runs either). `peer.peers`
+// is crossws's own reflection of `ctx.getWebSockets()` — Cloudflare's
+// ground truth for which connections are actually still open — so
+// cross-checking against it catches what our own event bookkeeping
+// misses.
+async function pruneStalePresence(peer: Peer, roomId: string, room: RoomState): Promise<void> {
+  const live = new Set([...peer.peers].map(p => p.id))
+  live.add(peer.id)
+  for (const clientId of [...room.presence.keys()]) {
+    if (!live.has(clientId)) {
+      room.presence.delete(clientId)
+      broadcastToOthers(peer, roomId, { type: 'presence_update', clientId, joined: false })
+    }
+  }
+  for (const name of TRACK_NAMES) {
+    const track = getTrack(room, name)
+    if (track.owner && !live.has(track.owner)) {
+      await releaseAndStop(peer, roomId, room, name)
+    }
+  }
+}
+
 // Stops a track (playback) and clears ownership, broadcasting both. Used
 // by release_track and by close() so a track never ends up ownerless but
 // still marked as playing — with no owner left, nothing could ever send
@@ -190,6 +220,7 @@ export default defineWebSocketHandler({
     const room = await getRoom(roomId)
 
     peer.subscribe(roomTopic(roomId))
+    await pruneStalePresence(peer, roomId, room)
     const avatarUrl = await avatarFromPeer(peer)
     room.presence.set(peer.id, { name, avatarUrl })
     broadcastToOthers(peer, roomId, {
@@ -334,5 +365,6 @@ export default defineWebSocketHandler({
         await releaseAndStop(peer, roomId, room, name)
       }
     }
+    await pruneStalePresence(peer, roomId, room)
   },
 })

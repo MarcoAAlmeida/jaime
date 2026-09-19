@@ -337,6 +337,18 @@ const overflowItems = computed(() => [[
 ]])
 
 let provider: CompositionProvider | undefined
+// `start()`'s own guard checks `provider`, but that's only assigned
+// after an `await nextTick()` (and more) — a real gap, not merely
+// theoretical: displayName can change value twice shortly after mount
+// for a signed-in user whose browser already has a leftover anonymous
+// session name (sessionName resolves first, then the account name
+// replaces it once refreshAuth() resolves), firing the `watch` below
+// a second time before the first start() has assigned `provider`.
+// Both calls then pass the guard and each open a real connection —
+// the same account joins twice. `starting` closes the gap: it's set
+// synchronously, before any await, so a second call arriving at any
+// point before `provider` exists still sees it and bails.
+let starting = false
 let editor: StrudelEditor | undefined
 let undoManager: Y.UndoManager | undefined
 let resizeObserver: ResizeObserver | undefined
@@ -434,7 +446,8 @@ function requestStop() {
 }
 
 async function start() {
-  if (!displayName.value || !role.value || provider) return
+  if (!displayName.value || !role.value || provider || starting) return
+  starting = true
   await nextTick() // the room shell (and its refs) render once the gates clear
 
   // Don't block editor mount on this — browsers only resume the

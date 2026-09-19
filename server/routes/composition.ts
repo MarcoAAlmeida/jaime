@@ -161,6 +161,32 @@ function scheduleEviction(roomId: string, room: CompositionRoom) {
   }, EVICT_AFTER_MS)
 }
 
+// Cloudflare's Hibernatable WebSocket API has both a `webSocketClose`
+// and a `webSocketError` lifecycle hook — a connection that dies
+// abruptly (network drop, a redeploy severing it mid-session) without
+// a clean close handshake fires only the latter. Nitro's
+// cloudflare-durable preset (the generated $DurableObject class) only
+// wires up `webSocketClose`, so that path never reaches our own
+// `close()` handler below — leaving a stale presence entry forever,
+// which in turn blocks `scheduleEviction()` from ever seeing
+// `presence.size === 0`, leaking the room's Yjs doc and chat
+// indefinitely. `peer.peers` is crossws's own reflection of
+// `ctx.getWebSockets()` — Cloudflare's ground truth for which
+// connections are actually still open — so cross-checking against it
+// catches what our own event bookkeeping misses.
+function pruneStalePresence(peer: Peer, room: CompositionRoom): boolean {
+  const live = new Set([...peer.peers].map(p => p.id))
+  live.add(peer.id)
+  let changed = false
+  for (const clientId of room.presence.keys()) {
+    if (!live.has(clientId)) {
+      room.presence.delete(clientId)
+      changed = true
+    }
+  }
+  return changed
+}
+
 function roster(room: CompositionRoom): CompositionPresenceEntry[] {
   return [...room.presence].map(([clientId, p]) => ({
     clientId,
@@ -333,6 +359,7 @@ export default defineWebSocketHandler({
     }
 
     if (data.t === 'join') {
+      pruneStalePresence(peer, room)
       const role: Role = data.role === 'viewer' ? 'viewer' : 'editor'
       const awarenessId = typeof data.awarenessId === 'number' ? data.awarenessId : undefined
       const account = await accountFor(peer)
@@ -433,6 +460,7 @@ export default defineWebSocketHandler({
     if (!room) return
     const left = room.presence.get(peer.id)
     room.presence.delete(peer.id)
+    pruneStalePresence(peer, room)
     if (left?.awarenessId != null) {
       toOthers(peer, roomId, { t: 'peer_left', awarenessId: left.awarenessId })
     }
