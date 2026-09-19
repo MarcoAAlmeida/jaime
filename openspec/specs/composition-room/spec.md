@@ -178,7 +178,9 @@ alongside the participant roster, for the people in the room. Messages
 are delivered to everyone currently connected and are not persisted —
 chat history is empty after a restart or once the room empties. Each
 message SHALL be attributed to the sender's display name and, where
-the sender is signed in with a profile picture, their avatar.
+the sender is signed in with a profile picture, their avatar. `@jah`
+(see the `jah-chat` capability) is a possible sender, attributed the
+same way with its own avatar.
 
 #### Scenario: A message reaches everyone present
 - **WHEN** a participant sends a chat message
@@ -190,17 +192,23 @@ the sender is signed in with a profile picture, their avatar.
 - **WHEN** the room empties or the Worker restarts and someone rejoins
 - **THEN** the chat log is empty
 
+#### Scenario: An @jah reply is chat like any other
+- **WHEN** `@jah` replies in a room
+- **THEN** its reply is delivered to everyone currently connected the
+  same way a human's message is, and does not survive the room emptying
+  or a restart any differently
+
 ### Requirement: Composition Room Presents Three Tabs, One Visible At A Time
 The system SHALL organize the Composition Room into exactly three
-views — Composition (the shared editor and its visual backdrop), Chat
-(the roster and messaging, per the requirements above), and ASCII Art
-(per the `ascii-overlay` capability) — presented as tabs, with exactly
-one visible at a time. Each participant's active tab is their own,
-unsynced choice: switching tabs SHALL NOT change what any other
-participant sees. The system SHALL provide a way to switch tabs by
-keyboard as well as by pointer. On a narrow viewport the tab switcher
-SHALL be reachable at the bottom of the screen; on a wider viewport it
-SHALL be reachable from the room's header.
+views — Chat (the roster and messaging, per the requirements above),
+Composition (the shared editor and its visual backdrop), and ASCII Art
+(per the `ascii-overlay` capability) — presented as tabs, in that
+order, with exactly one visible at a time. Each participant's active
+tab is their own, unsynced choice: switching tabs SHALL NOT change what
+any other participant sees. The system SHALL provide a way to switch
+tabs by keyboard as well as by pointer. On a narrow viewport the tab
+switcher SHALL be reachable at the bottom of the screen; on a wider
+viewport it SHALL be reachable from the room's header.
 
 #### Scenario: Switching tabs shows only that view
 - **WHEN** a participant switches to a tab
@@ -221,6 +229,22 @@ SHALL be reachable from the room's header.
 - **WHEN** the room is open on a phone-width viewport
 - **THEN** the tab switcher is reachable at the bottom of the screen
   and every tab can be activated
+
+### Requirement: Chat Is The Default Tab On Room Entry
+The system SHALL show the Chat tab as the active tab from the moment a
+participant enters a Composition Room — whether by creating it or by
+opening its link — rather than Composition or ASCII Art. This is only
+the starting tab: it does not constrain what a participant switches to
+afterward.
+
+#### Scenario: Creating a room opens on Chat
+- **WHEN** a person creates a new Composition Room
+- **THEN** the Chat tab is active as soon as they land in the room
+
+#### Scenario: Joining a room opens on Chat
+- **WHEN** a person opens a Composition Room's link
+- **THEN** the Chat tab is active as soon as they land in the room,
+  regardless of which tab other participants currently have active
 
 ### Requirement: Playback State Is Always Visible
 The system SHALL show, in the room's header, whether the shared

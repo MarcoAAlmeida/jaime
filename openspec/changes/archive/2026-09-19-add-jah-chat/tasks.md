@@ -180,7 +180,12 @@
       shows the usage row: MarcoAAlmeida,
       `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, 755/50 tokens,
       $0.0003 estimated cost.)
-- [ ] 6.7 Sync the `jah-chat` and `composition-room` deltas; archive
+- [x] 6.7 Sync the `jah-chat` and `composition-room` deltas; archive
       the change.
-- [ ] 6.8 `docs/04-roadmap/index.md` — mark Phase 1 shipped; note
+      (`jah-chat` had no prior main spec — created
+      `openspec/specs/jah-chat/spec.md` from the delta's `## Purpose`
+      + `## ADDED Requirements` verbatim. `composition-room`'s two
+      MODIFIED requirements and one ADDED requirement merged in.
+      `openspec validate --specs --strict`: 21/21 passed.)
+- [x] 6.8 `docs/04-roadmap/index.md` — mark Phase 1 shipped; note
       Phase 2 (`add-jah-pattern-awareness`) is next.

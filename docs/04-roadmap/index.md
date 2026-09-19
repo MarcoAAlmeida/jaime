@@ -204,10 +204,22 @@ Migration `0006`: `users.ai_access`, `ai_usage`. `shared/user.ts` gains
 
 ## 1. `add-jah-chat`
 
+✅ shipped 2026-09-19 (deploy `84135593`), archived — verified live on
+`jaime.stream`: a real `@jah` reply landed in a Composition Room,
+attributed with its avatar, and the matching `ai_usage` row showed up
+in `/admin` with model/token/cost detail.
+
 Wires `@jah` into the room's existing `chat` message type as a
-participant (per `proposal.md`: "Phase 7 adds the AI as another
-participant in it" — no new UI surface). Handles **discussion** only.
+participant — no new UI surface. Handles **discussion** only.
 Available regardless of pause state.
+
+**Two additions beyond the original sketch below, both shipped with
+this phase**: the Composition Room's Chat tab (added since this
+roadmap was first drafted) is now the room's first and default tab,
+so `@jah` is the first thing anyone sees; and a brand-new room's chat
+opens with a one-time, free `@jah` welcome message (no model call, no
+cost, shown to anonymous visitors too) introducing itself and how to
+mention it.
 
 **Built on the `ai` SDK** (see Stack). Phase 1 is `generateText({
 system, messages })` with the discussion system prompt and **no tools
@@ -250,16 +262,21 @@ Strudel core-function cheatsheet always in context, so phase-1
 discussion isn't "generic LLM that's heard of Strudel" before doc
 retrieval (phase 2+) lands.
 
-**Testing**: unit-test with a mock model (`ai`'s `MockLanguageModelV1`),
-no real inference. e2e — a `JAH_E2E` flag swaps in a canned response;
-assert only that a message attributed to `@jah` (with its avatar)
-appears for an allowlisted user, that a signed-in non-allowlisted user
-gets the invite-only reply, and that an anonymous message triggers
-nothing. Never assert on model content.
+**Testing, as shipped**: `JAH_E2E` (mirrors `AUTH_E2E`/`OAUTH_E2E`)
+swaps in a canned reply — with a small artificial delay, otherwise the
+busy-lock and typing-signal windows are too fast to observe in a test.
+Pool-workers WS tests cover the full gate pipeline (access, caps, the
+busy lock, cross-room isolation) directly; a "kill switch off" pool-
+workers test isn't possible since `.dev.vars`' `JAH_E2E=1` is loaded
+into every test in this project, so that one branch is a plain unit
+test instead. e2e asserts a message attributed to `@jah` (with its
+avatar) for an allowlisted user, the invite-only reply for a signed-in
+non-allowlisted user, and silence for an anonymous message — never on
+model content.
 
 ---
 
-## 2. `add-jah-pattern-awareness`
+## 2. `add-jah-pattern-awareness` — next up
 
 Ships as a **`searchPatterns` tool** (zod-typed: `{ query, tags? }`)
 the model calls when a question — or a later edit — would benefit from a
