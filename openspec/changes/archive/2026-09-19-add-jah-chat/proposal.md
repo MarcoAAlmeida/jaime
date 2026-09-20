@@ -27,10 +27,7 @@ feature itself.
   first (was Composition) — so the welcome message (and any live
   conversation) is the first thing anyone sees.
 - **Discussion only.** `generateText({ system, messages })` via the
-  Vercel AI SDK, **no tools**. Reserved keywords `fix` / `edit` right
-  after the mention are recognized but explicitly not supported yet —
-  `@jah` says so rather than answering as generic discussion (keeps the
-  later `fix`/`edit` phases unambiguous once they land).
+  Vercel AI SDK, **no tools**.
 - **Provider**: Workers AI (`env.AI` binding), **every call routed
   through a Cloudflare AI Gateway** — logging, caching, rate limiting,
   spend alerts as config. Swappable to Claude later without touching
@@ -55,8 +52,7 @@ feature itself.
   reply so tests never call a real model.
 
 **Explicitly not in this change** (later `@jah` phases): the
-`searchPatterns` tool, doc retrieval, pausing the room, `fix`/`edit`
-actually applying anything, an admin surface for the caps/kill switch
+`searchPatterns` tool, doc retrieval, an admin surface for the caps/kill switch
 (env vars are enough at Marco-only scale).
 
 ## Capabilities

@@ -13,13 +13,10 @@
 ## 2. Routing + prompt (pure, unit-tested)
 
 - [x] 2.1 `server/jah/route.ts` — `classifyMention(text): { addressed:
-      boolean, kind: 'discussion' | 'fix' | 'edit' }` per design
-      decision 6: first token `@jah` (case-insensitive) required for
-      `addressed`; next token `fix`/`edit` (case-insensitive) sets
-      `kind`, else `'discussion'`.
+      boolean, rest: string }` per design decision 6: first token
+      `@jah` (case-insensitive) required for `addressed`.
 - [x] 2.2 Unit tests: not addressed (no mention, mid-message mention);
-      addressed + discussion; addressed + fix; addressed + edit;
-      case-insensitivity for both the mention and the keyword.
+      addressed; case-insensitivity for the mention.
       (Also found and fixed, as a prerequisite: `toReconcileSql` in
       `scripts/lib/patterns-manifest.mjs` embedded a raw newline for
       any multi-line pattern code, corrupting the vitest test-DB seed
@@ -75,7 +72,7 @@
       gate in order: kill switch (`JAH_ENABLED === '1' || !!JAH_E2E` —
       see design decision 3's implementation note) → signed-in →
       `hasAiAccess()` → `underCaps` → the room's `jahBusy` lock →
-      `fix`/`edit` decline vs. discussion. Every decline path replies
+      discussion. Every decline path replies
       with a fixed explanatory `chat` message from `@jah`; only a real
       discussion call sets `jahBusy`, sends `jah_typing: true`, calls
       `generateJahReply`, records usage, broadcasts the reply, clears
@@ -124,7 +121,7 @@
 - [x] 6.1 Pool-workers WS tests (extend `test/composition.test.ts` or a
       sibling): kill switch off → silent; anonymous → silent; signed-in
       no access → invite-only reply, no usage row; over cap → capped
-      reply, no usage row; `fix`/`edit` → not-yet-supported reply;
+      reply, no usage row;
       a normal discussion request (with `JAH_E2E`) → reply attributed
       to `@jah` with its avatar, one `ai_usage` row written; a second
       request while one is in flight in the same room → declined, not

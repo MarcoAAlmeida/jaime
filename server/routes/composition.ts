@@ -38,8 +38,6 @@ const JAH_CAP_LIMITS = { perUser: 25, global: 150 }
 const JAH_REPLY_NO_ACCESS = 'Sorry, I\'m invite-only right now — ask the room operator for access.'
 const JAH_REPLY_OVER_CAP = 'I\'ve hit my daily reply limit — try again after it resets (UTC midnight).'
 const JAH_REPLY_BUSY = 'Still working on the last one in this room, one sec.'
-const JAH_REPLY_FIX_NOT_SUPPORTED = 'Fixing patterns isn\'t something I can do yet — just discussion for now.'
-const JAH_REPLY_EDIT_NOT_SUPPORTED = 'Editing patterns isn\'t something I can do yet — just discussion for now.'
 // Posted once as a room's chat starts (design decision 10) — free,
 // static text, shown regardless of sign-in/access/kill-switch state,
 // so it never calls the model or touches ai_usage.
@@ -295,15 +293,6 @@ async function handleJahMention(
 
   if (room.jahBusy) {
     postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_BUSY))
-    return
-  }
-
-  if (mention.kind === 'fix') {
-    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_FIX_NOT_SUPPORTED))
-    return
-  }
-  if (mention.kind === 'edit') {
-    postChatMessage(peer, roomId, room, jahChatMessage(JAH_REPLY_EDIT_NOT_SUPPORTED))
     return
   }
 

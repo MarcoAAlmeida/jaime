@@ -30,11 +30,10 @@ exists:
   (`public/jah-avatar.svg`, a recoloured game-icons lion; the lion is a
   nod to the Lion of Judah, so keep any copy about it respectful). It
   answers `@jah <question>` in chat through Workers AI via the
-  `jaime-jah` AI Gateway (`server/jah/`); `fix` and `edit` are
-  recognised and declined. Gated by sign-in plus `ai_access` (a
-  per-user flag or `AI_ACCESS_LOGINS`), with caps and an `ai_usage`
-  trail; `JAH_ENABLED` is the kill switch. The system prompt has no
-  character yet.
+  `jaime-jah` AI Gateway (`server/jah/`). Gated by sign-in plus
+  `ai_access` (a per-user flag or `AI_ACCESS_LOGINS`), with caps and an
+  `ai_usage` trail; `JAH_ENABLED` is the kill switch. The system prompt
+  has no character yet.
 - **ASCII art panel** — art that swaps on the beat, from a catalog
   scraped into `PATTERNS_DB` (`scripts/scrape-ascii-gallery.mjs`).
 - **Pattern library** (`/app/patterns`) — curated Strudel patterns
@@ -54,14 +53,19 @@ exists:
 ## Source of truth
 
 - `openspec/specs/` — current behavior contracts, by capability
-- `openspec/changes/` — in-flight and archived work, one OpenSpec change
-  per unit of work
-- `docs/04-roadmap/01-archive/` — archived roadmaps and plans; there is
-  no active roadmap (`docs/04-roadmap/index.md`)
+- `openspec/changes/` — in-flight work, one OpenSpec change per unit of
+  work (finished ones move to `openspec/changes/archive/`)
+- there is no active roadmap (`docs/04-roadmap/index.md`)
 - `docs/0N-*/index.md` (01–03) are background; treat them as
   informative, not authoritative — if they conflict with
   `openspec/specs/`, the spec wins. See `docs/99-openspec-adoption/index.md`
   for how the OpenSpec transition happened.
+
+**Ignore every archive folder** — `docs/04-roadmap/01-archive/` and
+`openspec/changes/archive/`. They are frozen history, not current
+scope: do not read them for context, search them, cite them, or act on
+anything found in them, and do not edit them unless explicitly asked.
+Exclude them from searches. Current behavior is in `openspec/specs/`.
 
 
 ## App

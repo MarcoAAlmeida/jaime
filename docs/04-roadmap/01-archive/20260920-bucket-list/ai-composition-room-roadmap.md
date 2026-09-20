@@ -2,9 +2,9 @@
 
 One roadmap, no phase number. Held until Composition Room's
 implementation is done, not just spec'd — this is what comes right
-after. Four OpenSpec changes, ordered by dependency; your recent pace
+after. Three OpenSpec changes, ordered by dependency; your recent pace
 (4 changes landed in a single day, `08-30`) suggests this whole list is
-close to a week, not four.
+close to a few days.
 
 ---
 
@@ -71,47 +71,7 @@ rather than an invented one.
 
 ---
 
-## 3. `add-ai-doc-edits`
-
-**Context**: this is the one that actually touches the collaborative
-document, and it's harder than 1–2 because it has to go through the
-same `Y.applyUpdate` path as every human edit — not a side channel.
-
-**Decision to make first — how does the AI write**:
-- **As a peer**: the AI "connects" like any editor, subject to the
-  existing editor/viewer write-drop logic in the DO. Consistent with
-  everything else in the room, but there's no real WebSocket connection
-  behind it — it'd be a fabricated peer, adding complexity for
-  consistency's sake.
-- **Server applies directly**: the Worker calls `Y.applyUpdate(ydoc,
-  update)` on the AI's behalf and relays it exactly like any other
-  update, with its own authorization check (confirmed-email gate again)
-  instead of borrowing the peer-role mechanism. Simpler, since the DO
-  already does apply-and-relay for every update — this just adds a
-  second caller.
-
-**Things this surfaces that need explicit handling, not assumption**:
-- **Attribution**: does the AI get an awareness entry (name + color,
-  like `y-remoteSelections` gives every human editor) so its change is
-  visibly "from Claude" rather than looking like it came from nowhere?
-- **Undo scoping**: `y-codemirror.next`'s `undoManager` is typically
-  origin-scoped — worth confirming a human's Ctrl-Z doesn't undo the
-  AI's edit and vice versa, since that'd be a confusing surprise in a
-  live multi-editor session.
-- **Staleness**: the AI generates a suggestion against a doc snapshot;
-  if the doc changes before the suggestion lands, Yjs will still merge
-  it, but the merge might not be what the AI "intended" when it wrote
-  the suggestion. Worth deciding whether to re-check staleness before
-  applying, or just accept CRDT merge semantics as good enough — that's
-  the whole point of choosing Yjs in the first place.
-
-**Testing**: e2e — AI proposes an edit, all connected clients see it
-update; a human edits on top of it afterward with no corruption; the
-undo-scoping case above, explicitly.
-
----
-
-## 4. `add-ai-melody-tool`
+## 3. `add-ai-melody-tool`
 
 **Context**: builds on a MIDI-to-mininotation pipeline already sketched
 separately (parse MIDI → note-event IR → deterministic quantizer → LLM
@@ -122,11 +82,7 @@ starting point.
 
 **New surface needed**: a way to hand the AI a source file from inside
 the chat panel (drag a MIDI file into the room?), and a response path —
-does it come back as a chat message with a preview, or does it write
-straight into the document via #3's edit path? Given the room already
-has an explicit-evaluation model (Ctrl-Enter, not per-keystroke), a
-chat-preview-then-insert flow probably fits the room's existing
-interaction style better than an unprompted direct write.
+a chat message with a preview of the result.
 
 **Testing**: real fixtures exist to reuse rather than inventing new
 ones — the sample MIDI files from the earlier Java prototype

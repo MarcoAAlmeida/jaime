@@ -7,7 +7,7 @@ import { findOrCreateUser, setAiAccess } from '../server/auth/users'
 import { issueToken } from '../server/auth/tokens'
 
 // add-jah-chat — the full @jah gating pipeline over a real WebSocket
-// connection: access, caps, the busy lock, fix/edit declines, and a
+// connection: access, caps, the busy lock, and a
 // real (JAH_E2E-stubbed) discussion reply with its usage record.
 //
 // NOT covered here: the kill switch being off. `.dev.vars`' JAH_E2E=1
@@ -137,25 +137,6 @@ describe('@jah', () => {
     const reply = await next()
     expect(reply.message.text).toMatch(/limit/i)
     expect(await usageCount(userId)).toBe(25)
-  })
-
-  it('declines fix and edit as not-yet-supported, without recording usage', async () => {
-    const roomId = freshRoomId()
-    const { cookie, userId } = await signIn('access@example.com')
-    await setAiAccess(db, userId, true)
-    const { ws, next } = await join(roomId, 'Ally', cookie)
-
-    ws.send(JSON.stringify({ t: 'chat', text: '@jah fix my kick' }))
-    await next() // echo
-    const fixReply = await next()
-    expect(fixReply.message.text).toMatch(/fixing.*isn't something i can do yet/i)
-
-    ws.send(JSON.stringify({ t: 'chat', text: '@jah edit the bassline' }))
-    await next() // echo
-    const editReply = await next()
-    expect(editReply.message.text).toMatch(/editing.*isn't something i can do yet/i)
-
-    expect(await usageCount(userId)).toBe(0)
   })
 
   it('answers a discussion request, attributed to @jah with its avatar, and records one usage row', async () => {

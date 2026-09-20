@@ -23,9 +23,6 @@ out) is the only surface — see `shared/compositionProtocol.ts`.
 
 **Non-Goals (later `@jah` phases):**
 - Tools (`searchPatterns`, `validatePattern`, …), doc retrieval.
-- `fix` actually diagnosing, `edit` actually writing — phase 1 only
-  recognizes the keywords and declines them explicitly.
-- Pausing the room.
 - Any UI for the caps/kill switch — env vars, edited and redeployed,
   are enough at Marco-only scale (matches the bucket-list's "now" tier).
 - A Durable-Object-stored kill switch — env var is the roadmap's
@@ -149,10 +146,9 @@ lands too) better designed alongside a later phase, not bolted on now.
 
 ### 6. Routing is a pure, unit-testable function
 
-`classifyMention(text): { addressed: boolean, kind: 'discussion' |
-'fix' | 'edit' }` — first-token `@jah` check (case-insensitive), then
-the next token against `fix` / `edit`. Called before any account, cap,
-or model work, so a message that isn't addressed to `@jah` costs
+`classifyMention(text): { addressed: boolean, rest: string }` —
+first-token `@jah` check (case-insensitive). Called before any account,
+cap, or model work, so a message that isn't addressed to `@jah` costs
 nothing beyond a string check.
 
 ### 7. `@jah`'s avatar is a static asset, not a profile picture

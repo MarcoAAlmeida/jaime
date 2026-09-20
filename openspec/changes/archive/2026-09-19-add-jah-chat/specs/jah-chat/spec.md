@@ -33,30 +33,16 @@ with no `@jah` involvement.
   somewhere other than as the first token
 - **THEN** it is delivered as ordinary chat and `@jah` never replies
 
-### Requirement: Discussion Is The Default; `fix` And `edit` Are Reserved
+### Requirement: Every `@jah`-Addressed Message Is A Discussion Request
 
 The system SHALL treat any `@jah`-addressed message as a discussion
-request unless the next token is `fix` or `edit` (case-insensitive), in
-which case it SHALL reply that the request is not supported yet rather
-than answering as open discussion.
+request and answer it as open discussion.
 
 #### Scenario: A plain question is discussion
 
 - **WHEN** a signed-in, access-granted participant sends `@jah` followed
-  by a question that is not `fix` or `edit`
+  by a question
 - **THEN** `@jah` treats it as a discussion request
-
-#### Scenario: fix is reserved, not discussion
-
-- **WHEN** a participant sends `@jah fix` (with or without more text)
-- **THEN** `@jah` replies that fixing isn't available yet, and does not
-  answer as if it were a general question
-
-#### Scenario: edit is reserved, not discussion
-
-- **WHEN** a participant sends `@jah edit` (with or without more text)
-- **THEN** `@jah` replies that editing isn't available yet, and does
-  not answer as if it were a general question
 
 ### Requirement: Each `@jah` Reply Is Stateless
 
