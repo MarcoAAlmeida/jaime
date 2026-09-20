@@ -46,6 +46,38 @@ Frontmatter, then exactly one fenced code block with the pattern code:
   bare fence) holding the pattern code. Nothing else in the body is
   read.
 
+## Adding a pattern
+
+**With the `add-patterns` skill (recommended).** Give Claude Code a concrete
+source — a strudel.cc link (`#code` or `?short`), a raw/gist/GitHub file, a
+GitHub repository or directory, a documentation page, a local file, or pasted
+code with where it came from — and ask it to add the pattern(s). It resolves
+the source, asks about attribution when it is unclear, checks that each
+pattern plays, shows one review table, and only then writes the files. It
+changes the repo only; nothing is pushed or deployed. It will not go looking
+for sources: an open-ended "add some songs by X" gets a request for a link.
+
+The pieces are ordinary scripts you can run yourself:
+
+- `npm run pattern:resolve -- <source>` — source → candidates (JSON), writes nothing
+- `npm run pattern:check -- --candidates <file.json>` — the playback gate
+  (`--fast` for a Node-only triage that is not a gate)
+- `npm run pattern:write -- <spec.json> [--update]` — write the files
+- `npm run pattern:tags` — the tags already in use
+
+**By hand.** Add `content/patterns/<id>.md` as above, keep the code exactly as
+found (comments and formatting included), record the source URL, then run
+`npm run patterns:sync` to see it locally. Whichever way, run the playback
+spec before pushing — CI (`npm test`) does not run Playwright, so a pattern
+that asks for a sound that isn't loaded would ship silent:
+
+    npm run test:e2e -- e2e/pattern-playback.spec.ts
+
+(Set `PATTERN_IDS=id1,id2` to check only some.) A pattern that uses a pack
+outside the default sample map must load it in its own code, e.g.
+`samples('github:yaxu/clean-breaks/main')` for `amen`, so it also plays on
+strudel.cc.
+
 ## Reconcile semantics
 
 - Rows are matched by id. Present in the manifest → upserted. Absent

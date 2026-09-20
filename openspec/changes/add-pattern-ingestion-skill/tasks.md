@@ -47,15 +47,15 @@
 
 ## 3. The skill
 
-- [ ] 3.1 `.claude/skills/add-patterns/SKILL.md`: description that triggers
+- [x] 3.1 `.claude/skills/add-patterns/SKILL.md`: description that triggers
       only for a concrete source; the steps (Intake → Resolve → Vet → Check
       → Author → Confirm → Write → Hand off); the rules (fidelity, source
       URL, attribution with options, dependency = report and ask, repo
       only, no push).
-- [ ] 3.2 `references/`: `file-format.md`, `link-shapes.md` (the table in
+- [x] 3.2 `references/`: `file-format.md`, `link-shapes.md` (the table in
       design decision 3), `attribution.md` (the option set for ambiguous
       authorship).
-- [ ] 3.3 `content/patterns/README.md`: document adding patterns with the
+- [x] 3.3 `content/patterns/README.md`: document adding patterns with the
       skill and by hand.
 
 ## 4. Dogfood and verify
@@ -64,10 +64,10 @@
       (a `#base64` link, a `?short` link, a raw/gist file, a repository,
       pasted code with a source, an open-ended request with none); fix
       what breaks; record what was learned in design.md.
-- [ ] 4.2 Confirm a repository import round-trips: added, reconciled
+- [x] 4.2 Confirm a repository import round-trips: added, reconciled
       locally, appears in the library, plays, and a second run is a no-op.
-- [ ] 4.3 Typecheck, `npm test`, `playwright test` green (including the
+- [x] 4.3 Typecheck, `npm test`, `playwright test` green (including the
       playback spec with the new modes).
-- [ ] 4.4 `openspec validate add-pattern-ingestion-skill --strict`.
+- [x] 4.4 `openspec validate add-pattern-ingestion-skill --strict`.
 - [ ] 4.5 Sync the `pattern-ingestion`, `pattern-library` and
       `frontend-editor` deltas; archive.
