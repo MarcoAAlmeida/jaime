@@ -33,6 +33,11 @@ export default defineConfig(async () => {
             // keep the dev "link in the response" behaviour off here even
             // though .dev.vars sets it for `wrangler dev` / `nuxt dev`.
             AUTH_E2E: '',
+            // test/jah-chat.test.ts asserts the JAH_E2E canned reply.
+            // Without this, the suite relied on the gitignored
+            // .dev.vars — and in CI (no .dev.vars, JAH_ENABLED=1 from
+            // wrangler.jsonc) it hit the real Workers AI model.
+            JAH_E2E: '1',
           },
         },
       }),
