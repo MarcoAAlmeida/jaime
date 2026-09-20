@@ -1,72 +1,67 @@
 # jaime
 
-A browser-based app for multiple people to jam together using
-[Strudel](https://strudel.cc) pattern code in real time — a shared jam
-room where each person owns one track, types patterns into their own
-editor, and hears everyone's tracks mixed locally, locked to the same
-tempo. See `docs/01-project-overview/index.md` for the full picture.
+A browser-based app for multiple people to hang out and chat.
 
-JAM — the room / track-ownership / transport-clock tool built across
-the first roadmap (archived at `docs/04-roadmap/01-archive/`) — is
-implemented and shipped.
+The chat has:
+
+- AI chat participant named @jah
+- support for [Strudel](https://strudel.cc) pattern code in real time
+- ASCII art panel, synced to music
+
+More panels and features are planned for future updates.
+
 
 ## Status
 
-jaime is a hub for small music-oriented tools, with JAM as the first
-tool. The site is live at `https://jaime.stream`. The tools-hub roadmap
-(Phases 1–6) is complete, deployed, and archived at
-`docs/04-roadmap/01-archive/20260902.md`; the next roadmap is **TBD**
-(`docs/04-roadmap/index.md`). What shipped:
+Live at `https://jaime.stream` — a Nuxt 4 + Nuxt UI 4 app on one
+Cloudflare Worker (Durable Objects for rooms, D1 for content and domain
+data, Workers AI for `@jah`). There is no active roadmap; the specs
+describe what the app does today, and this section is orientation. What
+exists:
 
-- **Phase 1** — visual identity, the three layout shells, JAM under
-  `/app/jam`, the `jaime.stream` domain, click-through mocks
-  (`add-tools-hub-visual-identity`).
-- **Phase 2** — domain model settled (`docs/05-domain-model/`); a
-  `jaime-patterns` D1 database with migrations; **User** durable across
-  sessions and devices via passwordless email auth, plus an
-  auth-gated docs page (`add-pattern-library`, `add-user-auth`).
-- **Phase 3** — the shared Strudel engine on `@strudel/codemirror`'s
-  `StrudelMirror` + `app/lib/prebake.ts` / `app/lib/strudelEditor.ts`:
-  the full default sample map, `$:` documents, `setcps`, mini-notation
-  event highlight, pattern-driven visuals behind the editor
-  (`add-jam-pattern-loading`, `add-strudel-parity`). Excludes Hydra,
-  MIDI, tool-loaded sample banks.
-- **Phase 4** — the curated, searchable Pattern library and "Load into
-  JAM" (`add-pattern-library`, `add-jam-pattern-loading`).
-- **Phase 5, part one** — the curated catalog is a version-controlled
-  manifest (`content/patterns/*.md`, reconciled into D1 on deploy),
-  grown to 46 patterns; real Strudel docs at `/docs/strudel`
-  (`add-content-authoring`).
-- **Phase 6** — the Composition Room at `/app/composition`: one shared
-  Yjs document (`y-codemirror.next` + the single Durable Object as
-  authority), editor/viewer roles, live cursors, room-synced playback,
-  and an ephemeral chat panel (`add-composition-room`). Retired the
-  `hub-mock-screens` mock.
-
-Phase 7 (an AI in the Composition Room's chat panel) is deferred into
-the next roadmap. Carried over and unscheduled: docs full-text search,
-Hydra/TidalCycles pages, more curated patterns, a first-class **Sample**
-entity, "Load into the Composition Room", and a light-mode punchcard
-contrast polish.
+- **Composition Room** (`/app/composition`) — the main room. One shared
+  Yjs document (`y-codemirror.next`, the single Durable Object as
+  authority) with live cursors, presence and room-synced playback, in
+  three tabs: Chat (the default), Composition, ASCII Art. Everyone who
+  joins is an editor (the viewer role stays in the code, unused). The
+  Strudel engine is `StrudelMirror` + `app/lib/prebake.ts` /
+  `app/lib/strudelEditor.ts`.
+- **@jah** — the room's AI participant, shown as a red lion
+  (`public/jah-avatar.svg`, a recoloured game-icons lion; the lion is a
+  nod to the Lion of Judah, so keep any copy about it respectful). It
+  answers `@jah <question>` in chat through Workers AI via the
+  `jaime-jah` AI Gateway (`server/jah/`); `fix` and `edit` are
+  recognised and declined. Gated by sign-in plus `ai_access` (a
+  per-user flag or `AI_ACCESS_LOGINS`), with caps and an `ai_usage`
+  trail; `JAH_ENABLED` is the kill switch. The system prompt has no
+  character yet.
+- **ASCII art panel** — art that swaps on the beat, from a catalog
+  scraped into `PATTERNS_DB` (`scripts/scrape-ascii-gallery.mjs`).
+- **Pattern library** (`/app/patterns`) — curated Strudel patterns
+  authored as `content/patterns/*.md` and reconciled into `PATTERNS_DB`;
+  "Load into Composition Room" (and JAM) seeds a room with one via
+  `?load=<patternId>`.
+- **JAM** (`/app/jam`) — the older per-track jam room. Still works;
+  being phased out.
+- **Accounts** — passwordless email link and GitHub OAuth
+  (`jaime_session` cookie; tables in `PATTERNS_DB`), an account page,
+  and an operator-only `/admin` (`@jah` access, usage).
+- **Content** — `/docs` (docs shell), `/articles` (long-form pieces),
+  and the game-icons set bundled locally, with attribution in
+  `content/credits/game-icons.md` (`icon-library` spec).
+- **CI/CD** — Cloudflare Workers Builds; see Branching and deploys.
 
 ## Source of truth
 
 - `openspec/specs/` — current behavior contracts, by capability
 - `openspec/changes/` — in-flight and archived work, one OpenSpec change
-  per roadmap phase
-- `docs/04-roadmap/index.md` — phase-level index for the current
-  roadmap, evolves as work lands (currently **TBD** — the next roadmap
-  is unwritten); past roadmaps are archived under
-  `docs/04-roadmap/01-archive/`
-- `docs/05-domain-model/index.md` — entities, value objects,
-  aggregates, and bounded contexts for the current roadmap
-- `docs/06-user-stories/index.md` — user stories by journey, for the
-  current roadmap
-- `docs/0N-*/index.md` (01–03) are background written before OpenSpec
-  adoption; treat them as informative, not authoritative — if they
-  conflict with `openspec/specs/`, the spec wins. See
-  `docs/99-openspec-adoption/index.md` for why and how this transition
-  is happening.
+  per unit of work
+- `docs/04-roadmap/01-archive/` — archived roadmaps and plans; there is
+  no active roadmap (`docs/04-roadmap/index.md`)
+- `docs/0N-*/index.md` (01–03) are background; treat them as
+  informative, not authoritative — if they conflict with
+  `openspec/specs/`, the spec wins. See `docs/99-openspec-adoption/index.md`
+  for how the OpenSpec transition happened.
 
 
 ## App
@@ -115,9 +110,9 @@ primary) — do not use it.
 
 ## Layout
 
-Single project, not a monorepo — no nested `AGENTS.md` files yet. If
-independent sub-projects (e.g. a separate backend worker) emerge, split
-this file then, not before.
+Single project, not a monorepo — no nested `AGENTS.md` files. A sibling
+project, `jaime-games`, lives in its own repo and deploys to
+`games.jaime.stream`; jaime's palette and logo are copied there by hand.
 
 ## Commits
 
