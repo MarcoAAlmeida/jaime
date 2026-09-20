@@ -22,27 +22,28 @@
 
 ## 2. Helper scripts (`scripts/patterns/`, npm entries, offline tests)
 
-- [ ] 2.1 `tags`: existing tags with counts.
-- [ ] 2.2 `write`: JSON spec in; fence-length-safe file out; LF only, edge
+- [x] 2.1 `tags`: existing tags with counts.
+- [x] 2.2 `write`: JSON spec in; fence-length-safe file out; LF only, edge
       whitespace trimmed, code otherwise verbatim; validates through the
       manifest parser; dedupe by `source_url` (no-op / diff-and-update /
       new); id collision handling; local `patterns:sync`. Tests: byte-for-
       byte round trip on fixtures (comments, indentation, CRLF input,
       backticks in code), idempotent re-run, update-in-place keeps the id.
-- [ ] 2.3 `resolve` — `strudel.cc/#<base64>` and raw/gist/GitHub-blob
+- [x] 2.3 `resolve` — `strudel.cc/#<base64>` and raw/gist/GitHub-blob
       URLs, local files and stdin; header hints (`@title`, `@by`); refuses
       non-Strudel code; flags already-in-library candidates. Fixture tests.
-- [ ] 2.4 `resolve` — GitHub repository/directory: one tree listing, raw
+- [x] 2.4 `resolve` — GitHub repository/directory: one tree listing, raw
       fetches, candidate filtering, helper-looking files flagged. Tests
       against a saved tree and files.
-- [ ] 2.5 `resolve` — `strudel.cc/?<hash>`: the client key is read from the
+- [x] 2.5 `resolve` — `strudel.cc/?<hash>`: the client key is read from the
       live bundle at run time (never committed), any failure is a coded
       "can't resolve" (never a crash). Tests with saved responses,
       including the failure modes.
-- [ ] 2.6 `check`: runs the shared playback check for the given patterns or
+- [x] 2.6 `check`: runs the shared playback check for the given patterns or
       code; reports pass, eval error, missing sounds, or dependency
       (`is not a function` / `is not defined`). Tests for each outcome.
-- [ ] 2.7 (only if 1.4 says go) Node triage mode for `check`.
+- [x] 2.7 Node triage mode for `check` (`--fast`): `scripts/patterns/lib/triage.mjs`,
+      with a drift-guard test against `app/lib/prebake.ts`.
 
 ## 3. The skill
 

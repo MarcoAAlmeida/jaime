@@ -171,6 +171,27 @@ still gets the browser check, and its failures are confirmed there before
 anything is reported as broken. `samples()` calls inside a pattern register
 their names for that pattern only.
 
+**Two ways the browser gate lied, found by running it for real** (both fixed
+in the spec that `check` runs):
+
+- *False pass.* `samples()` in one pattern's code registers its pack for the
+  rest of that page's life, so a later pattern that forgot to load the same
+  pack found it already there and passed — a silent pattern slipping through.
+  After any pattern that calls `samples()` the next check starts on a fresh
+  page load.
+- *False alarm.* The app runs `prebake()` on the first Preview and does not
+  await the background sample banks (drum machines…), so the first Preview
+  on a cold page can fire before its sounds exist — a real, transient cold-
+  start silence. Each cold page now gets a warm-up Preview whose logs are
+  ignored, and waits for the bank downloads themselves, before the real
+  check. (`waitForLoadState('networkidle')` looks tempting and is wrong: it
+  resolves at once if the page was ever idle.)
+
+Validated on six known cases (good drums, the pre-fix silent `amen`, `amen`
+with its pack, a typo'd method, an outside helper, an unknown bank): all six
+come out right, and the whole catalog passes 49/49 in ~2 min. The fast tier
+gives the same verdicts on those cases in under a second.
+
 **CI is not a backstop for this.** Workers Builds runs `npm test` (script
 tests, migrate, build, vitest) and `npm run deploy`; Playwright is not part
 of it, so a silent pattern would ship if nobody ran the spec. `check` is

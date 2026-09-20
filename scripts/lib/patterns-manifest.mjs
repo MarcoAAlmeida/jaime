@@ -204,7 +204,7 @@ export function validateManifest(entries, problems) {
   return found
 }
 
-function sq(value) {
+export function sq(value) {
   if (value == null) return 'NULL'
   const str = String(value)
   if (!str.includes('\n')) return `'${str.replace(/'/g, '\'\'')}'`

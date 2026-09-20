@@ -26,7 +26,7 @@ function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-interface CatalogPattern { id: string, title: string }
+interface CatalogPattern { id: string, title: string, code: string }
 
 interface PlaybackResult {
   id: string
@@ -35,6 +35,10 @@ interface PlaybackResult {
   error?: string
   missingSounds?: string[]
 }
+
+// The sample banks the app loads on first use (app/lib/prebake.ts); the
+// drum-machine aliases come last in that chain.
+const BANK_FILES = ['strudel.json', 'tidal-drum-machines-alias.json', 'piano.json', 'EmuSP12.json', 'vcsl.json', 'mridangam.json']
 
 // ~2 s per pattern plus the first-load wait; never below the old flat cap.
 function timeoutFor(count: number) {
@@ -58,11 +62,11 @@ test('every curated pattern evaluates without a pattern error or a missing sound
   // The API caps a page at 60, so walk every page — a single request
   // would silently stop checking anything past the first 60 patterns.
   const all: CatalogPattern[] = await page.evaluate(async () => {
-    const out: { id: string, title: string }[] = []
+    const out: { id: string, title: string, code: string }[] = []
     for (let p = 1; ; p++) {
       const res = await fetch(`/api/patterns?limit=60&page=${p}`)
-      const body = await res.json() as { patterns: { id: string, title: string }[], total: number }
-      out.push(...body.patterns.map(x => ({ id: x.id, title: x.title })))
+      const body = await res.json() as { patterns: { id: string, title: string, code: string }[], total: number }
+      out.push(...body.patterns.map(x => ({ id: x.id, title: x.title, code: x.code })))
       if (body.patterns.length === 0 || out.length >= body.total) break
     }
     return out
@@ -78,9 +82,25 @@ test('every curated pattern evaluates without a pattern error or a missing sound
   test.setTimeout(timeoutFor(patterns.length))
 
   const search = page.getByPlaceholder('Search patterns…')
-  const results: PlaybackResult[] = []
 
-  for (const [i, { id, title }] of patterns.entries()) {
+  // `samples()` in a pattern registers its pack for the rest of the page's
+  // life, so a LATER pattern that forgot to load the same pack would find
+  // it there and pass — a silent pattern slipping through. After any
+  // pattern that calls samples() the next check starts on a fresh page.
+  let dirty = false
+  // A page is "cold" until its first Preview has run prebake() and the sample
+  // banks have arrived (see the warm-up in checkOne).
+  let cold = true
+  async function freshPage() {
+    await page.goto('/app/patterns')
+    dirty = false
+    cold = true
+  }
+
+  async function checkOne({ id, title, code }: CatalogPattern, settleMs: number): Promise<PlaybackResult> {
+    if (dirty) await freshPage()
+    dirty = /\bsamples\s*\(/.test(code)
+    missingByTitle.delete(title)
     await search.fill(title)
 
     // The row's accessible name is "<title> <tag1> <tag2> …" — match the
@@ -91,8 +111,24 @@ test('every curated pattern evaluates without a pattern error or a missing sound
     const row = page
       .getByRole('button', { name: new RegExp(`^${escapeRegExp(title)}(?:\\s|$)`) })
       .first()
-    await row.click() // expand — the first one lazy-loads engine + samples
-    await page.waitForTimeout(i === 0 ? 5000 : 400)
+    await row.click() // expand — the first one lazy-loads the engine
+    if (cold) {
+      // The banks download when the first Preview runs prebake() — and the
+      // background ones (drum machines…) are not awaited, so that first
+      // Preview can fire before they land. Warm up with a throwaway Preview
+      // (`current` is empty, so what it logs is ignored), wait for the banks
+      // themselves, then check for real.
+      const banks = BANK_FILES.map(f => page.waitForResponse(r => r.url().endsWith(f), { timeout: 30_000 }).catch(() => null))
+      await page.getByRole('button', { name: /^Preview/ }).click()
+      await Promise.all(banks)
+      await page.waitForTimeout(1500) // …and the banks finish registering
+      const warmStop = page.getByRole('button', { name: /^Stop/ })
+      if (await warmStop.isVisible().catch(() => false)) await warmStop.click()
+      cold = false
+    }
+    else {
+      await page.waitForTimeout(settleMs)
+    }
 
     current = title
     await page.getByRole('button', { name: /^Preview/ }).click()
@@ -114,15 +150,31 @@ test('every curated pattern evaluates without a pattern error or a missing sound
 
     const missing = [...(missingByTitle.get(title) ?? [])]
     current = ''
-    results.push({
+    await search.clear()
+    return {
       id,
       title,
       status: error ? 'error' : missing.length ? 'missing-sounds' : 'pass',
       ...(error ? { error } : {}),
       ...(missing.length ? { missingSounds: missing } : {}),
-    })
+    }
+  }
 
-    await search.clear()
+  const results: PlaybackResult[] = []
+  for (const p of patterns) results.push(await checkOne(p, 400))
+
+  // A sound reported missing may only have been slow to arrive: the app
+  // loads its drum-machine banks in the background and does not wait, so
+  // the first pattern to use one can fire before it lands. Give the banks
+  // time, then check those patterns once more. A sound that is really
+  // missing is still missing the second time.
+  const suspects = results.filter(r => r.status === 'missing-sounds')
+  if (suspects.length) {
+    await freshPage()
+    for (const r of suspects) {
+      const again = await checkOne(patterns.find(p => p.id === r.id)!, 400)
+      if (again.status !== 'missing-sounds') results[results.indexOf(r)] = again
+    }
   }
 
   if (process.env.PLAYBACK_REPORT) {
