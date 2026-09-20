@@ -69,8 +69,8 @@
 - [x] 5.3 Run `scripts/jah-prompt-eval.mjs` against the final prompt and
       record the numbers in design.md.
 - [x] 5.4 `openspec validate add-jah-code-cards --strict`.
-- [ ] 5.5 Browser-verify locally (desktop + phone), then `npm run deploy`
+- [x] 5.5 Browser-verify locally (desktop + phone), then `npm run deploy`
       and confirm on jaime.stream with a real `@jah` question: the reply
       shows a card, Preview pauses the room and plays ≤ 5 s, Copy and
       Open work.
-- [ ] 5.6 Sync the `jah-chat` and `composition-room` deltas; archive.
+- [x] 5.6 Sync the `jah-chat` and `composition-room` deltas; archive.
