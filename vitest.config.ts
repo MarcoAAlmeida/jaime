@@ -38,6 +38,10 @@ export default defineConfig(async () => {
             // .dev.vars — and in CI (no .dev.vars, JAH_ENABLED=1 from
             // wrangler.jsonc) it hit the real Workers AI model.
             JAH_E2E: '1',
+            // test/session-verify.test.ts presents this header value;
+            // fixed here so the suite never depends on the gitignored
+            // .dev.vars (or a real secret).
+            GAMES_VERIFY_SECRET: 'test-verify-secret',
           },
         },
       }),

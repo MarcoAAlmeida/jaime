@@ -37,11 +37,15 @@ interface SessionUserRow {
 
 /**
  * Resolves a session id to its user, or null if the session is unknown
- * or expired. Slides the expiry forward on use (throttled to once/day).
+ * or expired. Read-only: it never writes, so it is safe for callers
+ * that must not affect session state (the service-binding verify
+ * endpoint). `lastSeenAt` lets `getSessionUser` decide whether to slide.
  */
-export async function getSessionUser(db: D1Database, sessionId: string): Promise<User | null> {
-  const nowMs = Date.now()
-  const nowIso = new Date(nowMs).toISOString()
+export async function lookupSessionUser(
+  db: D1Database,
+  sessionId: string,
+): Promise<{ user: User, lastSeenAt: string } | null> {
+  const nowIso = new Date().toISOString()
   const row = await db
     .prepare(
       `SELECT s.last_seen_at, u.id, u.email, u.display_name, u.status, u.created_at,
@@ -53,23 +57,38 @@ export async function getSessionUser(db: D1Database, sessionId: string): Promise
     .first<SessionUserRow>()
   if (!row) return null
 
-  if (nowMs - Date.parse(row.last_seen_at) > SLIDE_AFTER_MS) {
+  return {
+    lastSeenAt: row.last_seen_at,
+    user: {
+      id: row.id,
+      email: row.email,
+      displayName: row.display_name,
+      status: row.status === 'confirmed' ? 'confirmed' : 'pending',
+      createdAt: row.created_at,
+      aiAccess: row.ai_access === 1,
+      ...(row.avatar_url ? { avatarUrl: row.avatar_url } : {}),
+      ...(row.github_login ? { githubLogin: row.github_login } : {}),
+    },
+  }
+}
+
+/**
+ * Resolves a session id to its user, or null if the session is unknown
+ * or expired. Slides the expiry forward on use (throttled to once/day).
+ */
+export async function getSessionUser(db: D1Database, sessionId: string): Promise<User | null> {
+  const found = await lookupSessionUser(db, sessionId)
+  if (!found) return null
+
+  const nowMs = Date.now()
+  if (nowMs - Date.parse(found.lastSeenAt) > SLIDE_AFTER_MS) {
     await db
       .prepare('UPDATE sessions SET last_seen_at = ?, expires_at = ? WHERE id = ?')
-      .bind(nowIso, new Date(nowMs + SESSION_TTL_MS).toISOString(), sessionId)
+      .bind(new Date(nowMs).toISOString(), new Date(nowMs + SESSION_TTL_MS).toISOString(), sessionId)
       .run()
   }
 
-  return {
-    id: row.id,
-    email: row.email,
-    displayName: row.display_name,
-    status: row.status === 'confirmed' ? 'confirmed' : 'pending',
-    createdAt: row.created_at,
-    aiAccess: row.ai_access === 1,
-    ...(row.avatar_url ? { avatarUrl: row.avatar_url } : {}),
-    ...(row.github_login ? { githubLogin: row.github_login } : {}),
-  }
+  return found.user
 }
 
 export async function deleteSession(db: D1Database, sessionId: string): Promise<void> {

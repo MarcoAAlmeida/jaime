@@ -15,6 +15,7 @@ interface __BaseEnv_Env {
 	OAUTH_E2E: string;
 	AI_ACCESS_LOGINS: string;
 	JAH_E2E: string;
+	GAMES_VERIFY_SECRET: string;
 	$DurableObject: DurableObjectNamespace<import("./.output/server/index").$DurableObject>;
 }
 declare namespace Cloudflare {
@@ -29,7 +30,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "AI_GATEWAY_ID" | "JAH_ENABLED" | "AUTH_E2E" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "OAUTH_E2E" | "AI_ACCESS_LOGINS" | "JAH_E2E">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "AI_GATEWAY_ID" | "JAH_ENABLED" | "AUTH_E2E" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "OAUTH_E2E" | "AI_ACCESS_LOGINS" | "JAH_E2E" | "GAMES_VERIFY_SECRET">> {}
 }
 
 // Begin runtime types

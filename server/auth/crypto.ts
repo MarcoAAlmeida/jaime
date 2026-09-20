@@ -8,6 +8,24 @@ export function randomToken(bytes = 32): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
+/**
+ * Constant-time string equality: both sides are hashed to fixed-length
+ * digests first (so a length difference leaks nothing), then compared
+ * with no early exit.
+ */
+export async function timingSafeEqualStrings(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder()
+  const [da, db] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b)),
+  ])
+  const x = new Uint8Array(da)
+  const y = new Uint8Array(db)
+  let diff = 0
+  for (let i = 0; i < x.length; i++) diff |= x[i]! ^ y[i]!
+  return diff === 0
+}
+
 /** SHA-256 of a string as lowercase hex. */
 export async function sha256Hex(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
