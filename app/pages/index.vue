@@ -9,7 +9,7 @@ const TAGLINE = 'Your dev hangout — live-code, chat, and let @jah keep watch.'
 useSeoMeta({
   title: 'jaime — your dev hangout',
   description:
-    'jaime is a browser-based hangout for developers: chat with each other and with @jah, an AI lion in the room, and live-code Strudel patterns together.'
+    "jaime is a browser-based hangout for developers: chat with each other and with @jah, a lion who's read the docs, and live-code Strudel patterns together."
 })
 
 // game-icons.net icons on this page, with the author of each — one list
@@ -90,7 +90,7 @@ const features = [
 <template>
   <UPageHero
     :title="TAGLINE"
-    description="jaime is a browser-based place for developers to hang out and chat — with @jah, an AI lion in the room, and live Strudel coding together. Nothing to install."
+    description="jaime is a browser-based place for developers to hang out and chat — with @jah, a lion who's read the docs, and live Strudel coding together. Nothing to install."
     :links="[
       { label: 'Start a room', icon: gi('campfire'), size: 'lg', onClick: startRoom },
       { label: 'Pattern library', to: '/app/patterns', icon: 'i-lucide-library', color: 'neutral', variant: 'subtle', size: 'lg' },
