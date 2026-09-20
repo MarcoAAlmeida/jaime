@@ -89,7 +89,7 @@
 
 - [x] 6.1 Check the built page at desktop and portrait-mobile widths
       (no horizontal overflow), light and dark mode.
-- [ ] 6.2 `spec:` commit for the planning artifacts; `impl:` commit for
+- [x] 6.2 `spec:` commit for the planning artifacts; `impl:` commit for
       the code and tests; push to deploy through Workers Builds; check
       `jaime.stream`.
-- [ ] 6.3 Do not archive the change until it has been reviewed live.
+- [x] 6.3 Do not archive the change until it has been reviewed live.
