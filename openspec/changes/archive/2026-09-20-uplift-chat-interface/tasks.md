@@ -109,6 +109,6 @@
       `npm run deploy` and confirm on `jaime.stream`: a real `@jah`
       reply renders as the assistant with markdown, the switch works
       for an allowlisted account, and the tab still opens on Chat.
-- [ ] 6.6 Sync the `composition-room` and `jah-chat` deltas; archive
+- [x] 6.6 Sync the `composition-room` and `jah-chat` deltas; archive
       the change; update `docs/04-roadmap/index.md` if it mentions the
       chat UI.
