@@ -84,7 +84,16 @@
 
 ## 7. External-link ingestion skill
 
-- [ ] 7.1 Add `scripts/add-pattern.mjs`: resolve a `strudel.cc/#<base64>`
+> **Won't do in this change (2026-09-20).** Superseded: the ingestion
+> skill is being redesigned and will be specified as its own change. Two
+> assumptions in design decision 5 no longer hold: the manifest
+> (`content/patterns/*.md`, reconciled into the database on every deploy,
+> now via CI) is the single source of truth, so the skill will write
+> repo files rather than `origin='user'` database rows; and "resolve a
+> link" turned out to be a pipeline (several link shapes, some carrying
+> no code in the URL), not a base64 decode. Left unchecked, on purpose.
+
+- [-] 7.1 (won't do) Add `scripts/add-pattern.mjs`: resolve a `strudel.cc/#<base64>`
       link (decode fragment) or a raw source URL (fetch directly);
       extract `@title`/`@by`/`@license` from a leading comment block
       when present; require a resolvable source URL or refuse; generate
@@ -92,12 +101,12 @@
       rows via `wrangler d1 execute PATTERNS_DB` (`--local` by default,
       `--remote` only when explicitly passed), reusing
       `scripts/lib/patterns-manifest.mjs`'s SQL-escaping approach
-- [ ] 7.2 Add CLI flags: `--title`, `--author`, `--tags`, `--favorite`,
+- [-] 7.2 (won't do) Add CLI flags: `--title`, `--author`, `--tags`, `--favorite`,
       `--remote`
-- [ ] 7.3 Add `.claude/skills/add-pattern/SKILL.md`: given a link (and
+- [-] 7.3 (won't do) Add `.claude/skills/add-pattern/SKILL.md`: given a link (and
       optionally "make this a starter"), gather missing title/author/
       tags/favorite conversationally, then invoke the script
-- [ ] 7.4 Verify end-to-end against local `PATTERNS_DB` with one real
+- [-] 7.4 (won't do) Verify end-to-end against local `PATTERNS_DB` with one real
       external link (e.g. re-add a dropped strudel.cc example) and
       confirm it survives `npm run patterns:sync` unchanged (origin
       untouched by reconcile)
@@ -113,9 +122,11 @@
       engine never registered @strudel/codemirror's visual-widget
       methods — fixed in app/lib/prebake.ts, guarded so Composition
       Room/JAM's real widget wiring is never overwritten)
-- [ ] 8.2 `npm run deploy` (build → migrate `PATTERNS_DB` remote →
+- [x] 8.2 `npm run deploy` (build → migrate `PATTERNS_DB` remote →
       sync patterns remote → wrangler deploy)
-- [ ] 8.3 Verify in production: Composition Room's picker shows the
+- [x] 8.3 Verify in production (2026-09-20, jaime.stream: the picker lists
+      Dinofunk, Caverave and Birds of a Feather; Open in strudel.cc is
+      present in the room; the e2e covers stop-before-load): Composition Room's picker shows the
       three favorited patterns searchable, loading one stops playback
       first, and "open in strudel.cc" works from both the Pattern
       Library and the Composition Room

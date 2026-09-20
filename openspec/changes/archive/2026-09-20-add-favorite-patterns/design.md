@@ -100,6 +100,11 @@ have left as an open task, not required for this change to be
 complete.
 
 ### 5. The ingestion skill writes directly to `PATTERNS_DB`, no manifest file
+
+> **Not built; superseded (2026-09-20).** The skill is being redesigned as
+> its own change, writing to the repo manifest instead. Kept below as the
+> record of the original intent.
+
 This is the key architectural point from the user's clarification: the
 skill is **not** another manifest-file author. It runs a small script
 (`scripts/add-pattern.mjs <url> --title ... [--author ...] [--tags ...]
