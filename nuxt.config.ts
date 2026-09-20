@@ -1,4 +1,30 @@
+import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { getIcons } from '@iconify/utils'
+
+const require = createRequire(import.meta.url)
+
+// game-icons.net icons in use anywhere in jaime, by bare name (no
+// `game-icons:` prefix). This one list feeds BOTH bundles below: it is
+// the only thing that puts a game-icons icon into the Worker's server
+// render (the collection itself is ~6.4 MB — 2.8 MB gzipped, more than
+// the whole rest of the Worker — so it is never bundled whole), and it
+// is added to the client bundle explicitly so an icon named only in a
+// .ts file is still covered.
+//
+// Using a new icon takes TWO edits, both required: add its name here,
+// and add its icon → author line to content/credits/game-icons.md (CC BY
+// 3.0 needs per-icon attribution — see the `icon-library` spec). A name
+// missing from this list renders nothing, in dev as well as production.
+const GAME_ICONS_IN_USE: string[] = []
+
+const gameIconsSubset = GAME_ICONS_IN_USE.length > 0
+  ? getIcons(
+      JSON.parse(readFileSync(require.resolve('@iconify-json/game-icons/icons.json'), 'utf8')),
+      GAME_ICONS_IN_USE
+    )
+  : null
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -37,13 +63,22 @@ export default defineNuxtConfig({
   // runtime (it isn't reachable from the Cloudflare Worker). `scan`
   // catches icons named literally in templates; `icons` lists the ones
   // that only appear in app/utils/tools.ts, which the scan globs miss.
-  // NOT `serverBundle: { collections: ['lucide'] }` — that inlines the
-  // whole ~300KB lucide set into a server chunk.
+  //
+  // The server bundle embeds each listed collection WHOLE as a chunk in
+  // the Worker (lucide: ~0.5 MB, accepted). `serverBundle: 'local'`
+  // would embed every installed @iconify-json set automatically —
+  // measured with game-icons installed: the Worker grew 6.5 → 12.8 MB
+  // (≈ +2.8 MB gzipped) for zero icons in use — so collections are
+  // listed explicitly instead, and game-icons goes in as a subset (see
+  // GAME_ICONS_IN_USE above). Installing another @iconify-json set does
+  // NOT bundle it until it is listed here.
   icon: {
-    serverBundle: 'local',
+    serverBundle: {
+      collections: ['lucide', ...(gameIconsSubset ? [gameIconsSubset] : [])]
+    },
     clientBundle: {
       scan: true,
-      icons: ['lucide:radio', 'lucide:users'],
+      icons: ['lucide:radio', 'lucide:users', ...GAME_ICONS_IN_USE.map(name => `game-icons:${name}`)],
       includeCustomCollections: true
     },
     fallbackToApi: false
