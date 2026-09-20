@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, test } from 'node:test'
-import { ManifestError, readManifest, toReconcileSql, validateManifest } from './patterns-manifest.mjs'
+import { fenceFor, ManifestError, normalizeCode, readManifest, toReconcileSql, validateManifest } from './patterns-manifest.mjs'
 
 let dir
 beforeEach(() => {
@@ -105,6 +105,83 @@ describe('readManifest', () => {
     write('zzz.md', OK)
     write('aaa.md', OK)
     assert.deepEqual(readManifest(dir).map(e => e.id), ['aaa', 'zzz'])
+  })
+})
+
+describe('code fidelity (add-pattern-ingestion-skill)', () => {
+  const wrap = (fence, code, info = 'strudel') => `---
+title: T
+source_url: https://example.com/x
+---
+
+${fence}${info}
+${code}
+${fence}
+`
+
+  test('code containing a line of ``` is read back whole from a longer fence', () => {
+    const code = 'const t = `\n```\ninside\n```\n`\ns("bd*4")'
+    write('ticks.md', wrap('````', code))
+    assert.equal(readManifest(dir)[0].code, code)
+  })
+
+  test('fenceFor is longer than any backtick run, minimum three', () => {
+    assert.equal(fenceFor('s("bd")'), '```')
+    assert.equal(fenceFor('a `b` c'), '```')
+    assert.equal(fenceFor('x\n```\ny'), '````')
+    assert.equal(fenceFor('x ```` y'), '`````')
+  })
+
+  test('keeps comments, blank lines and indentation, including on the first line', () => {
+    const code = '  // "Title"\n  // @by someone\n\n$: s("bd*4")\n    .gain(.5)\n'
+    write('fmt.md', wrap('```', code))
+    assert.equal(readManifest(dir)[0].code, code.trimEnd())
+  })
+
+  test('normalises CRLF to LF and trims only edge blank lines and trailing space', () => {
+    assert.equal(normalizeCode('\r\n\r\n  a\r\nb  \r\n\r\n'), '  a\nb')
+    write('crlf.md', wrap('```', 'a\nb').replace(/\n/g, '\r\n'))
+    assert.equal(readManifest(dir)[0].code, 'a\nb')
+  })
+
+  test('a closing fence must be at least as long as the opening one', () => {
+    write('short.md', `---
+title: T
+source_url: https://example.com/x
+---
+
+\`\`\`\`strudel
+a
+\`\`\`
+b
+\`\`\`\`
+`)
+    assert.equal(readManifest(dir)[0].code, 'a\n```\nb')
+  })
+
+  test('skips a fenced block of another language before the code', () => {
+    write('other.md', `---
+title: T
+source_url: https://example.com/x
+---
+
+\`\`\`text
+not the pattern
+\`\`\`
+
+\`\`\`strudel
+s("bd")
+\`\`\`
+`)
+    assert.equal(readManifest(dir)[0].code, 's("bd")')
+  })
+
+  test('an unclosed fence yields no code (and is reported)', () => {
+    write('open.md', '---\ntitle: T\nsource_url: https://example.com/x\n---\n\n```strudel\ns("bd")\n')
+    assert.throws(() => readManifest(dir), (err) => {
+      assert.ok(err.problems.some(p => p.includes('fenced code block')))
+      return true
+    })
   })
 })
 

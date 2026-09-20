@@ -41,8 +41,10 @@ and a playback check keeps silent or broken patterns out.
   checked in the real engine. Failures are reported with reasons and not
   written. A pattern that needs code from outside its own file is
   reported and the developer is asked what to do.
-- **The playback test gains a fast path** for checking specific patterns
-  (and only what changed), so a bulk import doesn't blow the CI timeout.
+- **The playback test gains a fast path** for checking specific patterns and
+  a JSON report, walks every catalog page (it silently stopped at 60), and
+  is what `check` runs. CI does not run Playwright, so `check` — not CI —
+  is the gate.
 - **A wrong example is corrected:** the `Sample Playback` requirement cites
   `amen` as part of the default sample map; it isn't (it lives in
   yaxu/clean-breaks). The requirement now says packs outside the default
@@ -74,8 +76,8 @@ form; pushing or deploying.
   `scripts/patterns/` (`resolve`, `check`, `write`, `tags`) with unit
   tests and saved-response fixtures.
 - `scripts/lib/patterns-manifest.mjs`: fence-length-aware code extraction;
-  `e2e/pattern-playback.spec.ts`: id filter and changed-only mode, sharing
-  its missing-sound detection with `check`.
+  `e2e/pattern-playback.spec.ts`: id filter, JSON report, every-page walk
+  and a scaling timeout (this is what `check` runs).
 - `content/patterns/README.md`: document adding patterns via the skill.
 - No schema, protocol, or runtime change. Nothing here deploys by itself;
   new patterns ship on the next push, as today.

@@ -44,10 +44,54 @@ function splitFrontmatter(raw) {
   return { frontmatter: m[1], body: m[2] }
 }
 
+/**
+ * Normalise pattern code for storage and comparison: LF line endings, no
+ * leading blank lines, no trailing whitespace. A first line's own
+ * indentation is kept — the code is otherwise exactly as written.
+ * @param {string} code
+ */
+export function normalizeCode(code) {
+  return code.replace(/\r\n?/g, '\n').replace(/^(?:[ \t]*\n)+/, '').trimEnd()
+}
+
+/**
+ * The fence to wrap `code` in: strictly longer than any run of backticks
+ * inside it (minimum three), so code containing ``` is stored intact.
+ * @param {string} code
+ */
+export function fenceFor(code) {
+  const runs = (code.match(/`+/g) ?? []).map(r => r.length)
+  return '`'.repeat(Math.max(3, ...runs.map(n => n + 1)))
+}
+
+const CODE_INFO = new Set(['', 'strudel', 'js', 'javascript'])
+
+/**
+ * The first fenced block whose info string is strudel/js/javascript or
+ * empty. A block closes at a fence of at least the same length (CommonMark
+ * rule), so a longer outer fence can hold ``` lines. Blocks with another
+ * info string (e.g. ```text) are skipped whole.
+ */
 function extractCode(body) {
-  // First fenced block, ```strudel or a bare ```.
-  const m = /```(?:strudel|js|javascript)?\r?\n([\s\S]*?)\r?\n```/.exec(body)
-  return m ? m[1].trim() : ''
+  const lines = body.replace(/\r\n?/g, '\n').split('\n')
+  for (let i = 0; i < lines.length; i++) {
+    const open = /^ {0,3}(`{3,})([^`]*)$/.exec(lines[i])
+    if (!open) continue
+    const closer = new RegExp(`^ {0,3}\`{${open[1].length},}[ \\t]*$`)
+    let end = -1
+    for (let j = i + 1; j < lines.length; j++) {
+      if (closer.test(lines[j])) {
+        end = j
+        break
+      }
+    }
+    if (end === -1) return '' // unclosed fence
+    if (CODE_INFO.has(open[2].trim().toLowerCase())) {
+      return normalizeCode(lines.slice(i + 1, end).join('\n'))
+    }
+    i = end // some other block — skip it entirely
+  }
+  return ''
 }
 
 /**

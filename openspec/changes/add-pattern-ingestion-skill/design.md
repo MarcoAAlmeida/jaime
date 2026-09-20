@@ -97,7 +97,9 @@ Code for a system other than Strudel is declined at Intake/Resolve.
 
 Code is written verbatim into the fenced block. Only two normalisations:
 line endings to LF, and trimming blank space at the very start and end.
-No prettifier, no comment stripping, no reordering. Header comments
+No prettifier, no comment stripping, no reordering. "Blank space at the very
+start and end" means leading blank lines and trailing whitespace: a first
+line's own indentation is kept. Header comments
 (`@title`, `@by`, `@license`) stay inside the code, as `dinofunk.md`
 already does.
 
@@ -136,21 +138,46 @@ possible follow-up, not part of this change). Licence never gates.
 A candidate must evaluate without a pattern error and have every sound
 loaded. Two tiers, chosen by measurement in the groundwork spike:
 
-- **Real engine (the gate):** headless Chromium driving the same code path
-  as `e2e/pattern-playback.spec.ts`, using Playwright as a library (no MCP
-  needed). The spec gains an id filter and a changed-only mode (CI checks
-  only patterns whose files differ from the base), and its
-  missing-sound detection is extracted so `check` and the spec share it.
-- **Node triage (optional):** evaluate with the Strudel packages in plain
+- **Real engine (the gate):** headless Chromium driving the library's real
+  preview path — `check` runs `e2e/pattern-playback.spec.ts` itself (the
+  Playwright *library and runner*, no MCP needed). The spec takes
+  `PATTERN_IDS` (check only these) and `PLAYBACK_REPORT` (write a JSON
+  outcome per pattern). A candidate that is not in the library yet is put
+  there temporarily as `origin='user'` rows in the *local* database (never
+  touched by reconcile), checked, and removed; nothing reaches a remote
+  system. The spec also walks every catalog page: the API caps a page at
+  60, and the old single `limit=200` request silently stopped checking
+  after 60 patterns.
+- **Node triage (spike: GO):** evaluate with the Strudel packages in plain
   Node, query a few cycles, and compare the sound names against the
   loaded banks — milliseconds per pattern, useful to sift a large import
   before the browser tier. Built only if the spike shows it is reliable;
   it never replaces the real-engine gate (visuals and browser-only APIs).
 
-CI remains the backstop: the full playback test runs before every deploy,
-so a bad file cannot ship. Its 300 s timeout is sized for ~50 patterns at
-~2 s each; changed-only mode and a timeout that scales with the catalog
-size keep a 100-pattern import from breaking CI.
+**Spike result (task 1.4).** The whole catalog (49 patterns) evaluates in
+plain Node in ~0.4 s, against ~2 min in the browser. It agrees with the
+browser gate on every current pattern once the REPL-provided helpers are
+stubbed (`samples`, `setcps`/`setcpm`, `.p`, the drawing methods as no-ops),
+and it catches, correctly: the pre-fix silent `s("amen")`, a typo'd method,
+an unknown drum bank, and a helper defined outside the file. It needs the
+`@kabelsalat/web` resolution workaround the Nuxt config already carries, and
+the same sound banks the app's prebake loads (sample maps fetched by URL, GM
+soundfont names from `@strudel/soundfonts`, synth names, bank aliases).
+Limits, which set how it is used: two curated patterns (chord-voicing
+based) yield **zero events in Node** at any cycle count, so "no events" is
+reported as *inconclusive*, never *pass*; and a Node-only error may be a
+helper the REPL provides, so it is a **triage, not a gate** — its `pass`
+still gets the browser check, and its failures are confirmed there before
+anything is reported as broken. `samples()` calls inside a pattern register
+their names for that pattern only.
+
+**CI is not a backstop for this.** Workers Builds runs `npm test` (script
+tests, migrate, build, vitest) and `npm run deploy`; Playwright is not part
+of it, so a silent pattern would ship if nobody ran the spec. `check` is
+therefore the gate, run before writing, and the full spec is worth running
+before a push that adds patterns. A browser-free triage that *could* run in
+vitest — and so give CI a real gate — is the reason the Node spike (task
+1.4) matters. The spec's timeout scales with the number of patterns.
 
 A candidate that needs code from outside its own file is detected by the
 error (`x is not a function`, `x is not defined`) and reported as a
@@ -193,8 +220,8 @@ skill ends by offering a local commit.
 - **[Playback check flakiness]** → a first-beat miss while a pack loads
   is possible (as in the library preview); `check` waits for evaluation
   and reports a sound as missing only if it stays missing.
-- **[CI time on a big import]** → changed-only mode plus a scaling
-  timeout.
+- **[Nothing in CI runs the playback check]** → `check` gates writing; the
+  Node triage, if the spike says go, can be added to vitest so CI has one.
 - **[Fidelity vs. a helper dependency]** → never silently altered; the
   developer chooses.
 

@@ -1,16 +1,21 @@
 ## 1. Groundwork
 
-- [ ] 1.1 `scripts/lib/patterns-manifest.mjs`: `extractCode` matches the
+- [x] 1.1 `scripts/lib/patterns-manifest.mjs`: `extractCode` matches the
       opening fence's exact length (three-backtick files parse exactly as
       before); tests including code that contains a line of ``` (with a
       four-backtick fence) and a regression test for the existing files.
-- [ ] 1.2 Extract the playback check (evaluate, error capture, `sound X not
-      found` detection) from `e2e/pattern-playback.spec.ts` into a small
-      shared module used by the spec and by `check`.
-- [ ] 1.3 `e2e/pattern-playback.spec.ts`: `PATTERN_IDS` filter and a
-      changed-only mode (patterns whose files differ from the base ref);
-      timeout that scales with the number of patterns checked.
-- [ ] 1.4 Spike: can a Node-only evaluation (Strudel packages, a few cycles
+- [x] 1.2 `check` reuses the playback spec rather than a copy of it: the spec
+      now records each pattern's outcome (pass / eval error / missing
+      sounds) and can write it as a JSON report. (Changed from "extract a
+      shared module": the check has to drive the library UI to be the real
+      path, so the runner itself is the shared piece. See design 7.)
+- [x] 1.3 `e2e/pattern-playback.spec.ts`: `PATTERN_IDS` filter and
+      `PLAYBACK_REPORT`; walks every catalog page (the API caps a page at
+      60 — the old single `limit=200` request silently checked only the
+      first 60); timeout scales with the number checked. A changed-only mode
+      is dropped: CI does not run Playwright, so there is no CI run to speed
+      up (design 7).
+- [x] 1.4 Spike (GO — see design 7): can a Node-only evaluation (Strudel packages, a few cycles
       queried, sound names compared to the loaded banks) reliably catch
       errors and missing sounds across the whole current catalog? Record
       the result and the go/no-go for the Node triage tier in design.md.
