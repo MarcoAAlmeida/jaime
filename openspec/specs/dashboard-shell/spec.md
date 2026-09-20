@@ -1,9 +1,9 @@
 # dashboard-shell Specification
 
 ## Purpose
-Provides the tools shell — persistent sidebar navigation to Home and
-each tool — that JAM and future tools (Composition Room) live inside,
-distinct from the full-layout-swap docs shell.
+Provides the tools shell — persistent sidebar navigation to Home, the
+Composition Room, and Patterns, with JAM as a demoted entry — that the
+rooms live inside, distinct from the full-layout-swap docs shell.
 
 ## Requirements
 

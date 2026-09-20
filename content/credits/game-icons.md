@@ -32,9 +32,21 @@ Removing the last use of an icon removes its row and its list entry.
 
 `lion` is `@jah`'s avatar (`public/jah-avatar.svg`) — recoloured red on a
 round badge, with the credit in the file's metadata and in the avatar's
-tooltip. It is a static file, not rendered through `UIcon`, so it is not
-in `GAME_ICONS_IN_USE`.
+tooltip. The avatar is a static file, not rendered through `UIcon`; the
+homepage additionally renders the plain `lion` icon through `UIcon`, so
+it is also in `GAME_ICONS_IN_USE`.
+
+The homepage (`app/pages/index.vue`) credits each icon it uses in a line
+at the foot of the page, generated from one icon → author list.
 
 | Icon | Author | Source |
 | ---- | ------ | ------ |
 | `lion` | Lorc | [game-icons.net/1x1/lorc/lion.html](https://game-icons.net/1x1/lorc/lion.html) |
+| `chat-bubble` | Delapouite | [game-icons.net/1x1/delapouite/chat-bubble.html](https://game-icons.net/1x1/delapouite/chat-bubble.html) |
+| `musical-notes` | Delapouite | [game-icons.net/1x1/delapouite/musical-notes.html](https://game-icons.net/1x1/delapouite/musical-notes.html) |
+| `laptop` | Delapouite | [game-icons.net/1x1/delapouite/laptop.html](https://game-icons.net/1x1/delapouite/laptop.html) |
+| `rune-stone` | Lorc | [game-icons.net/1x1/lorc/rune-stone.html](https://game-icons.net/1x1/lorc/rune-stone.html) |
+| `scroll-unfurled` | Lorc | [game-icons.net/1x1/lorc/scroll-unfurled.html](https://game-icons.net/1x1/lorc/scroll-unfurled.html) |
+| `campfire` | Lorc | [game-icons.net/1x1/lorc/campfire.html](https://game-icons.net/1x1/lorc/campfire.html) |
+| `sound-waves` | Skoll | [game-icons.net/1x1/skoll/sound-waves.html](https://game-icons.net/1x1/skoll/sound-waves.html) |
+| `console-controller` | Skoll | [game-icons.net/1x1/skoll/console-controller.html](https://game-icons.net/1x1/skoll/console-controller.html) |

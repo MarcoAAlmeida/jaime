@@ -1,10 +1,10 @@
 # landing-page Specification
 
 ## Purpose
-Provides jaime's real marketing entry point at the site root — what
-the hub is, which tools exist, and how to get into one or reach the
-docs — replacing JAM's create/join screen as the site's landing
-experience.
+Provides jaime's real entry point at the site root — the developer
+hangout pitch with `@jah` as the headline, how to start a room or open
+a starter pattern in one, and how to reach the docs — replacing JAM's
+create/join screen as the site's landing experience.
 
 ## Requirements
 

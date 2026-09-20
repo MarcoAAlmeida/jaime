@@ -99,7 +99,7 @@ error rather than a silent omission. The same rows go in
 The section uses `GET /api/patterns?favorite=true` through
 `useAsyncData`. On any error or an empty list the section is not
 rendered — the landing page must never show an error for a secondary
-section. Each card shows the pattern's title and description with an
+section. Each card shows the pattern's title, tags and author (patterns have no description field) with an
 "Open in Composition Room" button that navigates to a fresh room with
 `?load=<id>`. Alternatives: a hardcoded list of ids (drifts from the
 catalog; breaks if a pattern is unfavorited) or content collection

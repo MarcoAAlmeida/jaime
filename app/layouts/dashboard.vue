@@ -28,6 +28,13 @@ const items = computed<NavigationMenuItem[][]>(() => [
       active: route.path === '/app/patterns'
     }
   ],
+  // JAM is being phased out — its own group, below the main entries.
+  DEMOTED_TOOLS.map(tool => ({
+    label: tool.label,
+    icon: tool.icon,
+    to: tool.to,
+    active: route.path === tool.to || route.path.startsWith(`${tool.to}/`)
+  })),
   [
     {
       label: 'Community',

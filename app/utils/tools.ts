@@ -1,7 +1,6 @@
-// The hub's tools, in the order they must appear everywhere they're
-// listed (landing page + dashboard sidebar) — Composition Room before
-// JAM, per the landing-page and dashboard-shell specs. `ready` flags
-// whether the tool is real yet or a Phase-1 click-through mock.
+// The main tools, in the order they appear in the dashboard and docs
+// sidebars. `ready` flags whether the tool is real yet or a click-through
+// mock.
 export interface Tool {
   label: string
   description: string
@@ -17,7 +16,14 @@ export const TOOLS: Tool[] = [
     icon: 'i-lucide-users',
     to: '/app/composition',
     ready: true
-  },
+  }
+]
+
+// Tools that still work but are being phased out. Kept out of `TOOLS` so
+// the landing hero, the features section and the sidebars' main groups
+// never feature them — they get low-key links only (landing footer, a
+// separate sidebar group, last in the docs quick links).
+export const DEMOTED_TOOLS: Tool[] = [
   {
     label: 'JAM',
     description: 'A shared jam room: each player owns one track, types Strudel patterns, everyone locked to the same tempo.',

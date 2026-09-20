@@ -17,7 +17,17 @@ const require = createRequire(import.meta.url)
 // and add its icon → author line to content/credits/game-icons.md (CC BY
 // 3.0 needs per-icon attribution — see the `icon-library` spec). A name
 // missing from this list renders nothing, in dev as well as production.
-const GAME_ICONS_IN_USE: string[] = []
+const GAME_ICONS_IN_USE: string[] = [
+  'lion',
+  'chat-bubble',
+  'musical-notes',
+  'rune-stone',
+  'scroll-unfurled',
+  'laptop',
+  'campfire',
+  'sound-waves',
+  'console-controller'
+]
 
 const gameIconsSubset = GAME_ICONS_IN_USE.length > 0
   ? getIcons(
