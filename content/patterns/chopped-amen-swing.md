@@ -6,5 +6,6 @@ created_at: 2026-09-01T00:00:07.000Z
 ---
 
 ```strudel
+samples('github:yaxu/clean-breaks/main')
 s("amen").chop(8).speed("1 1 2 1").swingBy(1/3, 8)
 ```
