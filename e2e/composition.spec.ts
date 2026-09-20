@@ -385,9 +385,14 @@ test('a chat message reaches everyone; chat is gone once the room empties', asyn
     // itself, but the message still reached it (chat-panel is hidden
     // via v-show, not removed from the DOM).
     await expect(
-      page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'Alice: hey room' }),
+      page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'hey room' }),
     ).toHaveCount(1, { timeout: 15_000 })
   }
+  // Bob sees who said it (the name is in the header for others' messages);
+  // Alice's own message carries no name (uplift-chat-interface).
+  await expect(
+    pageB.locator('[data-testid="chat-message-row"]').filter({ hasText: 'hey room' }),
+  ).toContainText('Alice')
 
   // Let the doc snapshot debounce (2s) land, then everyone leaves.
   await pageA.waitForTimeout(2500)
@@ -403,7 +408,7 @@ test('a chat message reaches everyone; chat is gone once the room empties', asyn
   const pageC = await joinRoom(context2, roomId, 'Cara', 'viewer')
   await expect.poll(() => docText(pageC), { timeout: 15_000 }).toBe('s("bd sd")')
   await expect(pageC.locator('[data-testid="chat-message-row"]').filter({ hasText: 'hey room' })).toHaveCount(0)
-  await expect(pageC.locator('[data-testid="chat-message-row"]').filter({ hasText: '@jah:' })).toHaveCount(1)
+  await expect(pageC.locator('[data-testid="chat-message-row"][data-role="assistant"]')).toHaveCount(1)
 
   await context2.close()
 })
@@ -467,8 +472,8 @@ test('three separate clients — two editors + a viewer — edit, cursor, hear, 
   for (const page of [pageA, pageB]) {
     // Presence, not visibility — neither has switched to the Chat tab.
     await expect(
-      page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'Vic: sounds good' }),
-    ).toHaveCount(1, { timeout: 15_000 })
+      page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'sounds good' }),
+    ).toContainText('Vic', { timeout: 15_000 })
   }
 
   await ctxA.close()

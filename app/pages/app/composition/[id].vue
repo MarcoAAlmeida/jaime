@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AsciiArtPiece } from '#shared/asciiArt'
-import type { ChatMessage, CompositionPresenceEntry, Role } from '#shared/compositionProtocol'
+import type { ChatMessage, CompositionPresenceEntry, JahAvailability, Role } from '#shared/compositionProtocol'
 import type { Pattern, PatternListResult } from '#shared/catalog'
 import type { CompositionProvider } from '~/lib/compositionProvider'
 import type { StrudelEditor } from '~/lib/strudelEditor'
@@ -8,7 +8,10 @@ import { StateEffect } from '@codemirror/state'
 import { yCollab } from 'y-codemirror.next'
 import * as Y from 'yjs'
 import { nextCycleBoundary } from '#shared/transportMath'
+import type { ChatUIMessage } from '~/lib/chatMessages'
+import { toChatMessages } from '~/lib/chatMessages'
 import { createCompositionProvider } from '~/lib/compositionProvider'
+import { withJahMention } from '~/lib/jahMention'
 import { createStrudelEditor, primeAudio } from '~/lib/strudelEditor'
 import { randomDisplayName } from '~/lib/suggestedName'
 import { toStrudelUrl } from '~/lib/strudelShareLink'
@@ -81,6 +84,38 @@ const chatLog = ref<HTMLDivElement>()
 // @jah is generating a reply (add-jah-chat) — cleared once the reply
 // (or a decline) lands, or immediately by the next 'jah_typing: false'.
 const jahTyping = ref(false)
+// This connection's id (from every `welcome`) — decides which chat
+// messages are "mine" (uplift-chat-interface design decision 2).
+const ownClientId = ref<string>()
+// Whether @jah can reply to this participant, told at join. Until the
+// first `welcome` arrives assume the most restrictive answer.
+const jahAvailability = ref<JahAvailability>('signed-out')
+// The "to @jah" switch: while on, outgoing messages get `@jah ` prepended.
+// Sticky for the page session (not persisted), starts off.
+const toJah = ref(false)
+const JAH_UNAVAILABLE_HINT: Record<Exclude<JahAvailability, 'available'>, string> = {
+  'signed-out': 'Sign in to talk to @jah.',
+  'no-access': '@jah is invite-only.',
+  'disabled': '@jah is offline.',
+}
+const jahHint = computed(() =>
+  jahAvailability.value === 'available' ? '' : JAH_UNAVAILABLE_HINT[jahAvailability.value])
+// A switch that can't work must not stay on (e.g. access lost on rejoin).
+watch(jahAvailability, (a) => { if (a !== 'available') toJah.value = false })
+const chatMessages = computed(() => toChatMessages(chat.value, ownClientId.value, jahTyping.value))
+// UChatMessages' slot props are loosely typed (`metadata` is `unknown`,
+// parts are a union) — narrow them to what toChatMessages produced.
+const metaOf = (metadata: unknown) => metadata as ChatUIMessage['metadata']
+const textOf = (parts: unknown) => (parts as ChatUIMessage['parts'])[0]?.text ?? ''
+const toast = useToast()
+// Model choice is a later change — the selector only says so.
+function modelNotImplemented() {
+  toast.add({
+    title: 'Model selection isn’t available yet',
+    description: 'For now @jah always uses its default model.',
+    icon: 'i-lucide-info',
+  })
+}
 
 // add-composition-tabs: Composition (editor + canvas), Chat (roster +
 // messages), and ASCII Art are three mutually-exclusive tabs rather
@@ -102,10 +137,30 @@ const TAB_DEFS: { id: TabId, label: string, icon: string }[] = [
 const chatUnread = ref(0)
 const compositionActivity = ref(false)
 
+// Follow new messages only if the reader is already at (or near) the
+// bottom, or the message is their own — never yank someone who has
+// scrolled up to read.
+const CHAT_STICK_PX = 80
+function chatNearBottom(): boolean {
+  const el = chatLog.value
+  if (!el) return true
+  return el.scrollHeight - el.scrollTop - el.clientHeight < CHAT_STICK_PX
+}
+function scrollChatToBottom() {
+  void nextTick(() => { if (chatLog.value) chatLog.value.scrollTop = chatLog.value.scrollHeight })
+}
+// Measured in the pre-flush watcher, i.e. before the bubble is added.
+watch(jahTyping, (typing) => { if (typing && chatNearBottom()) scrollChatToBottom() })
+
 function setActiveTab(id: TabId) {
   activeTab.value = id
   if (id !== 'composition') confirmingClear.value = false
-  if (id === 'chat') chatUnread.value = 0
+  if (id === 'chat') {
+    chatUnread.value = 0
+    // The panel was display:none, so anything that arrived meanwhile
+    // sits below the fold.
+    scrollChatToBottom()
+  }
   if (id === 'composition') {
     compositionActivity.value = false
     // The editor pane is hidden (display:none) while another tab is
@@ -243,7 +298,7 @@ watch(playing, (isPlaying) => {
 function sendChat() {
   const text = chatInput.value.trim()
   if (!text) return
-  provider?.sendChat(text)
+  provider?.sendChat(toJah.value && jahAvailability.value === 'available' ? withJahMention(text) : text)
   chatInput.value = ''
 }
 
@@ -487,10 +542,15 @@ async function start() {
   provider.on('status', (c) => { connected.value = c })
   provider.on('playing', (p) => { playing.value = p; playingOnJoin = p })
   provider.on('presence', (roster) => { participants.value = roster })
+  // Fires at the start of every `welcome`, which replays the whole log —
+  // start it over so a reconnect doesn't show every message twice.
+  provider.on('clientId', (id) => { ownClientId.value = id; chat.value = [] })
+  provider.on('jah', (a) => { jahAvailability.value = a })
   provider.on('chat', (msg) => {
+    const follow = msg.clientId === ownClientId.value || chatNearBottom()
     chat.value.push(msg)
     if (activeTab.value !== 'chat') chatUnread.value++
-    void nextTick(() => { if (chatLog.value) chatLog.value.scrollTop = chatLog.value.scrollHeight })
+    if (follow) scrollChatToBottom()
   })
   provider.on('jahTyping', (typing) => { jahTyping.value = typing })
   // Every client — editors and viewers — evaluates its own copy of the
@@ -851,41 +911,63 @@ onBeforeUnmount(() => {
           </h2>
           <div
             ref="chatLog"
-            class="border-default min-h-0 flex-1 space-y-1 overflow-y-auto rounded-md border p-2 text-sm"
+            class="border-default bg-default min-h-0 flex-1 overflow-y-auto rounded-md border py-2 text-sm"
             data-testid="chat-log"
           >
-            <p v-if="!chat.length" class="text-muted text-xs">
+            <p v-if="!chat.length" class="text-muted px-3 text-xs">
               Messages are visible to everyone here and aren't saved.
             </p>
-            <div v-for="(m, i) in chat" :key="i" class="flex items-start gap-1.5" data-testid="chat-message-row">
-              <UserAvatar :name="m.name" :src="m.avatarUrl" class="mt-0.5 shrink-0" />
-              <p class="min-w-0" data-testid="chat-message">
-                <span class="text-muted">{{ m.name }}:</span> {{ m.text }}
-              </p>
-            </div>
+            <UChatMessages
+              v-else
+              compact
+              :auto-scroll="false"
+              :messages="chatMessages"
+            >
+              <template #header="{ metadata }">
+                <span class="text-muted text-xs">{{ metaOf(metadata).name }}</span>
+              </template>
+              <template #content="{ metadata, parts }">
+                <UChatShimmer v-if="metaOf(metadata).typing" text="@jah is thinking…" />
+                <ChatMarkdown v-else :text="textOf(parts)" data-testid="chat-message" />
+              </template>
+            </UChatMessages>
           </div>
-          <p v-if="jahTyping" class="text-muted text-xs italic" data-testid="jah-typing">
-            @jah is thinking…
+          <UChatPrompt
+            v-model="chatInput"
+            :autofocus="false"
+            :maxrows="5"
+            variant="subtle"
+            placeholder="Message — Markdown works; put code in `backticks`"
+            data-testid="chat-input"
+            @submit="sendChat"
+          >
+            <UChatPromptSubmit status="ready" color="neutral" size="xs" data-testid="chat-send" />
+            <template #footer>
+              <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <UButton
+                  size="xs"
+                  color="neutral"
+                  variant="ghost"
+                  trailing-icon="i-lucide-chevron-down"
+                  data-testid="model-selector"
+                  @click="modelNotImplemented"
+                >
+                  @jah default
+                </UButton>
+                <USwitch
+                  v-model="toJah"
+                  size="xs"
+                  label="to @jah"
+                  :disabled="jahAvailability !== 'available'"
+                  data-testid="jah-switch"
+                />
+              </div>
+            </template>
+          </UChatPrompt>
+          <p v-if="jahHint" class="text-muted text-xs" data-testid="jah-switch-hint">
+            {{ jahHint }}
           </p>
-          <div class="flex gap-1.5">
-            <UInput
-              v-model="chatInput"
-              size="xs"
-              placeholder="Message"
-              class="flex-1"
-              data-testid="chat-input"
-              @keyup.enter="sendChat"
-            />
-            <UButton size="xs" color="neutral" data-testid="chat-send" @click="sendChat">
-              Send
-            </UButton>
-          </div>
         </div>
-
-        <!-- Reserved for add-jah-chat's future controls (file upload,
-             model/parameter selection) — deliberately empty and
-             zero-height until that change lands. -->
-        <div class="h-0 overflow-hidden" data-testid="chat-control-strip" />
       </div>
 
       <div

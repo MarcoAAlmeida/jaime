@@ -28,7 +28,8 @@ async function sendChat(page: Page, text: string): Promise<void> {
 }
 
 function jahRow(page: Page) {
-  return page.locator('[data-testid="chat-message-row"]').filter({ hasText: '@jah:' })
+  // @jah's messages are the assistant's (uplift-chat-interface).
+  return page.locator('[data-testid="chat-message-row"][data-role="assistant"]')
 }
 
 test('an allowlisted signed-in user gets a real @jah reply, visible to everyone', async ({ browser }) => {
@@ -86,7 +87,7 @@ test('an anonymous user addressing @jah gets no reply', async ({ page }) => {
   await expect(jahRow(page)).toHaveCount(1)
   await sendChat(page, '@jah hello?')
   await expect(
-    page.locator('[data-testid="chat-message-row"]').filter({ hasText: 'Anon: @jah hello?' }),
+    page.locator('[data-testid="chat-message-row"][data-role="user"]').filter({ hasText: '@jah hello?' }),
   ).toBeVisible({ timeout: 10_000 })
   await page.waitForTimeout(1000)
   await expect(jahRow(page)).toHaveCount(1) // still just the welcome

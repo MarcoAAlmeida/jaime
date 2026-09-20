@@ -30,6 +30,11 @@ Removing the last use of an icon removes its row and its list entry.
 
 ## Icons in use
 
+`lion` is `@jah`'s avatar (`public/jah-avatar.svg`) — recoloured red on a
+round badge, with the credit in the file's metadata and in the avatar's
+tooltip. It is a static file, not rendered through `UIcon`, so it is not
+in `GAME_ICONS_IN_USE`.
+
 | Icon | Author | Source |
 | ---- | ------ | ------ |
-| _none yet_ | | |
+| `lion` | Lorc | [game-icons.net/1x1/lorc/lion.html](https://game-icons.net/1x1/lorc/lion.html) |

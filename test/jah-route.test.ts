@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyMention, isJahEnabled } from '../server/jah/route'
+import { classifyMention, isJahEnabled, jahAvailability } from '../server/jah/route'
 
 describe('classifyMention', () => {
   it('is not addressed when there is no mention', () => {
@@ -70,5 +70,33 @@ describe('isJahEnabled', () => {
 
   it('is enabled when JAH_E2E is set, regardless of JAH_ENABLED', () => {
     expect(isJahEnabled({ JAH_ENABLED: '', JAH_E2E: '1' })).toBe(true)
+  })
+})
+
+describe('jahAvailability', () => {
+  const on = { JAH_ENABLED: '1', JAH_E2E: '' }
+  const off = { JAH_ENABLED: '', JAH_E2E: '' }
+
+  it('is "available" for an account with access while enabled', () => {
+    expect(jahAvailability(on, { aiAccess: true })).toBe('available')
+  })
+
+  it('is "no-access" for a signed-in account without access', () => {
+    expect(jahAvailability(on, { aiAccess: false })).toBe('no-access')
+  })
+
+  it('is "signed-out" with no account', () => {
+    expect(jahAvailability(on, null)).toBe('signed-out')
+  })
+
+  it('is "disabled" when the kill switch is off, whoever is asking', () => {
+    expect(jahAvailability(off, null)).toBe('disabled')
+    expect(jahAvailability(off, { aiAccess: false })).toBe('disabled')
+    // Precedence: an allowlisted account still sees "disabled", not "available".
+    expect(jahAvailability(off, { aiAccess: true })).toBe('disabled')
+  })
+
+  it('follows JAH_E2E the same way isJahEnabled does', () => {
+    expect(jahAvailability({ JAH_ENABLED: '', JAH_E2E: '1' }, { aiAccess: true })).toBe('available')
   })
 })

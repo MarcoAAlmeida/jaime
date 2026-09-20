@@ -16,7 +16,7 @@ import { recordUsage } from '../auth/aiUsage'
 import { getSessionUser } from '../auth/sessions'
 import { underCaps } from '../jah/caps'
 import { generateJahReply } from '../jah/reply'
-import { classifyMention, isJahEnabled } from '../jah/route'
+import { classifyMention, isJahEnabled, jahAvailability } from '../jah/route'
 import { getDurableEnv } from '../utils/durableStorage'
 
 const DEFAULT_BPM = 120
@@ -390,6 +390,7 @@ export default defineWebSocketHandler({
         atCycle: room.evalAtCycle,
         presence: roster(room),
         chat: room.chat,
+        jah: jahAvailability(getDurableEnv() ?? {}, account),
       })
       toOthers(peer, roomId, { t: 'presence', roster: roster(room) })
       return

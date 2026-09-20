@@ -3,6 +3,8 @@
 // (add-jah-chat design decision 6), so an unaddressed message costs
 // nothing beyond this check.
 
+import type { JahAvailability } from '../../shared/compositionProtocol'
+
 export type MentionKind = 'discussion' | 'fix' | 'edit'
 
 export interface MentionClassification {
@@ -41,4 +43,23 @@ export function classifyMention(text: string): MentionClassification {
  */
 export function isJahEnabled(env: { JAH_ENABLED?: string, JAH_E2E?: string }): boolean {
   return env.JAH_ENABLED === '1' || !!env.JAH_E2E
+}
+
+/**
+ * What to tell a joining participant about `@jah` (uplift-chat-interface
+ * design decision 6). Precedence matters and is the point of extracting
+ * it: the kill switch beats everything (a signed-in, allowlisted user
+ * still sees `disabled` while it is off), then whether they are signed
+ * in at all, then whether their account has effective access. Pure so
+ * the `disabled` branch is testable — through a socket the pool-workers
+ * env's `JAH_E2E=1` always leaves `@jah` on.
+ */
+export function jahAvailability(
+  env: { JAH_ENABLED?: string, JAH_E2E?: string },
+  account: { aiAccess: boolean } | null,
+): JahAvailability {
+  if (!isJahEnabled(env)) return 'disabled'
+  if (!account) return 'signed-out'
+  if (!account.aiAccess) return 'no-access'
+  return 'available'
 }

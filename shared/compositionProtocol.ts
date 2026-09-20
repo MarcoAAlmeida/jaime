@@ -8,6 +8,14 @@
 
 export type Role = 'editor' | 'viewer'
 
+/**
+ * Whether `@jah` can reply to this participant, told once at join
+ * (uplift-chat-interface). Informational only — the server's `chat`
+ * handler stays the authority on gating; this lets the client explain
+ * a disabled "to @jah" switch instead of guessing.
+ */
+export type JahAvailability = 'available' | 'signed-out' | 'no-access' | 'disabled'
+
 export interface CompositionPresenceEntry {
   clientId: string
   name: string
@@ -56,6 +64,8 @@ export type CompositionServerMessage =
     atCycle: number | null
     presence: CompositionPresenceEntry[]
     chat: ChatMessage[]
+    /** `@jah`'s availability to this participant, resolved at join. */
+    jah: JahAvailability
   }
   | { t: 'y-update', u: string }
   | { t: 'awareness', a: string }

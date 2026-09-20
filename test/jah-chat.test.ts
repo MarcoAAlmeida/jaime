@@ -223,3 +223,39 @@ describe('@jah', () => {
     expect(roomBReply.message.text).toMatch(/canned/i)
   })
 })
+
+describe('welcome.jah (uplift-chat-interface)', () => {
+  async function joinForWelcome(roomId: string, name: string, cookie?: string) {
+    const { ws, next } = await connect(roomId, name, cookie)
+    ws.send(JSON.stringify({ t: 'join', role: 'editor', name, color: '#f00', sv: toBase64(Y.encodeStateVector(new Y.Doc())) }))
+    const welcome = await next()
+    expect(welcome.t).toBe('welcome')
+    return welcome
+  }
+
+  it('tells an anonymous participant they are signed out', async () => {
+    const welcome = await joinForWelcome(freshRoomId(), 'Anon')
+    expect(welcome.jah).toBe('signed-out')
+  })
+
+  it('tells a signed-in participant without access they have no access', async () => {
+    const { cookie } = await signIn('noaccess@example.com')
+    const welcome = await joinForWelcome(freshRoomId(), 'Nia', cookie)
+    expect(welcome.jah).toBe('no-access')
+  })
+
+  it('tells a signed-in participant with access it is available', async () => {
+    const { cookie, userId } = await signIn('access@example.com')
+    await setAiAccess(db, userId, true)
+    const welcome = await joinForWelcome(freshRoomId(), 'Ada', cookie)
+    expect(welcome.jah).toBe('available')
+  })
+
+  it('is resolved per join: access granted later shows up on the next join', async () => {
+    const { cookie, userId } = await signIn('later@example.com')
+    const roomId = freshRoomId()
+    expect((await joinForWelcome(roomId, 'Lee', cookie)).jah).toBe('no-access')
+    await setAiAccess(db, userId, true)
+    expect((await joinForWelcome(roomId, 'Lee', cookie)).jah).toBe('available')
+  })
+})

@@ -7,6 +7,7 @@ import type {
   ChatMessage,
   CompositionPresenceEntry,
   CompositionServerMessage,
+  JahAvailability,
   Role,
 } from '#shared/compositionProtocol'
 import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from 'y-protocols/awareness'
@@ -46,6 +47,15 @@ interface Events {
   status: (connected: boolean) => void
   /** `@jah` is preparing a reply (add-jah-chat) — see `jah_typing`. */
   jahTyping: (typing: boolean) => void
+  /** `@jah`'s availability to this participant, from every `welcome`. */
+  jah: (availability: JahAvailability) => void
+  /**
+   * This connection's id, fired at the start of EVERY `welcome` — a
+   * reconnect gets a new one, and the `welcome` that carries it also
+   * replays the whole chat log, so it doubles as "the log is about to be
+   * re-sent, start it over".
+   */
+  clientId: (clientId: string) => void
 }
 
 export interface CompositionProvider {
@@ -171,7 +181,10 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
         emit('presence', msg.presence)
         emit('tempo', { ...clock })
         emit('playing', msg.playing, msg.atCycle)
+        emit('clientId', msg.clientId)
         for (const c of msg.chat) emit('chat', c)
+        // An older server won't send it; stay on the safe default.
+        emit('jah', msg.jah ?? 'signed-out')
         if (!readyDone) {
           readyDone = true
           resolveReady()
