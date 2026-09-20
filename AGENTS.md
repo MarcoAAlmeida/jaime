@@ -81,6 +81,27 @@ alone — that would ship code against an un-migrated schema and a stale
 catalog. Local dev and the test scripts run the same
 migrate-then-sync `--local` first.
 
+## Branching and deploys
+
+Single branch, `main`; OpenSpec commands run on `main`. Cloudflare
+Workers Builds is connected to `MarcoAAlmeida/jaime`: **every push to
+`main` runs `npm test` and then `npm run deploy`** (a failing test
+stops the deploy). So a push is a deploy, and the policy follows from
+that:
+
+- Commit locally as often as needed; local commits are free. Do not
+  push per fix.
+- Push when a change is archived (the `spec: Sync …; archive …`
+  commit), which carries everything committed since the last push.
+- To try something in the real environment before then, run
+  `npm run deploy` locally (it does not run the tests, and ships the
+  working tree, committed or not).
+- Before the archive push, run `npm test` locally — the push is the
+  first time CI runs the suite, and a failure there leaves the archive
+  commit un-deployed.
+- Non-production branch builds are enabled (they run the tests and a
+  no-op deploy), but no branches are used today.
+
 The curated Pattern library is authored as one Markdown file per
 pattern under `content/patterns/` (see its `README.md`), not SQL. The
 deploy/`db:migrate:local` sync upserts them into D1 and prunes curated
