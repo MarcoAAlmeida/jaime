@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Pattern, PatternListResult } from '#shared/catalog'
 import { nanoid } from 'nanoid'
-import { toStrudelUrl } from '~/lib/strudelShareLink'
 
 definePageMeta({ layout: 'dashboard' })
 useSeoMeta({ title: 'Pattern library — jaime' })
@@ -52,30 +51,16 @@ function clearFilters() {
   page.value = 1
 }
 
-// --- expand + copy + preview ------------------------------------------------
-type AudioEngine = typeof import('~/lib/audioEngine')
-let audio: AudioEngine | undefined
-let audioLoad: Promise<AudioEngine> | undefined
-
-// Load the (heavy) Strudel bundle and register the audio-unlock click
-// listener as soon as the user shows intent to preview — i.e. expands a
-// row. Doing it here (rather than in the Preview click handler) means
-// initAudioOnFirstClick() is armed before the click that would satisfy
-// it, same reasoning as the JAM room's primeAudio() call.
-function preloadAudio() {
-  audioLoad ??= import('~/lib/audioEngine').then((m) => {
-    audio = m
-    m.primeAudio()
-    return m
-  })
-  return audioLoad
-}
+// --- expand + preview ------------------------------------------------------
+// Preview state is the shared composable (also used by the chat's @jah
+// code cards). No options here: a library preview plays until stopped.
+const preview = usePatternPreview()
 
 const expanded = ref<string | null>(null)
 function toggleExpanded(id: string) {
   const opening = expanded.value !== id
   expanded.value = opening ? id : null
-  if (opening) preloadAudio()
+  if (opening) preview.preload()
 }
 
 function sourceLabel(pattern: Pattern): string {
@@ -99,51 +84,6 @@ function loadIntoJam(pattern: Pattern) {
 function loadIntoCompositionRoom(pattern: Pattern) {
   navigateTo(`/app/composition/${nanoid(10)}?load=${encodeURIComponent(pattern.id)}`)
 }
-
-const copiedId = ref<string | null>(null)
-async function copyCode(pattern: Pattern) {
-  await navigator.clipboard.writeText(pattern.code)
-  copiedId.value = pattern.id
-  setTimeout(() => {
-    if (copiedId.value === pattern.id) copiedId.value = null
-  }, 1500)
-}
-
-const previewingId = ref<string | null>(null)
-const previewLoading = ref(false)
-const previewError = ref<{ id: string, message: string } | null>(null)
-
-async function togglePreview(pattern: Pattern) {
-  previewError.value = null
-  if (previewingId.value === pattern.id) {
-    await audio?.stopPreview()
-    previewingId.value = null
-    return
-  }
-  previewLoading.value = true
-  try {
-    const engine = await preloadAudio()
-    await engine.stopPreview()
-    const err = await engine.evaluatePreview(pattern.code)
-    if (err) {
-      previewError.value = { id: pattern.id, message: err }
-      previewingId.value = null
-    }
-    else {
-      previewingId.value = pattern.id
-    }
-  }
-  catch (e) {
-    previewError.value = { id: pattern.id, message: (e as Error).message }
-  }
-  finally {
-    previewLoading.value = false
-  }
-}
-
-onBeforeUnmount(() => {
-  audio?.stopPreview()
-})
 </script>
 
 <template>
@@ -245,69 +185,41 @@ onBeforeUnmount(() => {
             </button>
 
             <div v-if="expanded === pattern.id" class="border-default border-t p-4">
-              <pre class="text-muted bg-elevated overflow-x-auto rounded p-3 text-xs"><code>{{ pattern.code }}</code></pre>
-
-              <UAlert
-                v-if="previewError?.id === pattern.id"
-                class="mt-3"
-                color="error"
-                variant="subtle"
-                icon="i-lucide-alert-triangle"
-                title="Pattern error"
-                :description="previewError.message"
-              />
-
-              <div class="mt-3 flex flex-wrap items-center gap-2">
-                <UButton
-                  label="Load into JAM"
-                  icon="i-lucide-radio"
-                  size="xs"
-                  color="primary"
-                  data-testid="load-into-jam"
-                  @click="loadIntoJam(pattern)"
-                />
-                <UButton
-                  label="Load into Composition Room"
-                  icon="i-lucide-users"
-                  size="xs"
-                  color="primary"
-                  variant="outline"
-                  data-testid="load-into-composition"
-                  @click="loadIntoCompositionRoom(pattern)"
-                />
-                <UButton
-                  :label="previewingId === pattern.id ? 'Stop' : 'Preview'"
-                  :icon="previewingId === pattern.id ? 'i-lucide-square' : 'i-lucide-play'"
-                  size="xs"
-                  color="neutral"
-                  variant="outline"
-                  :loading="previewLoading && previewingId !== pattern.id"
-                  @click="togglePreview(pattern)"
-                />
-                <UButton
-                  :label="copiedId === pattern.id ? 'Copied' : 'Copy code'"
-                  :icon="copiedId === pattern.id ? 'i-lucide-check' : 'i-lucide-copy'"
-                  size="xs"
-                  color="neutral"
-                  variant="outline"
-                  @click="copyCode(pattern)"
-                />
-                <UButton
-                  label="Open in strudel.cc"
-                  icon="i-lucide-external-link"
-                  size="xs"
-                  color="neutral"
-                  variant="outline"
-                  :to="toStrudelUrl(pattern.code)"
-                  target="_blank"
-                />
-                <span class="text-dimmed ml-auto text-xs">
-                  Source:
-                  <ULink :to="pattern.source.url" target="_blank" class="text-muted hover:text-default">
-                    {{ sourceLabel(pattern) }}
-                  </ULink>
-                </span>
-              </div>
+              <StrudelCard
+                :code="pattern.code"
+                :previewing="preview.previewingId.value === pattern.id"
+                :preview-loading="preview.loading.value"
+                :error="preview.error.value?.id === pattern.id ? preview.error.value.message : null"
+                @preview="preview.toggle(pattern.id, pattern.code)"
+              >
+                <template #actions>
+                  <UButton
+                    label="Load into JAM"
+                    icon="i-lucide-radio"
+                    size="xs"
+                    color="primary"
+                    data-testid="load-into-jam"
+                    @click="loadIntoJam(pattern)"
+                  />
+                  <UButton
+                    label="Load into Composition Room"
+                    icon="i-lucide-users"
+                    size="xs"
+                    color="primary"
+                    variant="outline"
+                    data-testid="load-into-composition"
+                    @click="loadIntoCompositionRoom(pattern)"
+                  />
+                </template>
+                <template #aside>
+                  <span class="text-dimmed ml-auto text-xs">
+                    Source:
+                    <ULink :to="pattern.source.url" target="_blank" class="text-muted hover:text-default">
+                      {{ sourceLabel(pattern) }}
+                    </ULink>
+                  </span>
+                </template>
+              </StrudelCard>
             </div>
           </UCard>
         </div>

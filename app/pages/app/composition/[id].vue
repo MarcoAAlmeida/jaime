@@ -9,7 +9,9 @@ import { yCollab } from 'y-codemirror.next'
 import * as Y from 'yjs'
 import { nextCycleBoundary } from '#shared/transportMath'
 import type { ChatUIMessage } from '~/lib/chatMessages'
+import type { ReplySegment } from '~/lib/chatSegments'
 import { toChatMessages } from '~/lib/chatMessages'
+import { splitReply } from '~/lib/chatSegments'
 import { createCompositionProvider } from '~/lib/compositionProvider'
 import { withJahMention } from '~/lib/jahMention'
 import { createStrudelEditor, primeAudio } from '~/lib/strudelEditor'
@@ -500,6 +502,40 @@ function requestStop() {
   if (isEditor.value) provider?.sendStop()
 }
 
+// --- @jah code cards (add-jah-code-cards) ------------------------------------
+// Previewing a card pauses the room for EVERYONE (design decision 4): stopping
+// only the previewer would leave them out of sync with their mates. The stop
+// is the ordinary broadcast — the server relays it, every editor's repl stops
+// and `playing` goes false — so wait for that to land before the preview
+// plays. Bounded, so a lost relay can't hang the Preview button.
+function stopRoomForPreview(): Promise<void> {
+  if (!playing.value) return Promise.resolve()
+  requestStop()
+  return new Promise((resolve) => {
+    const finish = () => {
+      unwatch()
+      clearTimeout(timeout)
+      resolve()
+    }
+    const unwatch = watch(playing, (p) => { if (!p) finish() })
+    const timeout = setTimeout(finish, 2000)
+  })
+}
+
+// At most 5 s, from when it starts playing; the room stays stopped after.
+const preview = usePatternPreview({ beforeStart: stopRoomForPreview, maxMs: 5000 })
+
+// Splitting parses Markdown; the chat re-renders often, so remember per text.
+const segmentCache = new Map<string, ReplySegment[]>()
+function segmentsOf(text: string): ReplySegment[] {
+  let segments = segmentCache.get(text)
+  if (!segments) {
+    segments = splitReply(text)
+    segmentCache.set(text, segments)
+  }
+  return segments
+}
+
 async function start() {
   if (!displayName.value || !role.value || provider || starting) return
   starting = true
@@ -557,6 +593,9 @@ async function start() {
   // shared document, aligned to the room clock by the editor's
   // beforeStart. The broadcast carries only { atCycle }, never code.
   provider.on('eval', () => {
+    // Someone pressed Play: it ends any running card preview, so two
+    // sounds never overlap (add-jah-code-cards).
+    void preview.stop()
     playing.value = true
     if (activeTab.value !== 'composition') compositionActivity.value = true
     void editor?.evaluate()
@@ -928,6 +967,26 @@ onBeforeUnmount(() => {
               </template>
               <template #content="{ metadata, parts }">
                 <UChatShimmer v-if="metaOf(metadata).typing" text="@jah is thinking…" />
+                <!-- Only @jah's replies get cards; a person's fenced code stays an ordinary code block. -->
+                <div v-else-if="metaOf(metadata).jah" class="flex min-w-0 flex-col gap-2" data-testid="chat-message">
+                  <template
+                    v-for="(segment, i) in segmentsOf(textOf(parts))"
+                    :key="`${metaOf(metadata).at}-${i}`"
+                  >
+                    <ChatMarkdown v-if="segment.kind === 'text'" :text="segment.text" />
+                    <StrudelCard
+                      v-else
+                      :code="segment.code"
+                      :can-preview="isEditor"
+                      :previewing="preview.previewingId.value === `${metaOf(metadata).at}-${i}`"
+                      :preview-loading="preview.loading.value"
+                      :error="preview.error.value?.id === `${metaOf(metadata).at}-${i}` ? preview.error.value.message : null"
+                      @pointerenter="preview.preload()"
+                      @focusin="preview.preload()"
+                      @preview="preview.toggle(`${metaOf(metadata).at}-${i}`, segment.code)"
+                    />
+                  </template>
+                </div>
                 <ChatMarkdown v-else :text="textOf(parts)" data-testid="chat-message" />
               </template>
             </UChatMessages>

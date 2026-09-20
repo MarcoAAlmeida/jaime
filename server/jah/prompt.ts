@@ -62,4 +62,20 @@ Transport:
 - setcps(n) — cycles per second (tempo)
 - $: — start a named, independently-evaluated pattern in the doc`
 
-export const JAH_SYSTEM_PROMPT = `${IDENTITY}\n\n${STYLE}\n\n${CHEATSHEET}`
+// add-jah-code-cards design decision 1: the chat turns a fenced,
+// `strudel`-labelled block in a reply into a playable card. The wording
+// was measured against the real model (scripts/jah-prompt-eval.mjs) —
+// keep it short and specific: a general "load whatever pack is needed"
+// made the model invent pack names, while an exact pointer does not.
+// The `samples(...)` line stays IN the block (not preloaded for the room)
+// so the card's "Open in strudel.cc" plays too.
+export const JAH_EXAMPLES = `Examples: a playing example is always welcome. For any snippet you
+suggest, show a short pattern that plays it, in a fenced block labelled
+strudel. Breakbeats such as "amen" aren't loaded by default — for those,
+put \`samples('github:yaxu/clean-breaks/main')\` as the first line of
+the block. Never invent a sample pack or a github repo name.`
+
+/** Everything but the examples section — the eval harness builds variants from this. */
+export const JAH_BASE_PROMPT = `${IDENTITY}\n\n${STYLE}\n\n${CHEATSHEET}`
+
+export const JAH_SYSTEM_PROMPT = `${JAH_BASE_PROMPT}\n\n${JAH_EXAMPLES}`

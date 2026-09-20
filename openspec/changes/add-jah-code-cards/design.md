@@ -62,6 +62,13 @@ breakbeat", 2–3 samples each; about $0.06 in total):
 Every "miss" in the last row was correct code with the label on the line
 *after* the fence (decision 2) — the tolerant reader recovers them.
 
+Re-measured on the final prompt with the kept harness
+(`node scripts/jah-prompt-eval.mjs --variants final --samples 3`, 14
+questions x 3 samples = 42 real replies, 2026-09-20): a fence in 100%,
+labelled `strudel` and complete in 86%, recoverable by the tolerant reader
+in 100%, one silent reply (2%, a break used without loading it), and no
+invented packs (0%).
+
 The fuller rules were rejected: they made the model skip the example for
 simple questions (`.fast`), and told to "load whatever pack is needed" it
 invented `github:electronica/breakbeats`. A *specific* pointer works; a

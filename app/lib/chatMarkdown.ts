@@ -43,3 +43,14 @@ md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
 export function renderChatMarkdown(text: string): string {
   return md.render(text)
 }
+
+/**
+ * Tokenise (parse only — no rendering) with the same configured
+ * `markdown-it` instance the chat renders with, so anything that needs to
+ * know where a message's blocks are (add-jah-code-cards: `splitReply`)
+ * agrees with what `renderChatMarkdown` will show. The rendering path and
+ * its safety properties are unchanged.
+ */
+export function parseChatMarkdown(text: string) {
+  return md.parse(text, {})
+}

@@ -8,7 +8,16 @@ import { JAH_SYSTEM_PROMPT } from './prompt'
 // dev and e2e never spend real money or need Workers AI access.
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-const CANNED_E2E_REPLY = 'This is a canned @jah reply for testing (JAH_E2E).'
+// Prose plus a fenced `strudel` block, so e2e can drive the chat's code
+// cards (add-jah-code-cards) without a real model. The synth pattern
+// evaluates with no sample downloads.
+const CANNED_E2E_REPLY = [
+  'This is a canned @jah reply for testing (JAH_E2E). Here is a pattern that plays:',
+  '',
+  '```strudel',
+  'note("c3 e3 g3").s("sawtooth").lpf(800).gain(0.3)',
+  '```',
+].join('\n')
 // A real model call takes long enough for `jah_typing` and the
 // `jahBusy` lock to be observable; an instant stub would make both
 // effectively untestable (and the typing indicator would never
