@@ -80,6 +80,12 @@ alone — that would ship code against an un-migrated schema and a stale
 catalog. Local dev and the test scripts run the same
 migrate-then-sync `--local` first.
 
+Typecheck with `npm run typecheck`: `nuxt typecheck` covers `app/`,
+`server/` and `shared/`; `npm run typecheck:tests` covers `test/` and
+`e2e/`, which it does not (`tsconfig.tests.json`, `tsconfig.e2e.json`).
+`npm test` does not run it. Fix every error it reports rather than
+leaving it as pre-existing.
+
 ## Branching and deploys
 
 Single branch, `main`; OpenSpec commands run on `main`. Cloudflare

@@ -347,6 +347,9 @@ function sourceLabel(pattern: Pattern): string {
 
 // Reset after every pick so the trigger keeps showing its placeholder
 // rather than looking like a persistent "selected starter" control.
+// `null`, not `undefined`: Reka treats an undefined model as uncontrolled and
+// keeps showing the last pick. The template's `v-model.nullable` is what makes
+// `null` a valid value for USelectMenu's types.
 const starterPickerValue = ref<string | null>(null)
 const starterItems = computed(() => favoritePatterns.value.map(p => ({
   label: p.title,
@@ -837,7 +840,7 @@ onBeforeUnmount(() => {
     >
       <template v-if="activeTab === 'composition'">
         <USelectMenu
-          v-model="starterPickerValue"
+          v-model.nullable="starterPickerValue"
           :items="starterItems"
           value-key="value"
           placeholder="Load a starter"

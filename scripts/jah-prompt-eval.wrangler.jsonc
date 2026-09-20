@@ -1,0 +1,9 @@
+{
+  // Minimal config for scripts/jah-prompt-eval.mjs: only the Workers AI
+  // binding. Loading the app's own wrangler.jsonc would drag in its Durable
+  // Object, D1 and assets bindings — noisy warnings, and it locks
+  // .output/public so a build can't run at the same time.
+  "name": "jah-prompt-eval",
+  "compatibility_date": "2025-07-15",
+  "ai": { "binding": "AI" }
+}

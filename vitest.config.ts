@@ -24,6 +24,12 @@ export default defineConfig(async () => {
     },
     plugins: [
       cloudflareTest({
+        // The `AI` binding is always remote, so by default every run opened
+        // a live connection to Cloudflare (slow, needs network + login, can
+        // spend money, and left the process hanging at exit). Tests never
+        // need a real model — `JAH_E2E` stubs it and test/jah-reply.test.ts
+        // passes a fake — so keep everything local.
+        remoteBindings: false,
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
           bindings: {

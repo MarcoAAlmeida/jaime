@@ -25,6 +25,7 @@
 // The gateway is bypassed on purpose (a measurement should not pollute the
 // production gateway's logs); the model is the one in reply.ts.
 
+import { fileURLToPath } from 'node:url'
 import { generateText } from 'ai'
 import { getPlatformProxy } from 'wrangler'
 import { createWorkersAI } from 'workers-ai-provider'
@@ -108,7 +109,10 @@ const arg = (name, fallback) => {
 const samples = Number(arg('samples', 2))
 const wanted = arg('variants', 'current,line,final').split(',')
 
-const { env, dispose } = await getPlatformProxy()
+// Only the AI binding (see the config's header) — not the app's wrangler.jsonc.
+const { env, dispose } = await getPlatformProxy({
+  configPath: fileURLToPath(new URL('./jah-prompt-eval.wrangler.jsonc', import.meta.url)),
+})
 const workersai = createWorkersAI({ binding: env.AI })
 
 const rows = []

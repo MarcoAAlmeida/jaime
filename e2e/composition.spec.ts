@@ -562,6 +562,10 @@ test('an editor loads a starter composition into the shared document for everyon
     await expect.poll(() => docText(page)).toContain('$:arrange(')
   }
 
+  // The picker resets after a pick, so its trigger shows the placeholder
+  // again rather than looking like a persistent "selected starter" control.
+  await expect(pageA.locator('[data-testid="load-preset-button"]')).toContainText('Load a starter')
+
   // And it evaluates without a pattern error — its gm_* voices, the
   // LinnDrum / TR808 banks, and s_polymeter / arrange all resolve.
   await pageA.locator(CONTENT).click()

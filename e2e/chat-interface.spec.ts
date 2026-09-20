@@ -49,7 +49,10 @@ test('Enter sends, Shift+Enter adds a line, an empty message is not sent', async
   const page = await newAnon(browser, `ci-input-${Date.now()}`, 'Alice')
   const input = page.getByTestId('chat-input')
   const rows = page.locator(ROW)
-  const before = await rows.count() // @jah's welcome
+  // A brand-new room opens with @jah's one-time welcome — wait for it to
+  // land before counting, or `before` can read 0 and then race the welcome.
+  await expect(rows).toHaveCount(1)
+  const before = await rows.count()
 
   // Nothing typed / only whitespace → nothing sent.
   await input.click()

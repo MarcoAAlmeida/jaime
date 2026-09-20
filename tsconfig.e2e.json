@@ -1,0 +1,16 @@
+{
+  // Typecheck for the Playwright specs (e2e/**), which `nuxt typecheck`
+  // does not cover. They run in Node but evaluate code in the browser
+  // (`page.evaluate`), hence the DOM lib. Run with `npm run typecheck:tests`.
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext", "dom"],
+    "types": ["node"]
+  },
+  "include": ["e2e/**/*.ts", "playwright.config.ts"]
+}

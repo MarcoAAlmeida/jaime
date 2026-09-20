@@ -1,0 +1,11 @@
+{
+  // Typecheck for the Worker-side tests (test/**), which `nuxt typecheck`
+  // does not cover. Run with `npm run typecheck:tests`.
+  "extends": "./.nuxt/tsconfig.server.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node", "@cloudflare/vitest-pool-workers/types"]
+  },
+  "include": ["test/**/*.ts", "worker-configuration.d.ts"]
+}
