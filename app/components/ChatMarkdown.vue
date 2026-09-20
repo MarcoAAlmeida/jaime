@@ -25,12 +25,20 @@ const html = computed(() => renderChatMarkdown(props.text))
 .chat-md :deep(ol) { margin: 0.35em 0; padding-left: 1.25em; }
 .chat-md :deep(ul) { list-style: disc; }
 .chat-md :deep(ol) { list-style: decimal; }
+/* Headings stay modest — this is a chat bubble, not a document — but they
+   must still read as headings: a size step per level, then bold body size. */
 .chat-md :deep(h1),
 .chat-md :deep(h2),
 .chat-md :deep(h3),
 .chat-md :deep(h4),
 .chat-md :deep(h5),
-.chat-md :deep(h6) { margin: 0.5em 0 0.25em; font-size: 1em; font-weight: 600; }
+.chat-md :deep(h6) { margin: 0.5em 0 0.25em; font-weight: 700; line-height: 1.25; }
+.chat-md :deep(h1) { font-size: 1.5em; }
+.chat-md :deep(h2) { font-size: 1.3em; }
+.chat-md :deep(h3) { font-size: 1.15em; }
+.chat-md :deep(h4),
+.chat-md :deep(h5),
+.chat-md :deep(h6) { font-size: 1em; }
 .chat-md :deep(blockquote) {
   margin: 0.35em 0;
   padding-left: 0.75em;
