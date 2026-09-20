@@ -104,8 +104,8 @@
       (composition, mobile-rooms, oauth, ascii-panel, jah-chat,
       chat-interface). Rebuild before pool-workers tests that use
       `SELF.fetch`.
-- [ ] 6.4 `openspec validate uplift-chat-interface --strict`.
-- [ ] 6.5 Browser-verify locally at desktop and phone width; then
+- [x] 6.4 `openspec validate uplift-chat-interface --strict`.
+- [x] 6.5 Browser-verify locally at desktop and phone width; then
       `npm run deploy` and confirm on `jaime.stream`: a real `@jah`
       reply renders as the assistant with markdown, the switch works
       for an allowlisted account, and the tab still opens on Chat.
