@@ -48,6 +48,5 @@ const synths = stack(
 stack(
   drums.fast(2).color('tomato'),
   synths
-).slow(2)
-  //.pianoroll({fold:1})
+).pianoroll({fold:1})
 ```
