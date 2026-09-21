@@ -63,6 +63,12 @@ test('the hero links to the pattern library, and JAM is only in the footer', asy
 })
 
 test('each starter pattern opens a fresh Composition Room with its code loaded', async ({ page }) => {
+  // An anonymous visitor's name is kept in sessionStorage and picked up when
+  // a page loads, so a tab that already named itself is not asked again (by
+  // design). Each starter here is a fresh visitor: forget the name on every
+  // page load, before the app reads it.
+  await page.addInitScript(() => sessionStorage.removeItem('jaime-display-name'))
+
   await page.goto('/')
   const cards = page.getByTestId('starter-card')
   await expect(cards.first()).toBeVisible()
