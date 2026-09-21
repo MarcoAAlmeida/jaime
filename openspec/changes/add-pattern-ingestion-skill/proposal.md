@@ -22,10 +22,10 @@ and a playback check keeps silent or broken patterns out.
   (asking the developer when unclear, with options), checks that the
   pattern plays, proposes the entries in one review table, and on
   approval writes `content/patterns/<id>.md`, commits only those files,
-  deploys, and confirms the result on the live site. It writes to no remote
-  database itself (the deploy's reconcile does) and does not push unless
-  asked. The review says exactly what will happen, including any other
-  pattern files in the working tree that the deploy will carry.
+  pushes (CI runs the tests and deploys — never a hand-run deploy script),
+  and confirms the result on the live site. It writes to no remote database
+  itself. The review says exactly what will happen, including any other
+  unpushed commits that will ride along.
 - **Concrete sources only.** A strudel.cc link (with the code in the URL
   or a short link that stores it elsewhere), a raw/gist/GitHub file, a
   GitHub repository or directory (bulk), a documentation page with code
@@ -54,7 +54,7 @@ and a playback check keeps silent or broken patterns out.
 
 Out of scope: any change to the Pattern Library UI or search (including
 searching by author); direct database writes; an in-app "add pattern"
-form; pushing (left to the developer).
+form; running a deploy script by hand.
 
 ## Capabilities
 

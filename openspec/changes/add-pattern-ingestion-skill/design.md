@@ -35,14 +35,14 @@ ingestion, never built).
   skill and everything deterministic in tested scripts.
 - Keep silent and broken patterns out, by construction.
 - Change nothing until the developer has approved a review of exactly what
-  will happen; then ship it (commit, deploy, confirm live).
+  will happen; then ship it (commit, push — CI deploys — confirm live).
 
 **Non-Goals**
 
 - Library UI or search changes (searching by author is a separate,
   possible follow-up).
-- Direct database writes; an in-app add form; pushing (the developer
-  does that, or asks for it).
+- Direct database writes; an in-app add form; running a deploy script by
+  hand (the push is the deploy).
 - Open-ended discovery ("find me songs by X").
 - Deciding licences; attribution is by recording the source.
 
@@ -228,19 +228,21 @@ sources on its own.
 
 Before approval the workflow changes nothing but temporary local check rows
 (removed again). The review says exactly what will happen: files created or
-updated, new tags, favourites, that the files will be committed and deployed,
-and — from `git status` — any *other* pattern files in the working tree that
-the same deploy will carry (the reconcile reads the working tree, not git).
+updated, new tags, favourites, that the files will be committed and pushed
+(which deploys), and — from `git log origin/main..HEAD` — any *other*
+commits that will be pushed with them.
 
 On approval the **Ship** step runs, and it is expected, not optional: write
 the files (the local database is synced so the result shows locally), commit
-only those files, run `npm run deploy`, and confirm on the live API that each
-pattern is present with the expected title, author, tags and favourite state.
-A missing pattern gets one deploy retry, then is reported — a first deploy
-attempt once appeared not to land, and the cause was never established, so
-the skill confirms instead of assuming. It writes to no remote database
-itself (the deploy's reconcile does) and does not push unless asked: a push
-makes CI deploy the same content again.
+only those files, and **push**. Deploying *is* commit + push — Workers Builds
+runs `npm test` and then `npm run deploy` — so the skill never runs the deploy
+script by hand (which would also read the uncommitted working tree). It then
+polls the live API until each pattern is present with the expected title,
+author, tags and favourite state; if one does not appear it reads the CI build
+and reports what failed, rather than assuming or working around it (a failed
+test run stops the deploy, which is the safety net). It writes to no remote
+database itself — CI's reconcile does. Because a push carries every unpushed
+commit, the review names any others that will ride along.
 
 ### 11. Favourites
 

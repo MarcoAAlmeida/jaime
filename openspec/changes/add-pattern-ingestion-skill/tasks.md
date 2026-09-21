@@ -60,7 +60,8 @@
 
 - [x] 3.4 Dogfood feedback applied (first live run, the Grimes cover): the
       review states exactly what will happen; approval commits (only the
-      pattern files), deploys and confirms live — expected, not optional and
+      pattern files) and pushes — deploy is commit + push via CI, never a
+      manual script — then confirms live — expected, not optional and
       not "never deploy"; a short Favourites section (no suitability
       tests); a "do only what was asked, ask before improvising" rule.
       Skill, README, reference, spec, design and proposal aligned.

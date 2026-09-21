@@ -54,8 +54,8 @@ GitHub repository or directory, a documentation page, a local file, or pasted
 code with where it came from — and ask it to add the pattern(s). It resolves
 the source, asks about attribution when it is unclear, checks that each
 pattern plays, and shows one review of exactly what will happen. Once you
-approve it, it writes the files, commits them, deploys, and confirms the
-result on the live site (it does not push). It will not go looking for
+approve it, it writes the files, commits them, pushes (CI runs the tests and
+deploys) and confirms the result on the live site. It will not go looking for
 sources: an open-ended "add some songs by X" gets a request for a link.
 
 The pieces are ordinary scripts you can run yourself:

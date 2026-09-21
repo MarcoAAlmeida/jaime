@@ -5,7 +5,7 @@ curated Pattern Library: what a developer can hand over, how it is
 turned into code, what must be true before it is added (it plays, its
 source is recorded, its attribution has been judged), and that once the
 developer approves a review of exactly what will happen, the patterns are
-committed, deployed and confirmed live. It is a developer workflow
+committed, pushed (CI deploys) and confirmed live. It is a developer workflow
 supported by a Claude Code skill, not a runtime feature of the product.
 
 ## ADDED Requirements
@@ -184,7 +184,7 @@ each item its identifier, title, tags, author, source, check result and
 whether it is a favourite — and SHALL write nothing until the developer
 approves, accepting their edits. The review SHALL also say what will
 happen on approval: which files are created or updated, which tags are new,
-and that the files will be committed and deployed. Tags SHALL be reused
+and that the files will be committed and pushed, which deploys them. Tags SHALL be reused
 from the library's existing tags wherever they fit, and any new tag SHALL
 be shown as new. A batch (such as a repository) SHALL be reviewed
 together, not one item at a time.
@@ -209,12 +209,12 @@ together, not one item at a time.
 
 - **WHEN** the review is shown
 - **THEN** it names the files to be created or updated, marks any new
-  tags, and states that approval will commit and deploy them
+  tags, and states that approval will commit and push them, which deploys
 
-#### Scenario: Other pattern changes in the working tree are named
+#### Scenario: Other unpushed commits are named
 
-- **WHEN** other pattern files are modified or untracked in the working
-  tree, which the deploy would also carry to the live library
+- **WHEN** other commits are waiting to be pushed and would deploy
+  together with the patterns
 - **THEN** the review names them before approval
 
 ### Requirement: Adding Is Repeatable Without Duplicating
@@ -239,35 +239,36 @@ duplicate. An existing pattern's identifier SHALL NOT change.
 
 Until the developer approves the review, the workflow SHALL change nothing
 beyond temporary local check data that is removed again. Once they approve
-it, the workflow SHALL write the pattern files, commit only those files,
-deploy, and confirm on the live site that each pattern is present with the
-expected title, author, tags and favourite state, reporting any that are
-not. It SHALL NOT write to a remote database itself (the deploy reconciles
-it) and SHALL NOT push unless the developer asks.
+it, the workflow SHALL write the pattern files, commit only those files
+and push them — the push is the deploy, run by CI — and confirm on the
+live site that each pattern is present with the expected title, author,
+tags and favourite state, reporting any that are not. It SHALL NOT run a
+deploy script by hand and SHALL NOT write to a remote database itself
+(CI's deploy reconciles it).
 
 #### Scenario: Nothing ships before approval
 
 - **WHEN** the developer has not approved the review
 - **THEN** no pattern file is written, nothing is committed and nothing
-  is deployed
+  is pushed
 
-#### Scenario: An approved batch is committed, deployed and confirmed
+#### Scenario: An approved batch is committed, pushed and confirmed
 
 - **WHEN** the developer approves the review
-- **THEN** only the pattern files are committed, the deploy runs, and each
-  added pattern is confirmed on the live site
+- **THEN** only the pattern files are committed and pushed, CI deploys, and
+  each added pattern is confirmed on the live site
 
-#### Scenario: A pattern missing from the live site is reported
+#### Scenario: A pattern that does not appear is investigated, not assumed
 
-- **WHEN** a pattern is not present on the live site after the deploy
-- **THEN** the deploy is retried once, and if it is still missing it is
-  reported rather than assumed present
+- **WHEN** a pattern has not appeared on the live site after a reasonable
+  wait
+- **THEN** the workflow looks at the CI build, reports what failed, and does
+  not claim success or work around a failed run
 
-#### Scenario: Nothing is pushed
+#### Scenario: No manual deploy
 
-- **WHEN** the workflow finishes
-- **THEN** nothing has been pushed unless the developer asked for it, and
-  the summary says so
+- **WHEN** the workflow ships patterns
+- **THEN** it does not run a deploy script by hand; the push is the deploy
 
 ### Requirement: Favourites Are Set Only On Request
 

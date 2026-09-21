@@ -1,7 +1,7 @@
 ---
 name: add-patterns
-description: Add Strudel patterns to jaime's Pattern Library from a concrete source the developer provides — a strudel.cc link (#code or ?short), a raw/gist/GitHub file URL, a GitHub repository or directory (bulk), a documentation page, a local file, or pasted code together with where it came from. Resolves the source to code, judges attribution (asks when unclear), requires the pattern to actually play, shows one review of exactly what will happen, and once the developer approves it writes content/patterns/*.md, commits, deploys and confirms the result live. Do NOT use for open-ended requests with no source ("add some songs by a band"); ask for a link or repository instead.
-allowed-tools: Bash(npm run pattern:*), Bash(node scripts/patterns/*), Bash(npm run deploy), Bash(git status:*), Bash(git add content/patterns/*), Bash(git commit:*), Bash(curl:*), Read, Write
+description: Add Strudel patterns to jaime's Pattern Library from a concrete source the developer provides — a strudel.cc link (#code or ?short), a raw/gist/GitHub file URL, a GitHub repository or directory (bulk), a documentation page, a local file, or pasted code together with where it came from. Resolves the source to code, judges attribution (asks when unclear), requires the pattern to actually play, shows one review of exactly what will happen, and once the developer approves it writes content/patterns/*.md, commits, pushes (CI tests and deploys) and confirms the result live. Do NOT use for open-ended requests with no source ("add some songs by a band"); ask for a link or repository instead.
+allowed-tools: Bash(npm run pattern:*), Bash(node scripts/patterns/*), Bash(git status:*), Bash(git log:*), Bash(git add content/patterns/*), Bash(git commit:*), Bash(git push), Bash(curl:*), Read, Write
 license: MIT
 metadata:
   author: jaime
@@ -11,10 +11,12 @@ metadata:
 Add patterns to the curated library from a source the developer hands you.
 
 The library is `content/patterns/<id>.md`; every deploy reconciles the
-database to those files. The judgment is yours; the deterministic work is in
-four scripts (`npm run pattern:<name>`), each printing JSON on stdout. You
-write the files, and — after the developer approves the review (step 6) —
-commit, deploy and confirm it live.
+database to those files, and **deploying means commit + push: CI (Workers
+Builds) runs the tests and then deploys** — you never run a deploy script by
+hand. The judgment is yours; the deterministic work is in four scripts
+(`npm run pattern:<name>`), each printing JSON on stdout. You write the files,
+and — after the developer approves the review (step 6) — commit, push and
+confirm it live.
 
 ## When to use — and when not
 
@@ -122,7 +124,7 @@ For every eligible candidate propose:
   there is one, otherwise where it came from — never a reason to fail).
 
 ### 6. Review — say exactly what will happen, then wait
-Run `git status` first. Then show a single review for the whole batch and
+Run `git status` and `git log origin/main..HEAD --oneline` first. Then show a single review for the whole batch and
 **wait for approval**; accept edits and drops. It must say:
 
 | id | title | author | tags | source | check | favourite |
@@ -131,11 +133,12 @@ Run `git status` first. Then show a single review for the whole batch and
 - **What will be written:** the file path(s), created or updated, and any
   *new* tags.
 - **What happens on approval:** the pattern file(s) are committed (only
-  those), then `npm run deploy` runs and the result is confirmed on the live
-  site.
-- **Anything else the deploy will carry:** any other modified or untracked
-  pattern files in the working tree (`git status`) are reconciled by the same
-  deploy — name them so the developer isn't surprised.
+  those) and **pushed**; CI runs the tests and then deploys; the result is
+  confirmed on the live site.
+- **Anything else the push will carry:** any *other* commits not yet pushed
+  (`git log origin/main..HEAD`) go up and deploy with it — name them so the
+  developer isn't surprised. (Uncommitted changes don't ship; CI builds what is
+  pushed.)
 - The failures/skips below, with reasons.
 
 Write nothing until the developer approves.
@@ -153,22 +156,22 @@ agrees. `collision` → ask for another id. `invalid` → report the problems.
 `write` syncs the **local** database so the pattern appears in the local
 library.
 
-### 8. Ship — commit, deploy, confirm live
+### 8. Ship — commit, push, confirm live
 The developer approved the review, so this is expected, not optional:
 
 1. **Commit** only the pattern file(s) written (`git add content/patterns/<id>.md …`),
    message like `content: add <title> (<source>)` — never other files.
-2. **Deploy:** `npm run deploy` (builds, migrates, reconciles the patterns to
-   the remote database, uploads). If it fails, report the failure; a rerun of a
-   transient failure is fine, say you did it.
-3. **Confirm live:** for each id,
-   `curl -s https://jaime.stream/api/patterns/<id>` — present, with the
-   expected title, author, tags and favourite state (for favourites also
-   `/api/patterns?favorite=true`). If a pattern isn't there, rerun the deploy
-   once; if still missing, report it. Don't assume.
+2. **Push** (`git push`). That is the deploy: CI runs `npm test`, then the
+   deploy. **Do not run `npm run deploy` yourself.**
+3. **Confirm live.** CI takes a few minutes: poll
+   `curl -s https://jaime.stream/api/patterns/<id>` (every ~30 s, up to ~10
+   minutes) until each pattern is present with the expected title, author,
+   tags and favourite state (for favourites also `/api/patterns?favorite=true`).
+   If it doesn't appear, look at the build (the Cloudflare Builds tools, worker
+   `jaime`) and report what failed — a failed test run stops the deploy. Don't
+   assume, and don't work around a failed CI run.
 4. **Report:** what was created/updated/unchanged/skipped (with reasons), the
-   commit, the live confirmation. **Do not push** unless the developer asks —
-   a push makes CI deploy the same content again.
+   commit, and the live confirmation.
 
 ## Favourites
 
@@ -192,7 +195,7 @@ do. Favourites carry the tag `starter` plus two descriptive tags (for example
   changes are temporary local check rows (removed again) and the resolve/check
   outputs in the OS temp directory.
 - **Never write to a remote database yourself** — the deploy's reconcile does
-  that. Never push unless asked.
+  that. Push only as the approved Ship step, never a manual deploy.
 - **Repeatable.** Re-running on a source updates the existing entry (matched by
   source URL) and never duplicates or renames.
 - A failing item is **reported, never silently dropped**.
