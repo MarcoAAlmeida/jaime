@@ -3,8 +3,9 @@
 Governs how a Strudel pattern gets from an external source into the
 curated Pattern Library: what a developer can hand over, how it is
 turned into code, what must be true before it is added (it plays, its
-source is recorded, its attribution has been judged), and that the whole
-workflow changes only the repository. It is a developer workflow
+source is recorded, its attribution has been judged), and that once the
+developer approves a review of exactly what will happen, the patterns are
+committed, deployed and confirmed live. It is a developer workflow
 supported by a Claude Code skill, not a runtime feature of the product.
 
 ## ADDED Requirements
@@ -179,11 +180,14 @@ include the missing code) rather than deciding.
 ### Requirement: The Developer Reviews Before Anything Is Written
 
 The workflow SHALL present what it proposes to add in one review — for
-each item its identifier, title, tags, author, source and check result —
-and SHALL write nothing until the developer approves, accepting their
-edits. Tags SHALL be reused from the library's existing tags wherever they
-fit, and any new tag SHALL be shown as new. A batch (such as a repository)
-SHALL be reviewed together, not one item at a time.
+each item its identifier, title, tags, author, source, check result and
+whether it is a favourite — and SHALL write nothing until the developer
+approves, accepting their edits. The review SHALL also say what will
+happen on approval: which files are created or updated, which tags are new,
+and that the files will be committed and deployed. Tags SHALL be reused
+from the library's existing tags wherever they fit, and any new tag SHALL
+be shown as new. A batch (such as a repository) SHALL be reviewed
+together, not one item at a time.
 
 #### Scenario: One review for a batch
 
@@ -200,6 +204,18 @@ SHALL be reviewed together, not one item at a time.
 
 - **WHEN** the developer has not approved the review
 - **THEN** no pattern file is created or changed
+
+#### Scenario: The review says what will happen
+
+- **WHEN** the review is shown
+- **THEN** it names the files to be created or updated, marks any new
+  tags, and states that approval will commit and deploy them
+
+#### Scenario: Other pattern changes in the working tree are named
+
+- **WHEN** other pattern files are modified or untracked in the working
+  tree, which the deploy would also carry to the live library
+- **THEN** the review names them before approval
 
 ### Requirement: Adding Is Repeatable Without Duplicating
 
@@ -219,22 +235,65 @@ duplicate. An existing pattern's identifier SHALL NOT change.
 - **THEN** the developer is shown the difference and, if approved, the
   existing entry is updated under the same identifier
 
-### Requirement: The Workflow Changes Only The Repository
+### Requirement: An Approved Review Is Shipped And Confirmed Live
 
-The workflow SHALL write only pattern files in the repository. It SHALL
-NOT write to any remote database, SHALL NOT push, and SHALL NOT deploy;
-the next deploy reconciles the library to the files. It MAY sync the
-local database so the developer can see the result locally, and MAY make a
-local commit when the developer agrees.
+Until the developer approves the review, the workflow SHALL change nothing
+beyond temporary local check data that is removed again. Once they approve
+it, the workflow SHALL write the pattern files, commit only those files,
+deploy, and confirm on the live site that each pattern is present with the
+expected title, author, tags and favourite state, reporting any that are
+not. It SHALL NOT write to a remote database itself (the deploy reconciles
+it) and SHALL NOT push unless the developer asks.
 
-#### Scenario: Only files change
+#### Scenario: Nothing ships before approval
 
-- **WHEN** patterns are added
-- **THEN** the only repository changes are the pattern files (and any
-  update to them), and no remote system has been touched
+- **WHEN** the developer has not approved the review
+- **THEN** no pattern file is written, nothing is committed and nothing
+  is deployed
+
+#### Scenario: An approved batch is committed, deployed and confirmed
+
+- **WHEN** the developer approves the review
+- **THEN** only the pattern files are committed, the deploy runs, and each
+  added pattern is confirmed on the live site
+
+#### Scenario: A pattern missing from the live site is reported
+
+- **WHEN** a pattern is not present on the live site after the deploy
+- **THEN** the deploy is retried once, and if it is still missing it is
+  reported rather than assumed present
 
 #### Scenario: Nothing is pushed
 
 - **WHEN** the workflow finishes
-- **THEN** it leaves the work in the working tree or a local commit, and
-  says that deploying happens on the next push
+- **THEN** nothing has been pushed unless the developer asked for it, and
+  the summary says so
+
+### Requirement: Favourites Are Set Only On Request
+
+The workflow SHALL mark a pattern as a favourite only when the developer
+asks for it. A favourite then appears in the Composition Room's starter
+picker and on the homepage without any further step. A pattern that passes
+the playback check meets the bar; the workflow SHALL NOT impose further
+tests of its quality.
+
+#### Scenario: Not a favourite by default
+
+- **WHEN** the developer adds a pattern without asking for a favourite
+- **THEN** the pattern is not marked as a favourite
+
+#### Scenario: A requested favourite needs nothing more
+
+- **WHEN** the developer asks for a passing pattern to be a favourite
+- **THEN** it is marked as one and no additional checks are run
+
+### Requirement: The Workflow Does Only What Was Asked
+
+The workflow SHALL do what its steps and the developer's request call for
+and nothing more. When it considers an extra check, change or approach
+worthwhile, it SHALL ask the developer first and wait for the answer.
+
+#### Scenario: An extra step is proposed, not taken
+
+- **WHEN** the workflow thinks an additional check or change would help
+- **THEN** it asks the developer and does not do it until they agree

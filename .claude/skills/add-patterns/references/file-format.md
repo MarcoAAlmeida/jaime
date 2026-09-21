@@ -46,6 +46,8 @@ required — a file without one aborts the whole reconcile.
 
 Every deploy reconciles the database to the files: new → inserted, edited →
 updated (tags rebuilt), deleted → removed; only `origin='curated'` rows are
-touched; one invalid file aborts everything. Workers Builds runs
-`npm run deploy` on a push to `main`, so a pattern goes live when the commit
-is pushed.
+touched; one invalid file aborts everything. The reconcile reads the
+**working tree**, not git, so any modified pattern file is deployed with the
+rest — committed or not. The skill's Ship step runs `npm run deploy`; a push to
+`main` also deploys (Workers Builds runs the same command) and would simply
+reconcile the same content again.

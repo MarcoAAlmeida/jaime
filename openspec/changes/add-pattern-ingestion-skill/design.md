@@ -34,13 +34,15 @@ ingestion, never built).
 - Keep judgment (attribution, titles, tags, reading a page, asking) in the
   skill and everything deterministic in tested scripts.
 - Keep silent and broken patterns out, by construction.
-- Touch only the repository.
+- Change nothing until the developer has approved a review of exactly what
+  will happen; then ship it (commit, deploy, confirm live).
 
 **Non-Goals**
 
 - Library UI or search changes (searching by author is a separate,
   possible follow-up).
-- Direct database writes; an in-app add form; pushing or deploying.
+- Direct database writes; an in-app add form; pushing (the developer
+  does that, or asks for it).
 - Open-ended discovery ("find me songs by X").
 - Deciding licences; attribution is by recording the source.
 
@@ -68,7 +70,7 @@ own:
 
 ### 2. The steps, and where judgment lives
 
-Intake → Resolve → Vet → Check → Author → Confirm → Write → Hand off.
+Intake → Resolve → Vet → Check → Author → Review → Write → Ship.
 
 - **Deterministic (scripts):** decoding, fetching, listing a repo,
   running the engine, formatting the file, dedupe by source URL.
@@ -78,7 +80,9 @@ Intake → Resolve → Vet → Check → Author → Confirm → Write → Hand o
 - **Asking (the developer):** any real doubt — ambiguous authorship, a
   dependency outside the file, an id collision, an unresolvable source.
   Options are offered; the developer's answer is used. Nothing is written
-  before the single review table is approved.
+  before the single review is approved — and the skill does what its steps
+  and the developer's request call for and nothing more: an extra check or
+  change it thinks worthwhile is *proposed*, never just done.
 
 ### 3. Resolving links
 
@@ -220,12 +224,32 @@ The skill's description says it needs a concrete resource, and its first
 step refuses to proceed without one. It does not browse or search for
 sources on its own.
 
-### 10. What the workflow touches
+### 10. Review, then ship
 
-Files in `content/patterns/` only, plus the local database via
-`patterns:sync` so the result can be seen in the local library. No remote
-database, no push, no deploy: the next push deploys and reconciles. The
-skill ends by offering a local commit.
+Before approval the workflow changes nothing but temporary local check rows
+(removed again). The review says exactly what will happen: files created or
+updated, new tags, favourites, that the files will be committed and deployed,
+and — from `git status` — any *other* pattern files in the working tree that
+the same deploy will carry (the reconcile reads the working tree, not git).
+
+On approval the **Ship** step runs, and it is expected, not optional: write
+the files (the local database is synced so the result shows locally), commit
+only those files, run `npm run deploy`, and confirm on the live API that each
+pattern is present with the expected title, author, tags and favourite state.
+A missing pattern gets one deploy retry, then is reported — a first deploy
+attempt once appeared not to land, and the cause was never established, so
+the skill confirms instead of assuming. It writes to no remote database
+itself (the deploy's reconcile does) and does not push unless asked: a push
+makes CI deploy the same content again.
+
+### 11. Favourites
+
+`favorite: true` makes a pattern a starter: it appears in the Composition
+Room's "Load a starter" picker and on the homepage's "Start from a pattern"
+section (both read the favourites list, with no cap), so the skill has nothing
+else to do. Favourites carry `starter` plus two descriptive tags. The flag is
+set only on request, and passing the playback check is the whole bar — no
+further quality tests.
 
 ## Risks / Trade-offs
 

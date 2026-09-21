@@ -1,19 +1,20 @@
 ---
 name: add-patterns
-description: Add Strudel patterns to jaime's Pattern Library from a concrete source the developer provides — a strudel.cc link (#code or ?short), a raw/gist/GitHub file URL, a GitHub repository or directory (bulk), a documentation page, a local file, or pasted code together with where it came from. Resolves the source to code, judges attribution (asks when unclear), requires the pattern to actually play, reviews once, then writes content/patterns/*.md. Repo only — never pushes, deploys or touches a remote database. Do NOT use for open-ended requests with no source ("add some songs by a band"); ask for a link or repository instead.
-allowed-tools: Bash(npm run pattern:*), Bash(node scripts/patterns/*), Read, Write
+description: Add Strudel patterns to jaime's Pattern Library from a concrete source the developer provides — a strudel.cc link (#code or ?short), a raw/gist/GitHub file URL, a GitHub repository or directory (bulk), a documentation page, a local file, or pasted code together with where it came from. Resolves the source to code, judges attribution (asks when unclear), requires the pattern to actually play, shows one review of exactly what will happen, and once the developer approves it writes content/patterns/*.md, commits, deploys and confirms the result live. Do NOT use for open-ended requests with no source ("add some songs by a band"); ask for a link or repository instead.
+allowed-tools: Bash(npm run pattern:*), Bash(node scripts/patterns/*), Bash(npm run deploy), Bash(git status:*), Bash(git add content/patterns/*), Bash(git commit:*), Bash(curl:*), Read, Write
 license: MIT
 metadata:
   author: jaime
-  version: "1.0"
+  version: "1.1"
 ---
 
 Add patterns to the curated library from a source the developer hands you.
 
 The library is `content/patterns/<id>.md`; every deploy reconciles the
-database to those files (CI runs `npm run deploy` on a push). So this skill
-**only writes files**. The judgment is yours; the deterministic work is in
-four scripts (`npm run pattern:<name>`), each printing JSON on stdout.
+database to those files. The judgment is yours; the deterministic work is in
+four scripts (`npm run pattern:<name>`), each printing JSON on stdout. You
+write the files, and — after the developer approves the review (step 6) —
+commit, deploy and confirm it live.
 
 ## When to use — and when not
 
@@ -27,9 +28,16 @@ patterns" — **stop and ask for one**. Do not search the web for sources or
 invent them. If the resource is not Strudel (Tidal, Sonic Pi, SuperCollider…)
 say so and add nothing.
 
+## Do the steps — don't improvise
+
+Do what these steps and the developer's request say, and nothing more. If you
+think an extra check, an extra change, or a different approach would help,
+**ask first** and wait; never just do it.
+
 ## The steps
 
-Work through these in order. Never write a pattern file before step 6.
+Work through these in order. Never write a pattern file before step 6 is
+approved.
 
 ### 1. Intake
 Say what you were given and what you will do with it. Check it is a concrete
@@ -96,6 +104,9 @@ Report the rest with the reason and do not write them:
   approves it), or something else. Never decide alone.
 - **`error`** — report the message; nothing is written for it.
 
+Passing the check is the bar. Don't invent further tests of a pattern's
+quality.
+
 ### 5. Author
 For every eligible candidate propose:
 - `id` — kebab-case from the title (or the source file name). Ids never
@@ -106,19 +117,28 @@ For every eligible candidate propose:
 - `tags` — **reuse the library's tags**: run `npm run pattern:tags` and pick
   from what exists; show any new tag as *new*. Apply the developer's shared
   tags to a batch. Do **not** add authors as tags unless asked.
-- `author` (from step 3), `favorite` (only if the developer asks),
-  `sourceUrl` (from `resolve`; strudel.cc link preferred when there is one,
-  otherwise where it came from — never a reason to fail).
+- `author` (from step 3), `favorite` (only if the developer asks — see
+  *Favourites*), `sourceUrl` (from `resolve`; strudel.cc link preferred when
+  there is one, otherwise where it came from — never a reason to fail).
 
-### 6. Confirm — one review, then wait
-Show a single table for the whole batch and **wait for approval**; accept
-edits and drops:
+### 6. Review — say exactly what will happen, then wait
+Run `git status` first. Then show a single review for the whole batch and
+**wait for approval**; accept edits and drops. It must say:
 
-| id | title | author | tags | source | check | note |
+| id | title | author | tags | source | check | favourite |
 | --- | --- | --- | --- | --- | --- | --- |
 
-Include the failures/skips below it with reasons. Write nothing until the
-developer approves.
+- **What will be written:** the file path(s), created or updated, and any
+  *new* tags.
+- **What happens on approval:** the pattern file(s) are committed (only
+  those), then `npm run deploy` runs and the result is confirmed on the live
+  site.
+- **Anything else the deploy will carry:** any other modified or untracked
+  pattern files in the working tree (`git status`) are reconciled by the same
+  deploy — name them so the developer isn't surprised.
+- The failures/skips below, with reasons.
+
+Write nothing until the developer approves.
 
 ### 7. Write
 Build a spec array `[{ title, sourceUrl, code, tags, author, favorite, id }]`
@@ -133,13 +153,30 @@ agrees. `collision` → ask for another id. `invalid` → report the problems.
 `write` syncs the **local** database so the pattern appears in the local
 library.
 
-### 8. Hand off
-Run `git status`, summarise (created / updated / unchanged / skipped, with
-reasons), and offer a **local commit** (message like
-`content: add N patterns from <source>`). **Do not push** — a push deploys;
-say the patterns go live on the next push. If the developer wants the whole
-catalog re-checked before pushing (CI does not run the playback check):
-`npm run test:e2e -- e2e/pattern-playback.spec.ts`.
+### 8. Ship — commit, deploy, confirm live
+The developer approved the review, so this is expected, not optional:
+
+1. **Commit** only the pattern file(s) written (`git add content/patterns/<id>.md …`),
+   message like `content: add <title> (<source>)` — never other files.
+2. **Deploy:** `npm run deploy` (builds, migrates, reconciles the patterns to
+   the remote database, uploads). If it fails, report the failure; a rerun of a
+   transient failure is fine, say you did it.
+3. **Confirm live:** for each id,
+   `curl -s https://jaime.stream/api/patterns/<id>` — present, with the
+   expected title, author, tags and favourite state (for favourites also
+   `/api/patterns?favorite=true`). If a pattern isn't there, rerun the deploy
+   once; if still missing, report it. Don't assume.
+4. **Report:** what was created/updated/unchanged/skipped (with reasons), the
+   commit, the live confirmation. **Do not push** unless the developer asks —
+   a push makes CI deploy the same content again.
+
+## Favourites
+
+`favorite: true` is what makes a pattern a **starter**: it appears in the
+Composition Room's "Load a starter" picker and in the homepage's "Start from
+a pattern" section — both read the favourites list, so there is nothing else to
+do. Favourites carry the tag `starter` plus two descriptive tags (for example
+`starter, electro, samples`). Set the flag only when the developer asks for it.
 
 ## Rules
 
@@ -149,9 +186,13 @@ catalog re-checked before pushing (CI does not run the playback check):
 - **A source URL is always recorded**; ask if there isn't one.
 - **Licence never gates**; attribution is given by recording the source.
 - **Ask, don't guess**, on authorship, dependencies, id collisions and
-  unresolvable sources — with options.
-- **Repository only.** Files in `content/patterns/` (plus the local
-  database sync). Never a remote database, never a push, never a deploy.
+  unresolvable sources — with options. And ask before doing anything these
+  steps don't call for.
+- **Nothing is written before the review is approved.** Until then the only
+  changes are temporary local check rows (removed again) and the resolve/check
+  outputs in the OS temp directory.
+- **Never write to a remote database yourself** — the deploy's reconcile does
+  that. Never push unless asked.
 - **Repeatable.** Re-running on a source updates the existing entry (matched by
   source URL) and never duplicates or renames.
 - A failing item is **reported, never silently dropped**.

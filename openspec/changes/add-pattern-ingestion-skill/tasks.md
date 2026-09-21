@@ -49,14 +49,21 @@
 
 - [x] 3.1 `.claude/skills/add-patterns/SKILL.md`: description that triggers
       only for a concrete source; the steps (Intake → Resolve → Vet → Check
-      → Author → Confirm → Write → Hand off); the rules (fidelity, source
-      URL, attribution with options, dependency = report and ask, repo
-      only, no push).
+      → Author → Review → Write → Ship); the rules (fidelity, source URL,
+      attribution with options, dependency = report and ask, do only what
+      was asked).
 - [x] 3.2 `references/`: `file-format.md`, `link-shapes.md` (the table in
       design decision 3), `attribution.md` (the option set for ambiguous
       authorship).
 - [x] 3.3 `content/patterns/README.md`: document adding patterns with the
       skill and by hand.
+
+- [x] 3.4 Dogfood feedback applied (first live run, the Grimes cover): the
+      review states exactly what will happen; approval commits (only the
+      pattern files), deploys and confirms live — expected, not optional and
+      not "never deploy"; a short Favourites section (no suitability
+      tests); a "do only what was asked, ask before improvising" rule.
+      Skill, README, reference, spec, design and proposal aligned.
 
 ## 4. Dogfood and verify
 

@@ -53,9 +53,10 @@ source — a strudel.cc link (`#code` or `?short`), a raw/gist/GitHub file, a
 GitHub repository or directory, a documentation page, a local file, or pasted
 code with where it came from — and ask it to add the pattern(s). It resolves
 the source, asks about attribution when it is unclear, checks that each
-pattern plays, shows one review table, and only then writes the files. It
-changes the repo only; nothing is pushed or deployed. It will not go looking
-for sources: an open-ended "add some songs by X" gets a request for a link.
+pattern plays, and shows one review of exactly what will happen. Once you
+approve it, it writes the files, commits them, deploys, and confirms the
+result on the live site (it does not push). It will not go looking for
+sources: an open-ended "add some songs by X" gets a request for a link.
 
 The pieces are ordinary scripts you can run yourself:
 
