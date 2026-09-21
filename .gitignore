@@ -41,3 +41,7 @@ logs
 
 # scripts/scrape-ascii-gallery.mjs resume checkpoint (add-ascii-overlay)
 .ascii-scrape-checkpoint.json
+
+# temporary files and folders   
+tmp
+temp
