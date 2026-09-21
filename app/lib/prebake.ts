@@ -11,7 +11,7 @@
 // machines, piano, VCSL, GM soundfonts, …) load in the background and a
 // pattern that names one makes sound as soon as its bank arrives.
 
-import { evalScope, Pattern } from '@strudel/core'
+import { evalScope, noteToMidi, Pattern, valueToMidi } from '@strudel/core'
 import { miniAllStrings } from '@strudel/mini'
 import { aliasBank, registerSynthSounds, registerZZFXSounds, samples } from '@strudel/webaudio'
 
@@ -108,6 +108,28 @@ function registerHeadlessWidgets(): void {
   })
 }
 
+// strudel.cc's REPL defines `.piano()` itself — it is in no published
+// @strudel/* package — so patterns written there use it freely, and without
+// it they fail to evaluate here. Copied from its prebake (the later of the
+// two definitions in its bundle): the sampled piano, `clip` defaulting to 1,
+// a short release, and a gentle stereo spread by pitch (0.25 at the bottom
+// of the range to 0.75 at the top, times any pan already set).
+const C8 = noteToMidi('C8')
+const blendToCentre = (x: number, y: number) => x * y + (1 - y) / 2
+
+function registerPiano(): void {
+  defineIfMissing(Pattern.prototype as Record<string, unknown>, 'piano', function (this: typeof Pattern.prototype) {
+    return this
+      .fmap((value: Record<string, unknown>) => ({ ...value, clip: value.clip ?? 1 }))
+      .s('piano')
+      .release(0.1)
+      .fmap((value: Record<string, unknown>) => {
+        const t = blendToCentre(Math.min(Math.round(valueToMidi(value)) / C8, 1), 0.5)
+        return { ...value, pan: (Number(value.pan) || 1) * t }
+      })
+  })
+}
+
 async function run(): Promise<void> {
   await evalScope(
     import('@strudel/core'),
@@ -120,6 +142,7 @@ async function run(): Promise<void> {
   registerSynthSounds()
   registerZZFXSounds()
   registerHeadlessWidgets()
+  registerPiano()
 
   // General MIDI soundfont voices — `gm_*` names (gm_lead_2_sawtooth,
   // gm_epiano1, …). @strudel/soundfonts must be a *dynamic* import: a

@@ -88,6 +88,14 @@ describe('createTriage', () => {
     assert.equal(r.status, 'pass')
   })
 
+  test('.piano() exists, as strudel.cc\'s REPL defines it (and the sound is the loaded piano bank)', async () => {
+    const r = await triage.check('note("c3 e3 g3").piano()')
+    assert.equal(r.status, 'pass')
+    assert.ok(r.events > 0)
+    // and it does not hide a genuinely unknown method
+    assert.match((await triage.check('note("c3").pianoo()')).error, /pianoo is not a function/)
+  })
+
   test('a pattern with no events is inconclusive, never a pass', async () => {
     const r = await triage.check('silence')
     assert.equal(r.status, 'inconclusive')
@@ -108,6 +116,10 @@ describe('drift guard: the sound banks mirror app/lib/prebake.ts', () => {
       assert.ok(prebake.includes(`\${DOUGH}/${u.slice(DOUGH.length + 1)}`), `prebake.ts no longer mentions ${u}`)
     }
     assert.ok(prebake.includes(DRUM_MACHINE_ALIASES))
+  })
+  test('prebake.ts defines .piano() like the REPL (triage mirrors it)', () => {
+    assert.match(prebake, /'piano',\s*function/)
+    assert.ok(prebake.includes('valueToMidi'))
   })
   test('every DOUGH manifest prebake.ts loads is in the registry', () => {
     const named = [...prebake.matchAll(/\$\{DOUGH\}\/([\w-]+\.json)/g)].map(m => m[1])

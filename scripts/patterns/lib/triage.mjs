@@ -81,6 +81,18 @@ async function initEngine() {
     miniAllStrings()
     for (const w of WIDGETS) if (!core.Pattern.prototype[w]) core.Pattern.prototype[w] = function () { return this }
     core.Pattern.prototype.p = function () { return this } // labelled patterns register in the REPL; no-op here
+    // strudel.cc's REPL defines `.piano()`; so does app/lib/prebake.ts (mirrored here).
+    if (typeof core.Pattern.prototype.piano !== 'function') {
+      const C8 = core.noteToMidi('C8')
+      const blend = (x, y) => x * y + (1 - y) / 2
+      core.Pattern.prototype.piano = function () {
+        return this
+          .fmap(v => ({ ...v, clip: v.clip ?? 1 }))
+          .s('piano')
+          .release(0.1)
+          .fmap(v => ({ ...v, pan: (Number(v.pan) || 1) * blend(Math.min(Math.round(core.valueToMidi(v)) / C8, 1), 0.5) }))
+      }
+    }
     for (const n of NOOP_GLOBALS) globalThis[n] = () => {}
     return { evaluate: core.evaluate, transpiler }
   })()
