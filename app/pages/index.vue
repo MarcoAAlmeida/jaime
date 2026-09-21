@@ -112,6 +112,48 @@ const features = [
   </UPageHero>
 
   <UPageSection
+    v-if="starters.length"
+    id="starters"
+    data-testid="starters-section"
+    headline="Starter patterns"
+    title="Start from a pattern"
+    :icon="gi('laptop')"
+    description="Open any of these in a fresh Composition Room, with the pattern already in the shared editor."
+  >
+    <UPageGrid>
+      <UPageCard
+        v-for="pattern in starters"
+        :key="pattern.id"
+        :title="pattern.title"
+        :description="pattern.source.author ? `by ${pattern.source.author}` : undefined"
+        :ui="{ container: 'lg:flex-col' }"
+        data-testid="starter-card"
+      >
+        <div v-if="pattern.tags.length" class="flex flex-wrap gap-1">
+          <UBadge
+            v-for="tag in pattern.tags"
+            :key="tag"
+            color="neutral"
+            variant="subtle"
+          >
+            {{ tag }}
+          </UBadge>
+        </div>
+        <template #footer>
+          <UButton
+            label="Open in Composition Room"
+            color="neutral"
+            variant="subtle"
+            trailing-icon="i-lucide-arrow-right"
+            data-testid="starter-open"
+            @click="openStarter(pattern.id)"
+          />
+        </template>
+      </UPageCard>
+    </UPageGrid>
+  </UPageSection>
+
+  <UPageSection
     id="jah"
     data-testid="jah-section"
     headline="Meet @jah"
@@ -174,48 +216,6 @@ const features = [
         :to="feature.to"
         :ui="{ container: 'lg:flex-col' }"
       />
-    </UPageGrid>
-  </UPageSection>
-
-  <UPageSection
-    v-if="starters.length"
-    id="starters"
-    data-testid="starters-section"
-    headline="Starter patterns"
-    title="Start from a pattern"
-    :icon="gi('laptop')"
-    description="Open any of these in a fresh Composition Room, with the pattern already in the shared editor."
-  >
-    <UPageGrid>
-      <UPageCard
-        v-for="pattern in starters"
-        :key="pattern.id"
-        :title="pattern.title"
-        :description="pattern.source.author ? `by ${pattern.source.author}` : undefined"
-        :ui="{ container: 'lg:flex-col' }"
-        data-testid="starter-card"
-      >
-        <div v-if="pattern.tags.length" class="flex flex-wrap gap-1">
-          <UBadge
-            v-for="tag in pattern.tags"
-            :key="tag"
-            color="neutral"
-            variant="subtle"
-          >
-            {{ tag }}
-          </UBadge>
-        </div>
-        <template #footer>
-          <UButton
-            label="Open in Composition Room"
-            color="neutral"
-            variant="subtle"
-            trailing-icon="i-lucide-arrow-right"
-            data-testid="starter-open"
-            @click="openStarter(pattern.id)"
-          />
-        </template>
-      </UPageCard>
     </UPageGrid>
   </UPageSection>
 
