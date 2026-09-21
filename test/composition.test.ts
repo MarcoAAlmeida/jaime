@@ -73,6 +73,20 @@ afterEach(() => {
 
 const settle = () => new Promise(r => setTimeout(r, 150))
 
+/**
+ * Wait until `condition` holds, polling — instead of guessing how long a
+ * relay through the Durable Object takes (a fixed 150 ms is enough locally
+ * and not always on CI). On timeout it just returns, so the assertion that
+ * follows reports the actual difference.
+ */
+async function until(condition: () => boolean, timeoutMs = 5000): Promise<void> {
+  const start = Date.now()
+  while (!condition()) {
+    if (Date.now() - start > timeoutMs) return
+    await new Promise(r => setTimeout(r, 20))
+  }
+}
+
 describe('composition room', () => {
   it('converges two editors\' concurrent edits', async () => {
     const roomId = freshRoomId()
@@ -81,7 +95,8 @@ describe('composition room', () => {
 
     a.doc.getText(DOC_TEXT).insert(0, 'hello ')
     b.doc.getText(DOC_TEXT).insert(0, 'world ')
-    await settle()
+    const text = (d: Y.Doc) => d.getText(DOC_TEXT).toString()
+    await until(() => text(a.doc) === text(b.doc) && text(a.doc).includes('hello') && text(a.doc).includes('world'))
 
     expect(a.doc.getText(DOC_TEXT).toString()).toBe(b.doc.getText(DOC_TEXT).toString())
     expect(a.doc.getText(DOC_TEXT).toString()).toContain('hello')
