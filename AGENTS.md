@@ -15,9 +15,9 @@ More panels and features are planned for future updates.
 
 Live at `https://jaime.stream` — a Nuxt 4 + Nuxt UI 4 app on one
 Cloudflare Worker (Durable Objects for rooms, D1 for content and domain
-data, Workers AI for `@jah`). There is no active roadmap; the specs
-describe what the app does today, and this section is orientation. What
-exists:
+data, Workers AI for `@jah`). The one active roadmap is `@jah`
+intelligence (`docs/04-roadmap/`); the specs describe what the app does
+today, and this section is orientation. What exists:
 
 - **Composition Room** (`/app/composition`) — the main room. One shared
   Yjs document (`y-codemirror.next`, the single Durable Object as
@@ -55,7 +55,8 @@ exists:
 - `openspec/specs/` — current behavior contracts, by capability
 - `openspec/changes/` — in-flight work, one OpenSpec change per unit of
   work (finished ones move to `openspec/changes/archive/`)
-- there is no active roadmap (`docs/04-roadmap/index.md`)
+- `docs/04-roadmap/` — the active `@jah` intelligence roadmap (start at
+  `jah-intelligence/README.md`); planned work, not current behavior
 - `docs/0N-*/index.md` (01–03) are background; treat them as
   informative, not authoritative — if they conflict with
   `openspec/specs/`, the spec wins. See `docs/99-openspec-adoption/index.md`
