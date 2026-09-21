@@ -68,7 +68,7 @@
 
 ## 4. Dogfood and verify
 
-- [ ] 4.1 The developer runs the skill on real sources of different shapes
+- [x] 4.1 The developer runs the skill on real sources of different shapes
       (a `#base64` link, a `?short` link, a raw/gist file, a repository,
       pasted code with a source, an open-ended request with none); fix
       what breaks; record what was learned in design.md.
@@ -77,5 +77,5 @@
 - [x] 4.3 Typecheck, `npm test`, `playwright test` green (including the
       playback spec with the new modes).
 - [x] 4.4 `openspec validate add-pattern-ingestion-skill --strict`.
-- [ ] 4.5 Sync the `pattern-ingestion`, `pattern-library` and
+- [x] 4.5 Sync the `pattern-ingestion`, `pattern-library` and
       `frontend-editor` deltas; archive.

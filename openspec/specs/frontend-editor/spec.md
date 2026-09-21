@@ -47,7 +47,11 @@ independent of any realtime backend, and reachable at the
 The system SHALL make the full strudel.cc default sample map available
 to playback — not a curated subset — so that a pattern referencing any
 name from that map (drum hits like `bd`/`sd`/`hh`, break loops like
-`amen`, and the broader instrument set) produces sound, not silence.
+`breaks125`, and the broader instrument set) produces sound, not
+silence. A sound that is not in the default map (for example the `amen`
+break, which lives in a separate pack) is available only to a pattern
+that loads its pack itself, so that the same code also plays on
+strudel.cc.
 
 #### Scenario: A named-sample pattern plays
 - **WHEN** a user triggers playback of a pattern that references one or
@@ -58,6 +62,11 @@ name from that map (drum hits like `bd`/`sd`/`hh`, break loops like
 - **WHEN** any pattern from the curated Pattern library is placed in a
   track and playback is triggered
 - **THEN** it evaluates without a pattern error and produces sound
+
+#### Scenario: A pattern using a pack outside the default map loads it
+- **WHEN** a curated pattern uses a sound that is not in the default map
+- **THEN** the pattern's own code loads the pack that provides it, and
+  the pattern produces sound both here and on strudel.cc
 
 #### Scenario: Sample loading does not block the editor
 - **WHEN** the default sample map is being fetched for the first time

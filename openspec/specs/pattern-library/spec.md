@@ -31,7 +31,9 @@ single source of truth for which curated patterns exist. Each manifest
 entry SHALL carry a stable identifier, a title, the Strudel code, zero
 or more tags, and a source attribution (a URL and an optional author).
 A manifest entry missing a source SHALL be rejected rather than
-imported without attribution.
+imported without attribution. An entry's code SHALL reach the catalog
+exactly as written in the manifest, including code that itself contains
+lines of triple backticks.
 
 #### Scenario: A manifest entry fully describes a curated pattern
 - **WHEN** the manifest lists an entry with an id, title, code, tags,
@@ -48,6 +50,11 @@ imported without attribution.
 - **WHEN** the manifest contains two entries with the same identifier
 - **THEN** the reconcile fails and reports the duplicate, and the
   catalog is left unchanged
+
+#### Scenario: Code containing triple backticks is not truncated
+- **WHEN** an entry's code contains a line of triple backticks
+- **THEN** the catalog holds the entry's complete code, not the part
+  before that line
 
 ### Requirement: Deploying Reconciles The Catalog To The Manifest
 The system SHALL, as part of deployment, bring the curated contents of
