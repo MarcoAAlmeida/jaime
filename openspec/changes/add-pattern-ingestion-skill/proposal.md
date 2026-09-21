@@ -23,8 +23,7 @@ and a playback check keeps silent or broken patterns out.
   pattern plays, proposes the entries in one review table, and on
   approval writes `content/patterns/<id>.md`, commits only those files,
   pushes (CI runs the tests and deploys — never a hand-run deploy script),
-  and confirms the result on the live site. It writes to no remote database
-  itself. The review says exactly what will happen, including any other
+  then reports and stops. It writes to no remote database itself. The review says exactly what will happen, including any other
   unpushed commits that will ride along.
 - **Concrete sources only.** A strudel.cc link (with the code in the URL
   or a short link that stores it elsewhere), a raw/gist/GitHub file, a

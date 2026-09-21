@@ -35,7 +35,7 @@ ingestion, never built).
   skill and everything deterministic in tested scripts.
 - Keep silent and broken patterns out, by construction.
 - Change nothing until the developer has approved a review of exactly what
-  will happen; then ship it (commit, push — CI deploys — confirm live).
+  will happen; then ship it (commit and push — CI deploys — and stop).
 
 **Non-Goals**
 
@@ -237,11 +237,11 @@ the files (the local database is synced so the result shows locally), commit
 only those files, and **push**. Deploying *is* commit + push — Workers Builds
 runs `npm test` and then `npm run deploy` — so the skill never runs the deploy
 script by hand (which would also read the uncommitted working tree). It then
-polls the live API until each pattern is present with the expected title,
-author, tags and favourite state; if one does not appear it reads the CI build
-and reports what failed, rather than assuming or working around it (a failed
-test run stops the deploy, which is the safety net). It writes to no remote
-database itself — CI's reconcile does. Because a push carries every unpushed
+reports and stops — it does not poll the live site or the build (the
+developer said so: they will report a pattern that doesn't appear or a build
+that breaks, and the skill then looks into it; a failed test run stops the
+deploy, which is the safety net). It writes to no remote database itself —
+CI's reconcile does. Because a push carries every unpushed
 commit, the review names any others that will ride along.
 
 ### 11. Favourites

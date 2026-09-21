@@ -5,7 +5,7 @@ curated Pattern Library: what a developer can hand over, how it is
 turned into code, what must be true before it is added (it plays, its
 source is recorded, its attribution has been judged), and that once the
 developer approves a review of exactly what will happen, the patterns are
-committed, pushed (CI deploys) and confirmed live. It is a developer workflow
+committed and pushed (CI deploys). It is a developer workflow
 supported by a Claude Code skill, not a runtime feature of the product.
 
 ## ADDED Requirements
@@ -235,16 +235,16 @@ duplicate. An existing pattern's identifier SHALL NOT change.
 - **THEN** the developer is shown the difference and, if approved, the
   existing entry is updated under the same identifier
 
-### Requirement: An Approved Review Is Shipped And Confirmed Live
+### Requirement: An Approved Review Is Committed And Pushed
 
 Until the developer approves the review, the workflow SHALL change nothing
 beyond temporary local check data that is removed again. Once they approve
 it, the workflow SHALL write the pattern files, commit only those files
-and push them — the push is the deploy, run by CI — and confirm on the
-live site that each pattern is present with the expected title, author,
-tags and favourite state, reporting any that are not. It SHALL NOT run a
-deploy script by hand and SHALL NOT write to a remote database itself
-(CI's deploy reconciles it).
+and push them — the push is the deploy, run by CI — then report what
+was pushed and stop. It SHALL NOT run a deploy script by hand, SHALL NOT
+write to a remote database itself (CI's deploy reconciles it), and SHALL
+NOT keep watching the deploy or the live site afterwards; the developer
+reports if a pattern does not appear or the build breaks.
 
 #### Scenario: Nothing ships before approval
 
@@ -252,18 +252,17 @@ deploy script by hand and SHALL NOT write to a remote database itself
 - **THEN** no pattern file is written, nothing is committed and nothing
   is pushed
 
-#### Scenario: An approved batch is committed, pushed and confirmed
+#### Scenario: An approved batch is committed and pushed
 
 - **WHEN** the developer approves the review
 - **THEN** only the pattern files are committed and pushed, CI deploys, and
-  each added pattern is confirmed on the live site
+  the workflow reports what was pushed
 
-#### Scenario: A pattern that does not appear is investigated, not assumed
+#### Scenario: The workflow stops after the push
 
-- **WHEN** a pattern has not appeared on the live site after a reasonable
-  wait
-- **THEN** the workflow looks at the CI build, reports what failed, and does
-  not claim success or work around a failed run
+- **WHEN** the push has been made
+- **THEN** the workflow does not poll the live site or the build; it looks
+  into a missing pattern or a broken build only when the developer says so
 
 #### Scenario: No manual deploy
 
