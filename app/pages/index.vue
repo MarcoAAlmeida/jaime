@@ -31,11 +31,6 @@ type GameIcon = keyof typeof ICON_AUTHORS
 const gi = (name: GameIcon) => `game-icons:${name}`
 const iconCredits = Object.entries(ICON_AUTHORS).map(([name, author]) => ({ name, author }))
 
-// Returning-visitor fast path: anyone who has already set a display
-// name (a room's per-session identity) has used a room before — surface
-// a direct link straight to the Composition Room so they skip the pitch.
-const { displayName } = useDisplayName()
-
 // A fresh room, straight in — the Chat tab is the room's default tab.
 function startRoom() {
   return navigateTo(`/app/composition/${nanoid(10)}`)
@@ -97,19 +92,7 @@ const features = [
       { label: 'Read the docs', to: '/docs', color: 'neutral', variant: 'subtle', trailingIcon: 'i-lucide-arrow-right', size: 'lg' }
     ]"
     :ui="{ links: 'gap-3' }"
-  >
-    <ClientOnly>
-      <UAlert
-        v-if="displayName"
-        class="mx-auto mt-4 max-w-md"
-        color="neutral"
-        variant="subtle"
-        icon="i-lucide-arrow-right"
-        :title="`Welcome back, ${displayName}`"
-        :actions="[{ label: 'Go to the Composition Room', to: '/app/composition', color: 'neutral' }]"
-      />
-    </ClientOnly>
-  </UPageHero>
+  />
 
   <UPageSection
     v-if="starters.length"
