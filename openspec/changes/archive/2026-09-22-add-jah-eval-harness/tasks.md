@@ -120,5 +120,5 @@
 - [x] 7.2 `npm run test:scripts` passes and includes every new test with no
       network and no model; `npm test` and `npm run typecheck` are green.
 - [x] 7.3 `openspec validate add-jah-eval-harness --strict`.
-- [ ] 7.4 After the developer's review: sync the `jah-eval` spec into
+- [x] 7.4 After the developer's review: sync the `jah-eval` spec into
       `openspec/specs/` and archive.
