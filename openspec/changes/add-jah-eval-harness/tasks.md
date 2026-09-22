@@ -107,18 +107,18 @@
       rest.
 - [x] 6.3 Author about 10 `compose` cases with mechanically checkable
       constraints (`mustUse`, `mustNotUse`, `minEvents`).
-- [ ] 6.4 The developer reviews the case set — like a pattern review, before
+- [x] 6.4 The developer reviews the case set — like a pattern review, before
       anything is measured against it. Cases the developer drops or changes
       are applied.
 
 ## 7. Baseline and verification
 
-- [ ] 7.1 With a clean working tree and after `npx wrangler login`: run the
+- [x] 7.1 With a clean working tree and after `npx wrangler login`: run the
       full set twice, record the spread between the two runs and the
       resulting numbers in `design.md`, then `--save-baseline` and commit
       `scripts/jah-eval/baseline.json`.
-- [ ] 7.2 `npm run test:scripts` passes and includes every new test with no
+- [x] 7.2 `npm run test:scripts` passes and includes every new test with no
       network and no model; `npm test` and `npm run typecheck` are green.
-- [ ] 7.3 `openspec validate add-jah-eval-harness --strict`.
+- [x] 7.3 `openspec validate add-jah-eval-harness --strict`.
 - [ ] 7.4 After the developer's review: sync the `jah-eval` spec into
       `openspec/specs/` and archive.

@@ -204,6 +204,31 @@ stays: it compares prompt *variants*, which the harness does not.
   recording it and note the spread in the task record; later deltas smaller
   than the spread are not evidence. Three samples per case is a starting
   point, adjustable.
+
+  **Recorded baseline (task 7.1, 2026-09-22, revision `780a96a+dirty`, 40
+  cases × 3 samples, `@cf/meta/llama-3.3-70b-instruct-fp8-fast`):**
+
+  | | run 1 (saved as baseline) | run 2 | spread |
+  |---|---|---|---|
+  | overall | 86% | 87% | 1 point |
+  | docs | 90% | 90% | 0 points |
+  | fix | 90% | 90% | 0 points |
+  | compose | 73% | 77% | 4 points |
+
+  The compose spread is one case (`panning-drums`, 33% → 67% — a single
+  sample flipping from fail to pass across the two runs) rather than a
+  broad shift; every other case's pass rate was stable across the two
+  runs. `scripts/jah-eval/baseline.json` holds run 1. A later comparison
+  smaller than about 4 points in `compose`, or than the sampling noise
+  visible in a fresh two-run check, is not yet evidence of a real change.
+
+  Every failure inspected by hand was a genuine model mistake, not a
+  harness artifact worth noting here: e.g. `s(...).pan(0) + s(...).pan(1)`
+  (using `+` instead of `stack()`/`,` to combine patterns) and
+  `.room(0.8).gain(0.5).loop` (`.loop` used as a bare property, not
+  called) both correctly evaluate-fail with `pattern.queryArc is not a
+  function` — an honest report that the chain no longer produces a
+  Pattern, not a bug in the evaluation adapter.
 - **[Triage is not the browser]** → A composition that only plays in the
   browser reads as `inconclusive` or `fail` here. Accepted: inconclusive is
   reported separately and never counted as a pass; the mismatch is the same

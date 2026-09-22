@@ -1,0 +1,4185 @@
+{
+  "version": 1,
+  "ranAt": "2026-09-22T01:33:42.408Z",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "promptFingerprint": "c4c0f747d031",
+  "caseSetFingerprint": "46e5498edbf4",
+  "samples": 3,
+  "revision": "780a96a+dirty",
+  "summary": {
+    "overall": {
+      "pass": 103,
+      "fail": 17,
+      "inconclusive": 0,
+      "error": 0,
+      "total": 120,
+      "passRate": 0.8583333333333333
+    },
+    "perKind": {
+      "docs": {
+        "pass": 54,
+        "fail": 6,
+        "inconclusive": 0,
+        "error": 0,
+        "total": 60,
+        "passRate": 0.9
+      },
+      "fix": {
+        "pass": 27,
+        "fail": 3,
+        "inconclusive": 0,
+        "error": 0,
+        "total": 30,
+        "passRate": 0.9
+      },
+      "compose": {
+        "pass": 22,
+        "fail": 8,
+        "inconclusive": 0,
+        "error": 0,
+        "total": 30,
+        "passRate": 0.7333333333333333
+      }
+    },
+    "casePassRates": {
+      "fast-basic": 1,
+      "kick-and-snare": 1,
+      "reverb-basic": 1,
+      "four-on-the-floor-docs": 1,
+      "euclidean-rhythms": 0,
+      "bassline-basic": 1,
+      "amen-break": 1,
+      "jungle-breakbeat": 1,
+      "polyrhythm-basic": 0,
+      "lpf-basic": 1,
+      "chord-progression": 1,
+      "every-other-cycle": 1,
+      "pan-basic": 1,
+      "slow-basic": 1,
+      "lpf-vs-hpf": 1,
+      "gain-basic": 1,
+      "sometimesby-basic": 1,
+      "jux-basic": 1,
+      "bank-basic": 1,
+      "scale-basic": 1,
+      "undefined-function": 1,
+      "misspelled-function": 1,
+      "wrong-effect-name": 1,
+      "missing-closing-paren": 1,
+      "bad-mini-notation": 1,
+      "unloaded-sound-amen": 1,
+      "wrong-argument-shape": 1,
+      "missing-dot": 1,
+      "arp-typo": 0,
+      "missing-quotes": 1,
+      "four-on-the-floor": 1,
+      "offbeat-hats": 1,
+      "bassline-request": 1,
+      "minor-chord-pad": 0.6666666666666666,
+      "jungle-breakbeat-compose": 1,
+      "filtered-bass": 1,
+      "euclidean-hat-pattern": 0.3333333333333333,
+      "reverse-melody": 1,
+      "panning-drums": 0.3333333333333333,
+      "reverb-pad": 0
+    },
+    "failingCases": {
+      "euclidean-rhythms": [
+        {
+          "sampleIndex": 0,
+          "reason": "expect: {\"result\":\"fail\",\"missing\":[\"euclid\"]}"
+        },
+        {
+          "sampleIndex": 1,
+          "reason": "expect: {\"result\":\"fail\",\"missing\":[\"euclid\"]}"
+        },
+        {
+          "sampleIndex": 2,
+          "reason": "expect: {\"result\":\"fail\",\"missing\":[\"euclid\"]}"
+        }
+      ],
+      "polyrhythm-basic": [
+        {
+          "sampleIndex": 0,
+          "reason": "expect: {\"result\":\"fail\",\"missing\":[\"fast\"]}"
+        },
+        {
+          "sampleIndex": 1,
+          "reason": "expect: {\"result\":\"fail\",\"missing\":[\"fast\"]}"
+        },
+        {
+          "sampleIndex": 2,
+          "reason": "expect: {\"result\":\"fail\",\"missing\":[\"fast\"]}"
+        }
+      ],
+      "arp-typo": [
+        {
+          "sampleIndex": 0,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"note(...).s(...).arpeg is not a function\"}}"
+        },
+        {
+          "sampleIndex": 1,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"note(...).s(...).arpeg is not a function\"}}"
+        },
+        {
+          "sampleIndex": 2,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"note(...).s(...).arpeg is not a function\"}}"
+        }
+      ],
+      "minor-chord-pad": [
+        {
+          "sampleIndex": 1,
+          "reason": "minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":1}"
+        }
+      ],
+      "euclidean-hat-pattern": [
+        {
+          "sampleIndex": 0,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"no-code\"}}; mustUse: {\"result\":\"fail\",\"missing\":[\"hh\"]}; minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":3}"
+        },
+        {
+          "sampleIndex": 1,
+          "reason": "minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":3}"
+        }
+      ],
+      "panning-drums": [
+        {
+          "sampleIndex": 0,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"pattern.queryArc is not a function\"}}; minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":1}"
+        },
+        {
+          "sampleIndex": 1,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"Unexpected token (1:21)\"}}; minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":1}"
+        }
+      ],
+      "reverb-pad": [
+        {
+          "sampleIndex": 0,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"pattern.queryArc is not a function\"}}; minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":1}"
+        },
+        {
+          "sampleIndex": 1,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"pattern.queryArc is not a function\"}}; minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":1}"
+        },
+        {
+          "sampleIndex": 2,
+          "reason": "evaluates: {\"result\":\"fail\",\"detail\":{\"verdict\":\"fail\",\"error\":\"pattern.queryArc is not a function\"}}; minEvents: {\"result\":\"fail\",\"got\":0,\"wanted\":1}"
+        }
+      ]
+    }
+  },
+  "unavailable": [
+    {
+      "check": "functionExistence",
+      "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+    }
+  ],
+  "results": [
+    {
+      "caseId": "fast-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "fast-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "fast-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "kick-and-snare",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "kick-and-snare",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "kick-and-snare",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "reverb-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "reverb-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "reverb-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "four-on-the-floor-docs",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "four-on-the-floor-docs",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "four-on-the-floor-docs",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "euclidean-rhythms",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "fail",
+          "missing": [
+            "euclid"
+          ]
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": false,
+        "strudel": false,
+        "recoverable": false,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "no-code"
+      }
+    },
+    {
+      "caseId": "euclidean-rhythms",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "fail",
+          "missing": [
+            "euclid"
+          ]
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": false,
+        "strudel": false,
+        "recoverable": false,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "no-code"
+      }
+    },
+    {
+      "caseId": "euclidean-rhythms",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "fail",
+          "missing": [
+            "euclid"
+          ]
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "bassline-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "bassline-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "bassline-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "amen-break",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "amen-break",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "amen-break",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "jungle-breakbeat",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": true,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "missing": [
+          "amen"
+        ]
+      }
+    },
+    {
+      "caseId": "jungle-breakbeat",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "jungle-breakbeat",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": true,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "inconclusive",
+        "events": 0
+      }
+    },
+    {
+      "caseId": "polyrhythm-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "fail",
+          "missing": [
+            "fast"
+          ]
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "polyrhythm-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "fail",
+          "missing": [
+            "fast"
+          ]
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "polyrhythm-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "fail",
+          "missing": [
+            "fast"
+          ]
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "lpf-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "lpf-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "lpf-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "chord-progression",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "chord-progression",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "chord-progression",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "every-other-cycle",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "inconclusive",
+        "events": 0
+      }
+    },
+    {
+      "caseId": "every-other-cycle",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "inconclusive",
+        "events": 0
+      }
+    },
+    {
+      "caseId": "every-other-cycle",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "inconclusive",
+        "events": 0
+      }
+    },
+    {
+      "caseId": "pan-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "pan-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "pan-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "slow-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "slow-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "slow-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "lpf-vs-hpf",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "lpf-vs-hpf",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected character ' ' (1:19)"
+      }
+    },
+    {
+      "caseId": "lpf-vs-hpf",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "gain-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "gain-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "gain-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "sometimesby-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (2:20)"
+      }
+    },
+    {
+      "caseId": "sometimesby-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (1:28)"
+      }
+    },
+    {
+      "caseId": "sometimesby-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (1:28)"
+      }
+    },
+    {
+      "caseId": "jux-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (1:15)"
+      }
+    },
+    {
+      "caseId": "jux-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (1:15)"
+      }
+    },
+    {
+      "caseId": "jux-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (1:15)"
+      }
+    },
+    {
+      "caseId": "bank-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "bank-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "bank-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "scale-basic",
+      "kind": "docs",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": false,
+        "strudel": false,
+        "recoverable": false,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "no-code"
+      }
+    },
+    {
+      "caseId": "scale-basic",
+      "kind": "docs",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": false,
+        "strudel": false,
+        "recoverable": false,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "no-code"
+      }
+    },
+    {
+      "caseId": "scale-basic",
+      "kind": "docs",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "expect": {
+          "result": "pass"
+        },
+        "forbid": {
+          "result": "pass"
+        },
+        "code": {
+          "result": "not-applicable"
+        }
+      },
+      "formatting": {
+        "fenced": false,
+        "strudel": false,
+        "recoverable": false,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "no-code"
+      }
+    },
+    {
+      "caseId": "undefined-function",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "undefined-function",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "undefined-function",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "misspelled-function",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "misspelled-function",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "misspelled-function",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "wrong-effect-name",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "wrong-effect-name",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "wrong-effect-name",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "missing-closing-paren",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "missing-closing-paren",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "missing-closing-paren",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "bad-mini-notation",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "bad-mini-notation",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "bad-mini-notation",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "unloaded-sound-amen",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "unloaded-sound-amen",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "unloaded-sound-amen",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 8
+      }
+    },
+    {
+      "caseId": "wrong-argument-shape",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "wrong-argument-shape",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "wrong-argument-shape",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "missing-dot",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "missing-dot",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "missing-dot",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "arp-typo",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "note(...).s(...).arpeg is not a function"
+          }
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "note(...).s(...).arpeg is not a function"
+      }
+    },
+    {
+      "caseId": "arp-typo",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "note(...).s(...).arpeg is not a function"
+          }
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "note(...).s(...).arpeg is not a function"
+      }
+    },
+    {
+      "caseId": "arp-typo",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "note(...).s(...).arpeg is not a function"
+          }
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "note(...).s(...).arpeg is not a function"
+      }
+    },
+    {
+      "caseId": "missing-quotes",
+      "kind": "fix",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "missing-quotes",
+      "kind": "fix",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "missing-quotes",
+      "kind": "fix",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "changed": {
+          "result": "pass"
+        },
+        "keep": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "four-on-the-floor",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "four-on-the-floor",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "four-on-the-floor",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "offbeat-hats",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 40
+      }
+    },
+    {
+      "caseId": "offbeat-hats",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "offbeat-hats",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 56
+      }
+    },
+    {
+      "caseId": "bassline-request",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "bassline-request",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "bassline-request",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "minor-chord-pad",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "minor-chord-pad",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "inconclusive",
+          "detail": {
+            "verdict": "inconclusive",
+            "events": 0
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 1
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "inconclusive",
+        "events": 0
+      }
+    },
+    {
+      "caseId": "minor-chord-pad",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 12
+      }
+    },
+    {
+      "caseId": "jungle-breakbeat-compose",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "jungle-breakbeat-compose",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "jungle-breakbeat-compose",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "filtered-bass",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "filtered-bass",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 16
+      }
+    },
+    {
+      "caseId": "filtered-bass",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "euclidean-hat-pattern",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "no-code"
+          }
+        },
+        "mustUse": {
+          "result": "fail",
+          "missing": [
+            "hh"
+          ]
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 3
+        }
+      },
+      "formatting": {
+        "fenced": false,
+        "strudel": false,
+        "recoverable": false,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "no-code"
+      }
+    },
+    {
+      "caseId": "euclidean-hat-pattern",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "inconclusive",
+          "detail": {
+            "verdict": "inconclusive",
+            "events": 0
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 3
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "inconclusive",
+        "events": 0
+      }
+    },
+    {
+      "caseId": "euclidean-hat-pattern",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": false,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 24
+      }
+    },
+    {
+      "caseId": "reverse-melody",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "reverse-melody",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "reverse-melody",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "panning-drums",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "pattern.queryArc is not a function"
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 1
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "pattern.queryArc is not a function"
+      }
+    },
+    {
+      "caseId": "panning-drums",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "Unexpected token (1:21)"
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 1
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "Unexpected token (1:21)"
+      }
+    },
+    {
+      "caseId": "panning-drums",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "pass",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "pass"
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "pass"
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "pass",
+        "events": 32
+      }
+    },
+    {
+      "caseId": "reverb-pad",
+      "kind": "compose",
+      "sampleIndex": 0,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "pattern.queryArc is not a function"
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 1
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "pattern.queryArc is not a function"
+      }
+    },
+    {
+      "caseId": "reverb-pad",
+      "kind": "compose",
+      "sampleIndex": 1,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "pattern.queryArc is not a function"
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 1
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "pattern.queryArc is not a function"
+      }
+    },
+    {
+      "caseId": "reverb-pad",
+      "kind": "compose",
+      "sampleIndex": 2,
+      "verdict": "fail",
+      "checks": {
+        "functionExistence": {
+          "result": "unavailable",
+          "reason": "no Strudel documentation index yet (roadmap Phase 1, add-strudel-knowledge-corpus)"
+        },
+        "evaluates": {
+          "result": "fail",
+          "detail": {
+            "verdict": "fail",
+            "error": "pattern.queryArc is not a function"
+          }
+        },
+        "mustUse": {
+          "result": "pass"
+        },
+        "mustNotUse": {
+          "result": "pass"
+        },
+        "minEvents": {
+          "result": "fail",
+          "got": 0,
+          "wanted": 1
+        }
+      },
+      "formatting": {
+        "fenced": true,
+        "strudel": true,
+        "recoverable": true,
+        "silent": false,
+        "invented": false
+      },
+      "evalOutcome": {
+        "verdict": "fail",
+        "error": "pattern.queryArc is not a function"
+      }
+    }
+  ]
+}
