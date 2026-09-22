@@ -101,7 +101,10 @@ async function initEngine() {
 
 /**
  * @param {{ fetch?: typeof fetch, cycles?: number, known?: Set<string> }} [options]
- * @returns {Promise<{ check: (code: string) => Promise<{ status: 'pass'|'error'|'missing-sounds'|'inconclusive', error?: string, missing?: string[], events?: number, notes?: string[] }> }>}
+ * @returns {Promise<{
+ *   check: (code: string) => Promise<{ status: 'pass'|'error'|'missing-sounds'|'inconclusive', error?: string, missing?: string[], events?: number, notes?: string[] }>,
+ *   queryEvents: (code: string, cycles?: number) => Promise<string[]>,
+ * }>}
  */
 export async function createTriage(options = {}) {
   const fetchFn = options.fetch ?? globalThis.fetch
@@ -110,6 +113,18 @@ export async function createTriage(options = {}) {
   const { evaluate, transpiler } = await initEngine()
 
   return {
+    // Reuses this same evaluate()/transpiler rather than a second,
+    // independent engine setup — add-strudel-knowledge-corpus's exact
+    // comparison against Strudel's own recorded example output
+    // (refers_to/strudel/test/__snapshots__/examples.test.mjs.snap) needs
+    // to reproduce refers_to/strudel/test/runtime.mjs's `queryCode`
+    // exactly: `pattern.sortHapsByPart().queryArc(0, cycles)`, each hap
+    // shown with `.show(true)`, deliberately with NO samples() mock (their
+    // own test has none either — the snapshot was generated without one).
+    async queryEvents(code, queryCycles = 4) {
+      const { pattern } = await evaluate(code, transpiler)
+      return pattern.sortHapsByPart().queryArc(0, queryCycles).map(h => h.show(true))
+    },
     async check(code) {
       // `samples()` in one pattern registers names for that pattern only.
       const known = new Set(base)

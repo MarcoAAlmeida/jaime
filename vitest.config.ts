@@ -19,7 +19,12 @@ export default defineConfig(async () => {
     test: {
       // e2e/ is @playwright/test; scripts/ holds `node --test` files that
       // use node: builtins — neither runs under the workers pool.
-      exclude: ['**/node_modules/**', 'e2e/**', 'scripts/**'],
+      // refers_to/ holds vendored git submodules (add-strudel-knowledge-corpus
+      // initializes refers_to/strudel for real) — their own test suites are
+      // not ours to run; without this, once a submodule is checked out,
+      // vitest's default glob silently starts sweeping up and failing on
+      // its unrelated tests (found running the real pipeline, 2026-09-22).
+      exclude: ['**/node_modules/**', 'e2e/**', 'scripts/**', 'refers_to/**'],
       setupFiles: ['./test/apply-migrations.ts'],
     },
     plugins: [

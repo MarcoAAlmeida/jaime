@@ -1,0 +1,4 @@
+{
+  "/packages/core/sample-source.mjs": ["mystery"],
+  "/packages/core/other.mjs": ["helperOne", "helperTwo"]
+}

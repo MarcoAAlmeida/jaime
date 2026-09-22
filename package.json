@@ -18,6 +18,7 @@
     "pattern:check": "node scripts/patterns/check.mjs",
     "pattern:write": "node scripts/patterns/write.mjs",
     "jah:eval": "node scripts/jah-eval/run.mjs",
+    "knowledge:refresh": "node scripts/knowledge/refresh.mjs",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "test": "npm run test:scripts && npm run db:migrate:local && nuxt build && vitest run",
     "test:e2e": "npm run db:migrate:local && playwright test",

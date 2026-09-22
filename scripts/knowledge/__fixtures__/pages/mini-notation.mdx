@@ -1,0 +1,28 @@
+---
+title: Mini Notation
+layout: ../../layouts/MainLayout.astro
+---
+
+import { MiniRepl } from '../../docs/MiniRepl';
+import { JsDoc } from '../../docs/JsDoc';
+
+# Mini-notation
+
+Strudel uses a compact language for writing rhythmic patterns.
+
+## Example
+
+Before diving deeper, here is a flavour of how it looks:
+
+<MiniRepl
+  client:idle
+  tune={`note("c e g")`}
+/>
+
+## Sequences
+
+A space-separated list of steps plays one per cycle-step.
+
+```
+s("bd sd hh")
+```

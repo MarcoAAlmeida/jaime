@@ -1,0 +1,18 @@
+{
+  "docs": [
+    {
+      "name": "rev",
+      "longname": "Pattern.rev",
+      "memberof": "Pattern",
+      "description": "<p>Reverses a pattern: events that were early are now late, and vice versa.</p>",
+      "synonyms_text": "reverse, flip",
+      "synonyms": ["reverse", "flip"],
+      "tags": ["structure"],
+      "params": [
+        { "name": "pat", "type": { "names": ["Pattern"] }, "description": "the pattern to reverse" }
+      ],
+      "examples": ["note(\"c d e g\").rev()"],
+      "meta": { "filename": "sample-source.mjs", "path": "packages/core" }
+    }
+  ]
+}

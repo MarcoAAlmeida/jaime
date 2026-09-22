@@ -105,6 +105,21 @@ describe('createTriage', () => {
   test('a syntax error is an error', async () => {
     assert.equal((await triage.check('s("bd*4"')).status, 'error')
   })
+
+  // add-strudel-knowledge-corpus: reproduces
+  // refers_to/strudel/test/runtime.mjs's queryCode exactly, so a doc
+  // example's output here can be diffed against Strudel's own recorded
+  // snapshot for it.
+  test('queryEvents() shows each hap the way Strudel\'s own example snapshots do', async () => {
+    const shown = await triage.queryEvents('note("c3 e3")', 1)
+    assert.equal(shown.length, 2)
+    for (const s of shown) assert.match(s, /^\[ \d+\/\d+ → \d+\/\d+ \| note:[a-z0-9]+ \]$/)
+  })
+
+  test('queryEvents() defaults to 4 cycles, like Strudel\'s own example test', async () => {
+    const shown = await triage.queryEvents('note("c3")')
+    assert.equal(shown.length, 4)
+  })
 })
 
 describe('drift guard: the sound banks mirror app/lib/prebake.ts', () => {

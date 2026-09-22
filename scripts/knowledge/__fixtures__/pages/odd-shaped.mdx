@@ -1,0 +1,21 @@
+---
+title: Odd Shaped Page
+layout: ../../layouts/MainLayout.astro
+---
+
+import { JsDoc } from '../../docs/JsDoc';
+
+# Odd Shaped Page
+
+## A malformed reference
+
+This section has a JsDoc tag with no name attribute at all, which
+lib/pages.mjs should not crash on — it should warn and move on rather
+than guessing a function name.
+
+<JsDoc client:idle h={0} />
+
+## A normal section afterwards
+
+This section is ordinary prose and should still parse as a concept chunk
+even though the page overall had a problem.
