@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url'
 import { generateText } from 'ai'
 import { getPlatformProxy } from 'wrangler'
 import { createWorkersAI } from 'workers-ai-provider'
+import { score } from './jah-eval/lib/replies.mjs'
 import { JAH_BASE_PROMPT, JAH_EXAMPLES } from '../server/jah/prompt.ts'
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
@@ -62,45 +63,9 @@ const VARIANTS = {
   final: `${JAH_BASE_PROMPT}\n\n${JAH_EXAMPLES}`,
 }
 
-const REAL_PACKS = ['yaxu/clean-breaks', 'tidalcycles/dirt-samples']
-const UNLOADED_SOUNDS = /\b(amen|amen_\w*|jungle|breaks?\d*)\b/i
-
-function fences(text) {
-  const out = []
-  const re = /```([^\n`]*)\n([\s\S]*?)(?:```|$)/g
-  for (let m = re.exec(text); m; m = re.exec(text)) out.push({ label: m[1].trim().toLowerCase(), code: m[2] })
-  return out
-}
-
-function balanced(code) {
-  const pairs = { ')': '(', ']': '[', '}': '{' }
-  const stack = []
-  let quote = null
-  for (const ch of code) {
-    if (quote) { if (ch === quote) quote = null; continue }
-    if (ch === '"' || ch === '\'' || ch === '`') quote = ch
-    else if ('([{'.includes(ch)) stack.push(ch)
-    else if (ch in pairs && stack.pop() !== pairs[ch]) return false
-  }
-  return !quote && stack.length === 0
-}
-
-function score(text) {
-  const fs = fences(text)
-  const labelled = fs.filter(f => f.label === 'strudel' && f.code.trim() && balanced(f.code))
-  const recoverable = fs.filter(f =>
-    ['strudel', 'js', 'javascript', ''].includes(f.label)
-    || /^\s*(strudel|js|javascript)\s*\n/.test(f.code))
-  const codeAll = fs.map(f => f.code).join('\n')
-  return {
-    fenced: fs.length > 0,
-    strudel: labelled.length > 0,
-    recoverable: recoverable.length > 0,
-    silent: UNLOADED_SOUNDS.test(codeAll) && !/samples\s*\(/.test(codeAll),
-    invented: [...codeAll.matchAll(/samples\(\s*['"]github:([^/'"]+\/[^/'"]+)/g)]
-      .some(m => !REAL_PACKS.includes(m[1])),
-  }
-}
+// fences/balanced/REAL_PACKS/UNLOADED_SOUNDS/score moved to
+// jah-eval/lib/replies.mjs (add-jah-eval-harness task 1.1/1.2) so the eval
+// harness scores replies the same way this script always has.
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`)
