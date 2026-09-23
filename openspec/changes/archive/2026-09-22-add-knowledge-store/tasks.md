@@ -57,5 +57,5 @@
       submodule, no real model, no network beyond the local D1 the test
       pool already provisions.
 - [x] 4.4 `openspec validate add-knowledge-store --strict`.
-- [ ] 4.5 After the developer's review: sync the `strudel-knowledge`
+- [x] 4.5 After the developer's review: sync the `strudel-knowledge`
       delta into `openspec/specs/`; archive.
