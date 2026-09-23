@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T21:41:46.698Z",
+  "generatedAt": "2026-09-23T00:33:59.901Z",
   "submoduleCommit": "8f81463",
   "strudelVersions": {
     "core": "1.2.6",
@@ -24408,18 +24408,6 @@
       "examples": [
         "s(\"bd*2 hh*3 [sd bd]*2 perc\").zoom(0.25, 0.75)\r// s(\"hh*3 [sd bd]*2\") // equivalent"
       ]
-    },
-    {
-      "kind": "function",
-      "category": "uncategorized",
-      "tags": [],
-      "text": "",
-      "sourceUrl": null,
-      "license": "AGPL-3.0",
-      "version": "8f81463",
-      "synonyms": [],
-      "params": [],
-      "examples": []
     }
   ],
   "gaps": [
@@ -24745,7 +24733,7 @@
     "fscope: not presented on any documentation page — category derived from source (packages-webaudio-scope-mjs)",
     "withBase: not presented on any documentation page — category derived from source (packages-xen-xen-mjs)",
     "ftranspose: not presented on any documentation page — category derived from source (packages-xen-xen-mjs)",
-    "undefined: not presented on any documentation page — category derived from source (uncategorized)",
+    "(anonymous doclet, unknown source): no @name — not turned into a chunk",
     "/doc.json: acorn parse error: SyntaxError: undefined (undocumented — no JSDoc at all)",
     "/packages/codemirror/html.mjs: html (undocumented — no JSDoc at all)",
     "/packages/codemirror/html.mjs: h (undocumented — no JSDoc at all)",

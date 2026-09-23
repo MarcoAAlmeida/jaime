@@ -28,6 +28,14 @@ export function buildFunctionChunks(doclets, categoryByFunction, { commit }) {
 
   for (const d of doclets) {
     const id = d.name
+    // jsdoc occasionally emits an anonymous doclet with no @name at all
+    // (a stray/malformed comment block, not a real documented function)
+    // — found in the real corpus (2026-09-22): it has no id to give it,
+    // so it can't become a chunk at all. Reported, not silently dropped.
+    if (!id) {
+      gaps.push(`(anonymous doclet, ${d.sourcePath ?? 'unknown source'}): no @name — not turned into a chunk`)
+      continue
+    }
     if (seenIds.has(id)) {
       collisions.push(`duplicate function id "${id}" (from ${d.sourcePath ?? 'unknown source'}) — kept the first, dropped this one`)
       continue

@@ -16,6 +16,9 @@ const steps = [
   // Reconcile the curated pattern catalog to content/patterns/*.md
   // before the code that reads it goes live.
   ['node', ['scripts/sync-patterns.mjs', '--remote']],
+  // Same for the Strudel knowledge corpus (add-knowledge-store) —
+  // content/knowledge/strudel.json into the same PATTERNS_DB.
+  ['node', ['scripts/sync-knowledge.mjs', '--remote']],
   ['npx', ['wrangler', 'deploy']],
 ]
 

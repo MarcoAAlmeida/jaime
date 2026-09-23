@@ -13,6 +13,17 @@ function doclet(overrides = {}) {
   }
 }
 
+test('a nameless (anonymous) doclet is skipped and reported, never turned into a chunk with no id', () => {
+  // A real jsdoc artifact found in the corpus (2026-09-22): a doclet with
+  // no @name at all.
+  const nameless = doclet({ name: undefined, longname: undefined, memberof: null, description: '', tags: [], synonyms: [], sourcePath: null })
+  const { chunks, gaps } = buildFunctionChunks([doclet(), nameless], new Map([['rev', 'Time Modifiers']]), COMMIT)
+  assert.equal(chunks.length, 1)
+  assert.equal(chunks[0].id, 'rev')
+  assert.equal(gaps.length, 1)
+  assert.match(gaps[0], /anonymous doclet.*no @name/)
+})
+
 test('a categorized function gets the shared schema and no gap', () => {
   const categoryByFunction = new Map([['rev', 'Time Modifiers']])
   const { chunks, gaps, collisions } = buildFunctionChunks([doclet()], categoryByFunction, COMMIT)

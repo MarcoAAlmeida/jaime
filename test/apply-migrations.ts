@@ -11,3 +11,10 @@ for (const line of env.PATTERNS_SEED_SQL.split('\n')) {
   const sql = line.trim().replace(/;$/, '')
   if (sql && !sql.startsWith('--')) await env.PATTERNS_DB.prepare(sql).run()
 }
+
+// Same for the knowledge corpus (add-knowledge-store) — the same
+// migrations call above already brought in its schema (0009).
+for (const line of env.KNOWLEDGE_SEED_SQL.split('\n')) {
+  const sql = line.trim().replace(/;$/, '')
+  if (sql && !sql.startsWith('--')) await env.PATTERNS_DB.prepare(sql).run()
+}

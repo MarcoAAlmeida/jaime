@@ -1,5 +1,6 @@
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers'
 import { defineConfig } from 'vitest/config'
+import { buildKnowledgeReconcileSql } from './scripts/lib/knowledge-store.mjs'
 import { buildReconcileSql } from './scripts/lib/patterns-manifest.mjs'
 
 export default defineConfig(async () => {
@@ -10,6 +11,12 @@ export default defineConfig(async () => {
   // The curated catalog lives in content/patterns/*.md, not a migration —
   // reconcile the test DB to it the same way `npm run deploy` does.
   const patternsSeedSql = buildReconcileSql()
+  // Same idea for the knowledge corpus (add-knowledge-store): reconcile
+  // the real committed content/knowledge/strudel.json, so
+  // test/knowledge-catalog.test.ts (and anything later) queries the real
+  // corpus rather than a hand-built fixture, and the real reconcile SQL
+  // gets exercised against the schema on every test run too.
+  const knowledgeSeedSql = buildKnowledgeReconcileSql()
 
   return {
     // e2e/ holds @playwright/test specs (run via `npm run test:e2e`), a
@@ -40,6 +47,7 @@ export default defineConfig(async () => {
           bindings: {
             PATTERNS_MIGRATIONS: patternsMigrations,
             PATTERNS_SEED_SQL: patternsSeedSql,
+            KNOWLEDGE_SEED_SQL: knowledgeSeedSql,
             // Tests drive auth via minted tokens, not the emailed link —
             // keep the dev "link in the response" behaviour off here even
             // though .dev.vars sets it for `wrangler dev` / `nuxt dev`.

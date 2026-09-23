@@ -10,6 +10,8 @@ declare global {
       PATTERNS_MIGRATIONS: D1Migration[]
       /** Reconcile SQL for the curated catalog (content/patterns/*.md). */
       PATTERNS_SEED_SQL: string
+      /** Reconcile SQL for the knowledge corpus (content/knowledge/strudel.json). */
+      KNOWLEDGE_SEED_SQL: string
     }
   }
 }
