@@ -150,5 +150,5 @@
       fails).
 - [x] 9.2 `npm test` and `npm run typecheck` are green.
 - [x] 9.3 `openspec validate add-strudel-knowledge-corpus --strict`.
-- [ ] 9.4 After the developer's review: sync the `strudel-knowledge` spec
+- [x] 9.4 After the developer's review: sync the `strudel-knowledge` spec
       into `openspec/specs/` and archive.

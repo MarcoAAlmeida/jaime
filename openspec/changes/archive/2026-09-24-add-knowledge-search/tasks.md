@@ -80,5 +80,5 @@
       run the test suite).
 - [x] 6.4 `npm test` and `npm run typecheck` are green.
 - [x] 6.5 `openspec validate add-knowledge-search --strict`.
-- [ ] 6.6 After the developer's review: sync the `strudel-knowledge`
+- [x] 6.6 After the developer's review: sync the `strudel-knowledge`
       delta into `openspec/specs/`; archive.
