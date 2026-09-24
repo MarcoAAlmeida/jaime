@@ -6,8 +6,12 @@
   // assets bindings — mirrors scripts/jah-prompt-eval.wrangler.jsonc.
   "name": "knowledge-search",
   "compatibility_date": "2025-07-15",
-  "ai": { "binding": "AI" },
+  // Both have no local simulation at all; `getPlatformProxy` needs `remote:
+  // true` on each binding itself (not just its own `remoteBindings` option)
+  // or every call throws "Binding ... needs to be run remotely" — this bit
+  // add-knowledge-search's first real deploy (CI build 00c6e910, 2026-09-24).
+  "ai": { "binding": "AI", "remote": true },
   "vectorize": [
-    { "binding": "VECTORIZE", "index_name": "jaime-knowledge" }
+    { "binding": "VECTORIZE", "index_name": "jaime-knowledge", "remote": true }
   ]
 }
