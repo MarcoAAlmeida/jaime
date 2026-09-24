@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T00:33:59.901Z",
+  "generatedAt": "2026-09-24T20:38:05.991Z",
   "submoduleCommit": "8f81463",
   "strudelVersions": {
     "core": "1.2.6",
@@ -437,7 +437,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-faq-how-can-i-interface-strudel-with-my-favorite-music-software",
+      "id": "learn-faq-how-can-i-interface-strudel-with-my-favorite--f29b7606",
       "kind": "concept",
       "title": "How can I interface Strudel with my favorite music software? What can I do with it?",
       "category": "Frequently Asked Questions",
@@ -481,7 +481,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-faq-how-do-i-use-this-in-my-closed-source-webgame-or-other-softw",
+      "id": "learn-faq-how-do-i-use-this-in-my-closed-source-webgame-122967e0",
       "kind": "concept",
       "title": "How do I use this in my closed source webgame or other software?",
       "category": "Frequently Asked Questions",
@@ -536,7 +536,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-faq-i-saw-switch-angel-using-functions-which-i-cannot-find-in-th",
+      "id": "learn-faq-i-saw-switch-angel-using-functions-which-i-ca-e0c30d15",
       "kind": "concept",
       "title": "I saw Switch Angel using functions which I cannot find in the reference (e.g. `trancegate`). How do I make it work?",
       "category": "Frequently Asked Questions",
@@ -888,7 +888,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-input-output-sysex-sysexid-sysexdata-system-exclusive-message",
+      "id": "learn-input-output-sysex-sysexid-sysexdata-system-exclu-51247e1a",
       "kind": "concept",
       "title": "sysex, sysexid && sysexdata (System Exclusive Message)",
       "category": "MIDI, OSC & MQTT",
@@ -3902,7 +3902,7 @@
       "version": "8f81463"
     },
     {
-      "id": "functions-value-modifiers-plain-vs-parameterized-values-example-0",
+      "id": "functions-value-modifiers-plain-vs-parameterized-values-1445bead",
       "kind": "example",
       "title": "Plain vs Parameterized Values example",
       "category": "Control Parameters",
@@ -3913,23 +3913,23 @@
       "version": "8f81463"
     },
     {
-      "id": "functions-value-modifiers-plain-vs-parameterized-values-example-1",
-      "kind": "example",
-      "title": "Plain vs Parameterized Values example",
-      "category": "Control Parameters",
-      "tags": [],
-      "text": "note(\"<c e g>\").log()",
-      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/functions/value-modifiers.mdx",
-      "license": "AGPL-3.0",
-      "version": "8f81463"
-    },
-    {
-      "id": "functions-value-modifiers-plain-vs-parameterized-values-example-2",
+      "id": "functions-value-modifiers-plain-vs-parameterized-values-68dddad6",
       "kind": "example",
       "title": "Plain vs Parameterized Values example",
       "category": "Control Parameters",
       "tags": [],
       "text": "cat({note:'c'},{note:'e'},{note:'g'}).log()",
+      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/functions/value-modifiers.mdx",
+      "license": "AGPL-3.0",
+      "version": "8f81463"
+    },
+    {
+      "id": "functions-value-modifiers-plain-vs-parameterized-values-ace9ba00",
+      "kind": "example",
+      "title": "Plain vs Parameterized Values example",
+      "category": "Control Parameters",
+      "tags": [],
+      "text": "note(\"<c e g>\").log()",
       "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/functions/value-modifiers.mdx",
       "license": "AGPL-3.0",
       "version": "8f81463"
@@ -4166,23 +4166,23 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-pick-example-0",
-      "kind": "example",
-      "title": "How can I arrange in Strudel using `arrange` or `pick`? example",
-      "category": "Frequently Asked Questions",
-      "tags": [],
-      "text": "const cello = note(\n  \"<[d3 a2 b2 f#2] [g2 d3 g2 a2]>\")\n  .color(\"grey\").sound(\"gm_tremolo_strings:3\")\n const violin_p1 = note(\n  \"<[f#5 e5 d5 c#5] [b4 a4 b4 c#5]>\")\n  .color(\"blue\")\n const violin_p2 = note(\n  \"<[d5 c#5 b4 a4] [ g4 f#4 g4 f#4]>\")\n .color(\"green\")\n const violin_p3 = note(\n  \"<[d4 f#4 a4 g4 f#4 d4 f#4 e4] [d4 b3 d4 a4 g4 b4 a4 g4]>\")\n  .color(\"purple\")\n const violin_p4 = note(\n  \"<[f#4 d4 e4 c#5 d5 f#5 a5 a4] [b4 g4 a4 f#4 d4 d5 [d5@3 c#5]@2]>\")\n  .color(\"red\")\n\ncello$: arrange(\n  [2, silence],\n  [18,cello])\n violin1$: arrange(\n[4,silence],\n[2,violin_p1], [2,violin_p2],\n[2,violin_p3], [2,violin_p4],\n[2,violin_p1], [2,violin_p2],\n[2,violin_p3], [2,violin_p4]\n).sound(\"gm_tremolo_strings:0\")\nviolin2$: arrange(\n  [6,silence], [2,violin_p1], \n  [2,violin_p2], [2,violin_p3], \n  [2,violin_p4], [2,violin_p1], \n  [2,violin_p2], [2,violin_p3] \n  ).sound(\"gm_tremolo_strings:1\")\n violin3$: arrange(\n[8,silence],\n[2,violin_p1], [2,violin_p2],\n[2,violin_p3], [2,violin_p4],\n[2,violin_p1], [2,violin_p2]\n).sound(\"gm_tremolo_strings:2\")\n\n    all(x => x.release(.2))\n\n",
-      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/faq.mdx",
-      "license": "AGPL-3.0",
-      "version": "8f81463"
-    },
-    {
-      "id": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-pick-example-1",
+      "id": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-53c6a817",
       "kind": "example",
       "title": "How can I arrange in Strudel using `arrange` or `pick`? example",
       "category": "Frequently Asked Questions",
       "tags": [],
       "text": "const cello = note(\n  \"<[d3 a2 b2 f#2] [g2 d3 g2 a2]>\")\n  .color(\"grey\").sound(\"gm_tremolo_strings:3\")\n const violin_p1 = note(\n  \"<[f#5 e5 d5 c#5] [b4 a4 b4 c#5]>\")\n  .color(\"blue\")\n const violin_p2 = note(\n  \"<[d5 c#5 b4 a4] [ g4 f#4 g4 f#4]>\")\n .color(\"green\")\n const violin_p3 = note(\n  \"<[d4 f#4 a4 g4 f#4 d4 f#4 e4] [d4 b3 d4 a4 g4 b4 a4 g4]>\")\n  .color(\"purple\")\n const violin_p4 = note(\n  \"<[f#4 d4 e4 c#5 d5 f#5 a5 a4] [b4 g4 a4 f#4 d4 d5 [d5@3 c#5]@2]>\")\n  .color(\"red\")\n\nconst violins = [violin_p1, violin_p2, violin_p3, violin_p4]\n\ncello$: \"<~@2 0@18>\".pick([cello])\nviolin1$: \"<~@4 0@2 1@2 2@2 3@2 0@2 1@2 2@2 3@2>\".pick(violins)\n.sound(\"gm_tremolo_strings:0\")\nviolin2$: \"<~@6 0@2 1@2 2@2 3@2 0@2 1@2 2@2>\".pick(violins)\n.sound(\"gm_tremolo_strings:1\")\nviolin3$: \"<~@8 0@2 1@2 2@2 3@2 0@2 1@2 >\".pick(violins)\n.sound(\"gm_tremolo_strings:2\")\nall(x => x.release(.2))\n",
+      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/faq.mdx",
+      "license": "AGPL-3.0",
+      "version": "8f81463"
+    },
+    {
+      "id": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-be0dd31d",
+      "kind": "example",
+      "title": "How can I arrange in Strudel using `arrange` or `pick`? example",
+      "category": "Frequently Asked Questions",
+      "tags": [],
+      "text": "const cello = note(\n  \"<[d3 a2 b2 f#2] [g2 d3 g2 a2]>\")\n  .color(\"grey\").sound(\"gm_tremolo_strings:3\")\n const violin_p1 = note(\n  \"<[f#5 e5 d5 c#5] [b4 a4 b4 c#5]>\")\n  .color(\"blue\")\n const violin_p2 = note(\n  \"<[d5 c#5 b4 a4] [ g4 f#4 g4 f#4]>\")\n .color(\"green\")\n const violin_p3 = note(\n  \"<[d4 f#4 a4 g4 f#4 d4 f#4 e4] [d4 b3 d4 a4 g4 b4 a4 g4]>\")\n  .color(\"purple\")\n const violin_p4 = note(\n  \"<[f#4 d4 e4 c#5 d5 f#5 a5 a4] [b4 g4 a4 f#4 d4 d5 [d5@3 c#5]@2]>\")\n  .color(\"red\")\n\ncello$: arrange(\n  [2, silence],\n  [18,cello])\n violin1$: arrange(\n[4,silence],\n[2,violin_p1], [2,violin_p2],\n[2,violin_p3], [2,violin_p4],\n[2,violin_p1], [2,violin_p2],\n[2,violin_p3], [2,violin_p4]\n).sound(\"gm_tremolo_strings:0\")\nviolin2$: arrange(\n  [6,silence], [2,violin_p1], \n  [2,violin_p2], [2,violin_p3], \n  [2,violin_p4], [2,violin_p1], \n  [2,violin_p2], [2,violin_p3] \n  ).sound(\"gm_tremolo_strings:1\")\n violin3$: arrange(\n[8,silence],\n[2,violin_p1], [2,violin_p2],\n[2,violin_p3], [2,violin_p4],\n[2,violin_p1], [2,violin_p2]\n).sound(\"gm_tremolo_strings:2\")\n\n    all(x => x.release(.2))\n\n",
       "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/faq.mdx",
       "license": "AGPL-3.0",
       "version": "8f81463"
@@ -4221,7 +4221,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-faq-how-to-play-different-patterns-simultaneously-example-0",
+      "id": "learn-faq-how-to-play-different-patterns-simultaneously-d0f6b445",
       "kind": "example",
       "title": "How to play different patterns simultaneously? example",
       "category": "Frequently Asked Questions",
@@ -4430,7 +4430,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-input-output-sysex-sysexid-sysexdata-system-exclusive-message-example-0",
+      "id": "learn-input-output-sysex-sysexid-sysexdata-system-exclu-400ad20a",
       "kind": "example",
       "title": "sysex, sysexid && sysexdata (System Exclusive Message) example",
       "category": "MIDI, OSC & MQTT",
@@ -5277,29 +5277,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-mini-notation-subdividing-time-with-bracket-nesting-example-0",
-      "kind": "example",
-      "title": "Subdividing time with bracket nesting example",
-      "category": "Mini Notation",
-      "tags": [],
-      "text": "note(\"e5 b4 c5 d5 c5 b4\")",
-      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/mini-notation.mdx",
-      "license": "AGPL-3.0",
-      "version": "8f81463"
-    },
-    {
-      "id": "learn-mini-notation-subdividing-time-with-bracket-nesting-example-1",
-      "kind": "example",
-      "title": "Subdividing time with bracket nesting example",
-      "category": "Mini Notation",
-      "tags": [],
-      "text": "note(\"e5 [b4 c5] d5 c5 b4\")",
-      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/mini-notation.mdx",
-      "license": "AGPL-3.0",
-      "version": "8f81463"
-    },
-    {
-      "id": "learn-mini-notation-subdividing-time-with-bracket-nesting-example-2",
+      "id": "learn-mini-notation-subdividing-time-with-bracket-nesti-30ec3c67",
       "kind": "example",
       "title": "Subdividing time with bracket nesting example",
       "category": "Mini Notation",
@@ -5310,7 +5288,7 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-mini-notation-subdividing-time-with-bracket-nesting-example-3",
+      "id": "learn-mini-notation-subdividing-time-with-bracket-nesti-4810679e",
       "kind": "example",
       "title": "Subdividing time with bracket nesting example",
       "category": "Mini Notation",
@@ -5321,12 +5299,34 @@
       "version": "8f81463"
     },
     {
-      "id": "learn-mini-notation-subdividing-time-with-bracket-nesting-example-4",
+      "id": "learn-mini-notation-subdividing-time-with-bracket-nesti-7bfa5efc",
+      "kind": "example",
+      "title": "Subdividing time with bracket nesting example",
+      "category": "Mini Notation",
+      "tags": [],
+      "text": "note(\"e5 b4 c5 d5 c5 b4\")",
+      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/mini-notation.mdx",
+      "license": "AGPL-3.0",
+      "version": "8f81463"
+    },
+    {
+      "id": "learn-mini-notation-subdividing-time-with-bracket-nesti-897f0b83",
       "kind": "example",
       "title": "Subdividing time with bracket nesting example",
       "category": "Mini Notation",
       "tags": [],
       "text": "note(\"e5 [b4 c5] d5 [c5 b4 [d5 e5]]\")",
+      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/mini-notation.mdx",
+      "license": "AGPL-3.0",
+      "version": "8f81463"
+    },
+    {
+      "id": "learn-mini-notation-subdividing-time-with-bracket-nesti-b94b7a4c",
+      "kind": "example",
+      "title": "Subdividing time with bracket nesting example",
+      "category": "Mini Notation",
+      "tags": [],
+      "text": "note(\"e5 [b4 c5] d5 c5 b4\")",
       "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/learn/mini-notation.mdx",
       "license": "AGPL-3.0",
       "version": "8f81463"
@@ -6949,18 +6949,7 @@
       "version": "8f81463"
     },
     {
-      "id": "technical-manual-alignment-pattern-alignment-combination-example-0",
-      "kind": "example",
-      "title": "Pattern Alignment & Combination example",
-      "category": "Pattern Alignment",
-      "tags": [],
-      "text": "'0 [1 2] 3'.add('10 20');\n('10 [11 22] 23');",
-      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/technical-manual/alignment.mdx",
-      "license": "AGPL-3.0",
-      "version": "8f81463"
-    },
-    {
-      "id": "technical-manual-alignment-pattern-alignment-combination-example-1",
+      "id": "technical-manual-alignment-pattern-alignment-combinatio-20ea7002",
       "kind": "example",
       "title": "Pattern Alignment & Combination example",
       "category": "Pattern Alignment",
@@ -6971,7 +6960,18 @@
       "version": "8f81463"
     },
     {
-      "id": "technical-manual-alignment-pattern-alignment-combination-example-2",
+      "id": "technical-manual-alignment-pattern-alignment-combinatio-61e00c28",
+      "kind": "example",
+      "title": "Pattern Alignment & Combination example",
+      "category": "Pattern Alignment",
+      "tags": [],
+      "text": "'0 [1 2] 3'.add('10 20');\n('10 [11 22] 23');",
+      "sourceUrl": "https://codeberg.org/uzu/strudel/src/commit/8f81463/website/src/pages/technical-manual/alignment.mdx",
+      "license": "AGPL-3.0",
+      "version": "8f81463"
+    },
+    {
+      "id": "technical-manual-alignment-pattern-alignment-combinatio-b85af7a3",
       "kind": "example",
       "title": "Pattern Alignment & Combination example",
       "category": "Pattern Alignment",
@@ -27134,13 +27134,13 @@
       "detail": "all is not defined"
     },
     {
-      "chunkId": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-pick-example-0",
+      "chunkId": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-be0dd31d",
       "exampleIndex": 0,
       "issue": "error",
       "detail": "all is not defined"
     },
     {
-      "chunkId": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-pick-example-1",
+      "chunkId": "learn-faq-how-can-i-arrange-in-strudel-using-arrange-or-53c6a817",
       "exampleIndex": 0,
       "issue": "error",
       "detail": "all is not defined"
@@ -27218,7 +27218,7 @@
       "detail": "progNum(...).midi is not a function"
     },
     {
-      "chunkId": "learn-input-output-sysex-sysexid-sysexdata-system-exclusive-message-example-0",
+      "chunkId": "learn-input-output-sysex-sysexid-sysexdata-system-exclu-400ad20a",
       "exampleIndex": 0,
       "issue": "error",
       "detail": "note(...).sysex(...).midi is not a function"
@@ -27710,19 +27710,19 @@
       "detail": "Expecting Unicode escape sequence \\uXXXX (1:20)"
     },
     {
-      "chunkId": "technical-manual-alignment-pattern-alignment-combination-example-0",
+      "chunkId": "technical-manual-alignment-pattern-alignment-combinatio-61e00c28",
       "exampleIndex": 0,
       "issue": "error",
       "detail": "\"0 [1 2] 3\".add is not a function"
     },
     {
-      "chunkId": "technical-manual-alignment-pattern-alignment-combination-example-1",
+      "chunkId": "technical-manual-alignment-pattern-alignment-combinatio-20ea7002",
       "exampleIndex": 0,
       "issue": "error",
       "detail": "\"0 1 2\".add is not a function"
     },
     {
-      "chunkId": "technical-manual-alignment-pattern-alignment-combination-example-2",
+      "chunkId": "technical-manual-alignment-pattern-alignment-combinatio-b85af7a3",
       "exampleIndex": 0,
       "issue": "error",
       "detail": "Cannot read properties of undefined (reading 'in')"

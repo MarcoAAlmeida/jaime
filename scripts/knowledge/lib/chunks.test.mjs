@@ -88,6 +88,25 @@ test('two pages producing the same concept id is a reported collision', () => {
   assert.equal(collisions.length, 1)
 })
 
+test('a concept/example id over 64 bytes (Vectorize\'s own vector-id limit) is truncated with a short content hash appended', () => {
+  const longHeading = 'How can I interface Strudel with my favorite music software'
+  const pages = [{
+    path: 'learn/faq.mdx',
+    parsed: {
+      concepts: [{ heading: longHeading, category: 'FAQ', text: 'a' }],
+      examples: [{ heading: longHeading, category: 'FAQ', code: 's("bd")', index: 0 }],
+    },
+  }]
+  const { chunks } = buildConceptAndExampleChunks(pages, COMMIT)
+  for (const chunk of chunks) {
+    assert.ok(Buffer.byteLength(chunk.id, 'utf8') <= 64, `${chunk.id} is ${Buffer.byteLength(chunk.id, 'utf8')} bytes`)
+    assert.match(chunk.id, /-[0-9a-f]{8}$/)
+  }
+  // Same input, same hash — deterministic, not a source of drift across re-runs.
+  const again = buildConceptAndExampleChunks(pages, COMMIT)
+  assert.deepEqual(again.chunks.map(c => c.id), chunks.map(c => c.id))
+})
+
 test('assembleCorpus() combines both pools and still catches a cross-kind collision', () => {
   const functionResult = { chunks: [{ id: 'x', kind: 'function' }], gaps: ['g1'], collisions: ['c1'] }
   const conceptResult = { chunks: [{ id: 'x', kind: 'concept' }, { id: 'y', kind: 'concept' }], collisions: [] }
