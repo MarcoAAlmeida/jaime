@@ -31,6 +31,8 @@ export interface ChatMessage {
   at: number
   /** Profile picture of the sender, server-resolved. Absent for anonymous. */
   avatarUrl?: string
+  /** Knowledge chunks an `@jah` reply was grounded in (add-jah-knowledge-retrieval). Absent for a human message or an ungrounded reply. */
+  sources?: Array<{ id: string, title: string, sourceUrl: string | null }>
 }
 
 // --- client -> server ---

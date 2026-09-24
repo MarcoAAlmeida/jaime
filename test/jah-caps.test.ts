@@ -59,6 +59,8 @@ describe('recordUsage', () => {
       promptTokens: 42,
       completionTokens: 7,
       costEstimateUsd: 0.001,
+      retrievalChunksUsed: 3,
+      embeddingTokens: 0,
     })
     const rows = await listRecentUsage(db)
     expect(rows).toHaveLength(1)
@@ -69,6 +71,8 @@ describe('recordUsage', () => {
       model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       promptTokens: 42,
       completionTokens: 7,
+      retrievalChunksUsed: 3,
+      embeddingTokens: 0,
     })
   })
 })

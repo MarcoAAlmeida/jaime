@@ -40,6 +40,18 @@ function initial(name: string): string {
 }
 
 /**
+ * A message's text, with a trailing markdown "Sources: ..." line when
+ * `sources` is non-empty (add-jah-knowledge-retrieval design decision 5)
+ * — a deliberate v1 placeholder, rendered by the chat's existing markdown
+ * support with no new component or protocol awareness in the template.
+ */
+function withSources(text: string, sources: ChatMessage['sources']): string {
+  if (!sources || sources.length === 0) return text
+  const cited = sources.map(s => (s.sourceUrl ? `[${s.title}](${s.sourceUrl})` : s.title)).join(', ')
+  return `${text}\n\n*Sources: ${cited}*`
+}
+
+/**
  * `own` is decided by clientId — a reconnect gets a new one, so this
  * connection's earlier messages replayed in `welcome` show as others'
  * (design decision 2; accepted for v1).
@@ -55,7 +67,7 @@ export function toChatMessages(
     return {
       id: `${m.at}-${m.clientId}-${index}`,
       role: jah ? 'assistant' : 'user',
-      parts: [{ type: 'text', text: m.text }],
+      parts: [{ type: 'text', text: withSources(m.text, m.sources) }],
       side: own ? 'right' : 'left',
       // Own: the accent bubble, set apart at a glance. Others: a quiet
       // neutral bubble. @jah: outlined and coloured, so a reply reads as

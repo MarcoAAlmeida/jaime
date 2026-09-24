@@ -16,6 +16,7 @@ import { recordUsage } from '../auth/aiUsage'
 import { getSessionUser } from '../auth/sessions'
 import { underCaps } from '../jah/caps'
 import { generateJahReply } from '../jah/reply'
+import { realRetrievalDeps, retrieveContext } from '../jah/retrieval'
 import { classifyMention, isJahEnabled, jahAvailability } from '../jah/route'
 import { getDurableEnv } from '../utils/durableStorage'
 
@@ -216,8 +217,8 @@ function postChatMessage(peer: Peer, roomId: string, room: CompositionRoom, msg:
   toAll(peer, roomId, { t: 'chat', message: msg })
 }
 
-function jahChatMessage(text: string): ChatMessage {
-  return { clientId: JAH_NAME, name: JAH_NAME, avatarUrl: JAH_AVATAR_URL, text, at: Date.now() }
+function jahChatMessage(text: string, sources?: ChatMessage['sources']): ChatMessage {
+  return { clientId: JAH_NAME, name: JAH_NAME, avatarUrl: JAH_AVATAR_URL, text, at: Date.now(), sources }
 }
 
 function roomIdOf(peer: Peer): string | null {
@@ -299,9 +300,13 @@ async function handleJahMention(
   room.jahBusy = true
   toAll(peer, roomId, { t: 'jah_typing', typing: true })
   try {
+    // JAH_E2E's canned reply never touches the model or the corpus, so
+    // there's nothing for retrieval to ground — and no seeded knowledge
+    // store to expect in that environment.
+    const retrieval = env.JAH_E2E ? { contextBlocks: [], sources: [] } : await retrieveContext(realRetrievalDeps(env), mention.rest || 'Hello!')
     const userMessage: ModelMessage = { role: 'user', content: mention.rest || 'Hello!' }
-    const reply = await generateJahReply(env, [userMessage])
-    postChatMessage(peer, roomId, room, jahChatMessage(reply.text))
+    const reply = await generateJahReply(env, [userMessage], retrieval.contextBlocks)
+    postChatMessage(peer, roomId, room, jahChatMessage(reply.text, retrieval.sources.length > 0 ? retrieval.sources : undefined))
     await recordUsage(db, {
       userId: sender.userId,
       githubLogin: sender.githubLogin ?? null,
@@ -310,6 +315,9 @@ async function handleJahMention(
       promptTokens: reply.promptTokens,
       completionTokens: reply.completionTokens,
       costEstimateUsd: reply.costEstimateUsd,
+      retrievalChunksUsed: retrieval.sources.length,
+      // Workers AI's embedding output carries no token-count field — see migration 0011's comment.
+      embeddingTokens: 0,
     })
   }
   finally {

@@ -1,7 +1,7 @@
 import type { ModelMessage } from 'ai'
 import { generateText } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
-import { JAH_SYSTEM_PROMPT } from './prompt'
+import { buildSystemPrompt } from './prompt'
 
 // The model call seam (add-jah-chat design decision 5) — the only
 // place that touches `env.AI`. `JAH_E2E` short-circuits it so local
@@ -39,7 +39,12 @@ export interface JahReply {
   costEstimateUsd: number
 }
 
-export async function generateJahReply(env: Env, messages: ModelMessage[]): Promise<JahReply> {
+/**
+ * @param contextBlocks retrieved knowledge to ground the reply in
+ *   (add-jah-knowledge-retrieval) — see `server/jah/retrieval.ts`. With
+ *   none, the system prompt is exactly what it has always been.
+ */
+export async function generateJahReply(env: Env, messages: ModelMessage[], contextBlocks: string[] = []): Promise<JahReply> {
   if (env.JAH_E2E) {
     await new Promise(resolve => setTimeout(resolve, CANNED_E2E_DELAY_MS))
     return { text: CANNED_E2E_REPLY, model: MODEL, promptTokens: 0, completionTokens: 0, costEstimateUsd: 0 }
@@ -52,7 +57,7 @@ export async function generateJahReply(env: Env, messages: ModelMessage[]): Prom
 
   const result = await generateText({
     model: workersai(MODEL),
-    system: JAH_SYSTEM_PROMPT,
+    system: buildSystemPrompt(contextBlocks),
     messages,
   })
 

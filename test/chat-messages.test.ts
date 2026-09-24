@@ -83,4 +83,21 @@ describe('toChatMessages', () => {
     expect(toChatMessages([], 'c1', true)).toHaveLength(1)
     expect(toChatMessages([], 'c1', false)).toHaveLength(0)
   })
+
+  it('appends a markdown Sources line when a message has sources (add-jah-knowledge-retrieval)', () => {
+    const grounded: ChatMessage = { ...jah, sources: [{ id: 'rev', title: 'rev', sourceUrl: 'https://example.com/rev' }, { id: 'lpf', title: 'lpf', sourceUrl: 'https://example.com/lpf' }] }
+    const [m] = toChatMessages([grounded], 'c1')
+    expect(m!.parts[0]!.text).toBe('try `.fast(2)`\n\n*Sources: [rev](https://example.com/rev), [lpf](https://example.com/lpf)*')
+  })
+
+  it('leaves the text unchanged when a message has no sources', () => {
+    const [m] = toChatMessages([jah], 'c1')
+    expect(m!.parts[0]!.text).toBe('try `.fast(2)`')
+  })
+
+  it('renders a source with no sourceUrl as plain text, not a broken link', () => {
+    const grounded: ChatMessage = { ...jah, sources: [{ id: 'concept-1', title: 'Concept', sourceUrl: null }] }
+    const [m] = toChatMessages([grounded], 'c1')
+    expect(m!.parts[0]!.text).toBe('try `.fast(2)`\n\n*Sources: Concept*')
+  })
 })

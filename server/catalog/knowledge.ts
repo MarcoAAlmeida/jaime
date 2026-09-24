@@ -106,7 +106,7 @@ export async function findChunkByName(db: D1Database, name: string): Promise<Kno
  * `findChunkByName`. Returns `[]` rather than throwing when nothing
  * matches or the index is empty.
  */
-export async function searchChunks(ai: Ai, vectorize: Vectorize, db: D1Database, query: string, topK = 5): Promise<KnowledgeChunk[]> {
+export async function searchChunks(ai: Ai, vectorize: VectorizeIndex, db: D1Database, query: string, topK = 5): Promise<KnowledgeChunk[]> {
   const { data } = await ai.run(EMBEDDING_MODEL, { text: [query] }) as { data: number[][] }
   const { matches } = await vectorize.query(data[0]!, { topK })
   const chunks = await Promise.all(matches.map(m => findChunkByName(db, m.id)))

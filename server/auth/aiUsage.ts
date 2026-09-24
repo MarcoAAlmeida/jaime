@@ -17,6 +17,8 @@ interface AiUsageRow {
   prompt_tokens: number
   completion_tokens: number
   cost_estimate_usd: number
+  retrieval_chunks_used: number
+  embedding_tokens: number
   created_at: string
 }
 
@@ -30,6 +32,8 @@ function toRecord(row: AiUsageRow): AiUsageRecord {
     promptTokens: row.prompt_tokens,
     completionTokens: row.completion_tokens,
     costEstimateUsd: row.cost_estimate_usd,
+    retrievalChunksUsed: row.retrieval_chunks_used,
+    embeddingTokens: row.embedding_tokens,
     createdAt: row.created_at,
   }
 }
@@ -51,6 +55,10 @@ export interface RecordUsageInput {
   promptTokens: number
   completionTokens: number
   costEstimateUsd: number
+  /** `sources.length` from retrieval (add-jah-knowledge-retrieval); `0` for an ungrounded reply. */
+  retrievalChunksUsed: number
+  /** Reserved: always `0` today — see migration 0011's comment. */
+  embeddingTokens: number
 }
 
 /** One row per real `@jah` model call — never written for a decline (design decision 2/6). */
@@ -58,8 +66,8 @@ export async function recordUsage(db: D1Database, input: RecordUsageInput): Prom
   await db
     .prepare(
       `INSERT INTO ai_usage
-        (id, user_id, github_login, room_id, model, prompt_tokens, completion_tokens, cost_estimate_usd, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, user_id, github_login, room_id, model, prompt_tokens, completion_tokens, cost_estimate_usd, retrieval_chunks_used, embedding_tokens, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       nanoid(12),
@@ -70,6 +78,8 @@ export async function recordUsage(db: D1Database, input: RecordUsageInput): Prom
       input.promptTokens,
       input.completionTokens,
       input.costEstimateUsd,
+      input.retrievalChunksUsed,
+      input.embeddingTokens,
       new Date().toISOString(),
     )
     .run()

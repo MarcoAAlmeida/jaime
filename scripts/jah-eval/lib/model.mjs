@@ -1,8 +1,12 @@
 // The model call (add-jah-eval-harness task 4.1). `createModelCaller` is the
 // only part of this module that touches the network — it wraps the same
 // remote Workers AI binding scripts/jah-prompt-eval.mjs uses, with the same
-// model and system prompt server/jah/reply.ts uses for real @jah replies
-// (kept honest by the drift-guard test, model-drift.test.mjs).
+// model server/jah/reply.ts uses for real @jah replies (kept honest by the
+// drift-guard test, model-drift.test.mjs), and its ungrounded system prompt
+// — `buildSystemPrompt()` with no context blocks, byte-identical to
+// `JAH_SYSTEM_PROMPT` — matching the committed baseline (baseline.json).
+// Comparing against a *grounded* prompt (add-jah-knowledge-retrieval task
+// 6.2) is a deliberate, separate re-run, not this module's job.
 // `runSamples` is pure orchestration: it takes `call` as an argument, so it
 // is tested with an injected fake and needs neither a model nor a network.
 

@@ -9,10 +9,10 @@ const db = env.PATTERNS_DB
 // fakes stand in, while findChunkByName resolves against the real
 // seeded local D1 the same way the tests above do.
 function fakeAi(): Ai {
-  return { run: (async () => ({ data: [[0.1, 0.2, 0.3]] })) as Ai['run'] }
+  return { run: async () => ({ data: [[0.1, 0.2, 0.3]] }) } as unknown as Ai
 }
-function fakeVectorize(matches: Array<{ id: string, score: number }>): Vectorize {
-  return { query: (async () => ({ matches, count: matches.length })) as Vectorize['query'] } as Vectorize
+function fakeVectorize(matches: Array<{ id: string, score: number }>): VectorizeIndex {
+  return { query: (async () => ({ matches, count: matches.length })) as VectorizeIndex['query'] } as VectorizeIndex
 }
 
 describe('findChunkByName', () => {
@@ -100,8 +100,8 @@ describe('searchChunks', () => {
       query: (async (_vector: number[], options: { topK?: number }) => {
         seenOptions = options
         return { matches: [{ id: 'rev', score: 0.9 }], count: 1 }
-      }) as Vectorize['query'],
-    } as Vectorize
+      }) as VectorizeIndex['query'],
+    } as VectorizeIndex
     await searchChunks(fakeAi(), vectorize, db, 'anything', 3)
     expect(seenOptions.topK).toBe(3)
   })

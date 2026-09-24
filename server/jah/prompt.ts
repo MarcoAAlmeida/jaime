@@ -78,4 +78,19 @@ the block. Never invent a sample pack or a github repo name.`
 /** Everything but the examples section — the eval harness builds variants from this. */
 export const JAH_BASE_PROMPT = `${IDENTITY}\n\n${STYLE}\n\n${CHEATSHEET}`
 
-export const JAH_SYSTEM_PROMPT = `${JAH_BASE_PROMPT}\n\n${JAH_EXAMPLES}`
+/**
+ * Builds the full system prompt, optionally with a reference section
+ * built from retrieved knowledge (add-jah-knowledge-retrieval).
+ * With no context blocks, the output is byte-identical to what
+ * `JAH_SYSTEM_PROMPT` has always been — Phase 0's original guarantee for
+ * this seam, so every existing test asserting on `JAH_SYSTEM_PROMPT`
+ * keeps passing unmodified.
+ */
+export function buildSystemPrompt(contextBlocks: string[] = []): string {
+  const reference = contextBlocks.length > 0
+    ? `\n\nReference material — use this to ground your answer, and say so plainly if it doesn't cover the question:\n\n${contextBlocks.join('\n\n---\n\n')}`
+    : ''
+  return `${JAH_BASE_PROMPT}${reference}\n\n${JAH_EXAMPLES}`
+}
+
+export const JAH_SYSTEM_PROMPT = buildSystemPrompt()

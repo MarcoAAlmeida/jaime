@@ -23,5 +23,9 @@ export interface AiUsageRecord {
   promptTokens: number
   completionTokens: number
   costEstimateUsd: number
+  /** Knowledge chunks the reply was grounded in (add-jah-knowledge-retrieval). */
+  retrievalChunksUsed: number
+  /** Reserved: always 0 today — see migration 0011's comment. */
+  embeddingTokens: number
   createdAt: string
 }
