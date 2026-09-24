@@ -1,8 +1,19 @@
 import { env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
-import { findChunkByName } from '../server/catalog/knowledge'
+import { findChunkByName, searchChunks } from '../server/catalog/knowledge'
 
 const db = env.PATTERNS_DB
+
+// searchChunks never touches a real Ai/Vectorize binding in tests (spec:
+// "Search Never Runs Against A Real Index In Automated Tests") — these
+// fakes stand in, while findChunkByName resolves against the real
+// seeded local D1 the same way the tests above do.
+function fakeAi(): Ai {
+  return { run: (async () => ({ data: [[0.1, 0.2, 0.3]] })) as Ai['run'] }
+}
+function fakeVectorize(matches: Array<{ id: string, score: number }>): Vectorize {
+  return { query: (async () => ({ matches, count: matches.length })) as Vectorize['query'] } as Vectorize
+}
 
 describe('findChunkByName', () => {
   it('finds a function chunk by its own id', async () => {
@@ -61,5 +72,37 @@ describe('findChunkByName', () => {
     const chunk = await findChunkByName(db, 'ctf')
     expect(chunk!.id).toBe('lpf')
     expect(chunk!.id).not.toBe('hpf')
+  })
+})
+
+describe('searchChunks', () => {
+  it('returns chunks in the index\'s ranked order, with full content', async () => {
+    const vectorize = fakeVectorize([{ id: 'rev', score: 0.9 }, { id: 'lpf', score: 0.8 }])
+    const results = await searchChunks(fakeAi(), vectorize, db, 'reverse a pattern')
+    expect(results.map(c => c.id)).toEqual(['rev', 'lpf'])
+    expect(results[0]!.examples.length).toBeGreaterThan(0)
+  })
+
+  it('an empty match list returns [], not an error', async () => {
+    const results = await searchChunks(fakeAi(), fakeVectorize([]), db, 'nothing relevant')
+    expect(results).toEqual([])
+  })
+
+  it('a matched id that no longer resolves to a chunk is silently dropped, not an error', async () => {
+    const vectorize = fakeVectorize([{ id: 'rev', score: 0.9 }, { id: 'stale-deleted-id', score: 0.85 }])
+    const results = await searchChunks(fakeAi(), vectorize, db, 'reverse a pattern')
+    expect(results.map(c => c.id)).toEqual(['rev'])
+  })
+
+  it('honors a custom topK', async () => {
+    let seenOptions: { topK?: number } = {}
+    const vectorize = {
+      query: (async (_vector: number[], options: { topK?: number }) => {
+        seenOptions = options
+        return { matches: [{ id: 'rev', score: 0.9 }], count: 1 }
+      }) as Vectorize['query'],
+    } as Vectorize
+    await searchChunks(fakeAi(), vectorize, db, 'anything', 3)
+    expect(seenOptions.topK).toBe(3)
   })
 })

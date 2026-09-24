@@ -1,8 +1,18 @@
-// Catalog bounded context — Knowledge chunk read model (add-knowledge-store).
-// All D1 access for the Strudel documentation corpus lives here, mirroring
-// patterns.ts's own split (reconcile logic in scripts/lib/knowledge-store.mjs,
-// reads here). Nothing calls findChunkByName yet — this exists as the seam
-// add-jah-knowledge-retrieval will use. See design.md decision 4.
+// Catalog bounded context — Knowledge chunk read model
+// (add-knowledge-store, add-knowledge-search). All D1/AI/Vectorize access
+// for the Strudel documentation corpus lives here, mirroring patterns.ts's
+// own split (reconcile logic in scripts/lib/knowledge-store.mjs /
+// knowledge-search.mjs, reads here). Nothing calls findChunkByName or
+// searchChunks yet — these exist as the seam add-jah-knowledge-retrieval
+// will use.
+
+// Must match scripts/lib/knowledge-search.mjs's EMBEDDING_MODEL — a
+// query embedded with a different model than the corpus lives in
+// incompatible vector spaces, so similarity scores would be meaningless.
+// Duplicated rather than shared because this runs in the Worker at
+// request time while that one runs as a Node CLI script; there's no
+// existing precedent in this repo for a module crossing that boundary.
+const EMBEDDING_MODEL = '@cf/baai/bge-base-en-v1.5'
 
 export interface KnowledgeChunk {
   id: string
@@ -88,4 +98,17 @@ export async function findChunkByName(db: D1Database, name: string): Promise<Kno
     params.results.map(p => ({ name: p.name, types: p.types ? JSON.parse(p.types) : [], description: p.description })),
     examples.results.map(e => e.code),
   )
+}
+
+/**
+ * Finds chunks by the meaning of `query`, ranked by Vectorize's own
+ * relevance score, each resolved to its full content via
+ * `findChunkByName`. Returns `[]` rather than throwing when nothing
+ * matches or the index is empty.
+ */
+export async function searchChunks(ai: Ai, vectorize: Vectorize, db: D1Database, query: string, topK = 5): Promise<KnowledgeChunk[]> {
+  const { data } = await ai.run(EMBEDDING_MODEL, { text: [query] }) as { data: number[][] }
+  const { matches } = await vectorize.query(data[0]!, { topK })
+  const chunks = await Promise.all(matches.map(m => findChunkByName(db, m.id)))
+  return chunks.filter((c): c is KnowledgeChunk => c !== null)
 }

@@ -1,0 +1,13 @@
+{
+  // Minimal config for scripts/sync-knowledge.mjs's embedding phase
+  // (add-knowledge-search): only the bindings it needs to call Workers AI
+  // and Vectorize from Node via wrangler's getPlatformProxy. Loading the
+  // app's own wrangler.jsonc would drag in its Durable Object, D1 and
+  // assets bindings — mirrors scripts/jah-prompt-eval.wrangler.jsonc.
+  "name": "knowledge-search",
+  "compatibility_date": "2025-07-15",
+  "ai": { "binding": "AI" },
+  "vectorize": [
+    { "binding": "VECTORIZE", "index_name": "jaime-knowledge" }
+  ]
+}
