@@ -105,6 +105,25 @@ test('compose: passes when every constraint holds', () => {
   assert.equal(verdict, 'pass')
 })
 
+test('docs: an alternatives group ([\'note\', \'chord\']) passes if either name is mentioned', () => {
+  const c = { ...docsCase, expect: [['note', 'chord']] }
+  assert.equal(score(c, 'use `note("c e g")`', PASS, NO_INDEX).verdict, 'pass')
+  assert.equal(score(c, 'use `chord("Cmaj")`', PASS, NO_INDEX).verdict, 'pass')
+})
+
+test('docs: an alternatives group fails, naming the whole group, when neither is mentioned', () => {
+  const c = { ...docsCase, expect: [['note', 'chord']] }
+  const { checks, verdict } = score(c, 'no idea', PASS, NO_INDEX)
+  assert.equal(verdict, 'fail')
+  assert.deepEqual(checks.expect, { result: 'fail', missing: ['note or chord'] })
+})
+
+test('compose: a mustUse alternatives group ([\'lpf\', \'cutoff\']) passes if either is used', () => {
+  const c = { ...composeCase, mustUse: [['lpf', 'cutoff']] }
+  assert.equal(score(c, '```strudel\ns("bd").lpf(800)\n```', PASS, NO_INDEX).verdict, 'pass')
+  assert.equal(score(c, '```strudel\ns("bd").cutoff(800)\n```', PASS, NO_INDEX).verdict, 'pass')
+})
+
 test('compose: a missing required name fails and names it', () => {
   const reply = '```strudel\ns("hh*8")\n```'
   const { checks, verdict } = score(composeCase, reply, PASS, NO_INDEX)

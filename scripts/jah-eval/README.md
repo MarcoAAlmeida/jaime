@@ -64,7 +64,7 @@ Every case has:
 
 | Field | Meaning |
 |---|---|
-| `expect` | non-empty array of function names a correct answer must mention (whole word, case-insensitive, a leading `.` is fine either way) |
+| `expect` | non-empty array of function names a correct answer must mention (whole word, case-insensitive, a leading `.` is fine either way). An entry can itself be an array of alternatives (e.g. `['note', 'chord']`) meaning "at least one of these" — for a real synonym or an equally valid different function |
 | `forbid`? | function names that must NOT appear |
 | `code`? | `'required'` if the answer must contain code that evaluates; omit for no requirement |
 
@@ -84,7 +84,7 @@ way a user pastes a failure today.
 
 | Field | Meaning |
 |---|---|
-| `mustUse`? | names the code must contain |
+| `mustUse`? | names the code must contain (an entry can be an alternatives array, same as `expect` above) |
 | `mustNotUse`? | names the code must NOT contain |
 | `minEvents`? | minimum musical events the code must produce over a few cycles (default 1) |
 

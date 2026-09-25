@@ -16,7 +16,12 @@ export const docsCases = [
   { id: 'jungle-breakbeat', kind: 'docs', message: 'how do I make a jungle breakbeat?', expect: ['s'] },
   { id: 'polyrhythm-basic', kind: 'docs', message: 'what is a polyrhythm and how do I write one?', expect: ['fast'] },
   { id: 'lpf-basic', kind: 'docs', message: 'how do I filter a sound with lpf?', expect: ['lpf'] },
-  { id: 'chord-progression', kind: 'docs', message: 'how do I make a chord progression?', expect: ['note'] },
+  // Either the simple `note(...)` chord-stacking approach or the dedicated
+  // `chord`+`voicing` functions is a genuinely correct answer (found via
+  // add-jah-knowledge-retrieval task 6.2's grounded eval run, 2026-09-25:
+  // grounding surfaced `chord`/`voicing` and the model correctly switched
+  // to them, which the original note-only check then failed).
+  { id: 'chord-progression', kind: 'docs', message: 'how do I make a chord progression?', expect: [['note', 'chord']] },
   { id: 'every-other-cycle', kind: 'docs', message: 'how do I make a pattern that changes every other cycle?', expect: ['every'] },
   { id: 'pan-basic', kind: 'docs', message: 'how do I pan a sound left and right?', expect: ['pan'] },
   { id: 'slow-basic', kind: 'docs', message: 'how do I slow a pattern down?', expect: ['slow'] },

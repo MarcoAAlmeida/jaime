@@ -17,7 +17,10 @@ export const composeCases = [
     mustNotUse: ['jungle'],
     minEvents: 4,
   },
-  { id: 'filtered-bass', kind: 'compose', message: 'write a bassline with a low-pass filter sweep', mustUse: ['lpf'], minEvents: 1 },
+  // `cutoff` is a real, documented synonym for `lpf` (see
+  // knowledge-catalog.test.ts's exact-lookup tests) — accepted here for
+  // the same reason as chord-progression's expect list above.
+  { id: 'filtered-bass', kind: 'compose', message: 'write a bassline with a low-pass filter sweep', mustUse: [['lpf', 'cutoff']], minEvents: 1 },
   { id: 'euclidean-hat-pattern', kind: 'compose', message: 'write a euclidean hi-hat rhythm with 3 hits over 8 steps', mustUse: ['hh'], minEvents: 3 },
   { id: 'reverse-melody', kind: 'compose', message: 'write a short melody and reverse it', mustUse: ['note', 'rev'], minEvents: 1 },
   { id: 'panning-drums', kind: 'compose', message: 'write a drum pattern that pans left and right', mustUse: ['pan'], minEvents: 1 },

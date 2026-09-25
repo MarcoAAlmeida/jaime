@@ -17,6 +17,24 @@ function collapseWhitespace(s) {
   return s.replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * A requirement in `expect`/`mustUse` is normally one name that must be
+ * present; wrapping alternatives in a nested array (e.g. `['lpf', 'cutoff']`
+ * inside the outer list) instead means "at least one of these" — for a
+ * real Strudel synonym (`cutoff` for `lpf`) or an equally valid different
+ * function (`chord`+`voicing` vs `note` for a chord progression), where
+ * requiring one specific name would fail a genuinely correct answer.
+ */
+function satisfies(text, requirement, matcher) {
+  const alternatives = Array.isArray(requirement) ? requirement : [requirement]
+  return alternatives.some(name => matcher(text, name))
+}
+
+/** For a `missing` report: a plain requirement prints as itself, an alternatives group as "a or b". */
+function describeRequirement(requirement) {
+  return Array.isArray(requirement) ? requirement.join(' or ') : requirement
+}
+
 function containsFragment(code, fragment) {
   return collapseWhitespace(code).includes(collapseWhitespace(fragment))
 }
@@ -49,8 +67,8 @@ export function score(c, reply, evalOutcome, functionIndex, extractCalledFunctio
   checks.functionExistence = functionExistenceCheck(functionIndex, code ?? '', extractCalledFunctions)
 
   if (c.kind === 'docs') {
-    const missingExpect = c.expect.filter(name => !mentions(reply, name))
-    checks.expect = missingExpect.length === 0 ? { result: 'pass' } : { result: 'fail', missing: missingExpect }
+    const missingExpect = c.expect.filter(req => !satisfies(reply, req, mentions))
+    checks.expect = missingExpect.length === 0 ? { result: 'pass' } : { result: 'fail', missing: missingExpect.map(describeRequirement) }
     const forbidden = (c.forbid ?? []).filter(name => mentions(reply, name))
     checks.forbid = forbidden.length === 0 ? { result: 'pass' } : { result: 'fail', found: forbidden }
     const codeRequired = c.code === 'required'
@@ -79,8 +97,8 @@ export function score(c, reply, evalOutcome, functionIndex, extractCalledFunctio
   checks.evaluates = evalOutcome.verdict === 'pass'
     ? { result: 'pass' }
     : { result: evalOutcome.verdict === 'inconclusive' ? 'inconclusive' : 'fail', detail: evalOutcome }
-  const missingUse = (c.mustUse ?? []).filter(name => !code || !mentions(code, name))
-  checks.mustUse = missingUse.length === 0 ? { result: 'pass' } : { result: 'fail', missing: missingUse }
+  const missingUse = (c.mustUse ?? []).filter(req => !code || !satisfies(code, req, mentions))
+  checks.mustUse = missingUse.length === 0 ? { result: 'pass' } : { result: 'fail', missing: missingUse.map(describeRequirement) }
   const foundForbidden = (c.mustNotUse ?? []).filter(name => code && mentions(code, name))
   checks.mustNotUse = foundForbidden.length === 0 ? { result: 'pass' } : { result: 'fail', found: foundForbidden }
   const minEvents = c.minEvents ?? 1
