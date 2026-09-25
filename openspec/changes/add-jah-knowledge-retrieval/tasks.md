@@ -78,16 +78,33 @@
 
 ## 6. Verification
 
-- [ ] 6.1 A real, ad-hoc check (a one-off script or a manual mention in a
+- [x] 6.1 A real, ad-hoc check (a one-off script or a manual mention in a
       dev room) that a mention naming a real function (e.g. "what does
       `.euclid` do?" — a documented gap from the Phase 0 baseline) now
-      answers grounded in the real corpus, with sources shown.
-- [ ] 6.2 Re-run the Phase 0 eval (`npm run jah:eval`) against the
+      answers grounded in the real corpus, with sources shown. Verified
+      2026-09-24 against the live deploy: `retrieveContext` returned the
+      real `euclid` chunk (exact) plus `_euclidRot`/`euclidish`/a mini-
+      notation example (semantic), and the real model reply correctly
+      named both parameters and gave a working example — a mention the
+      Phase 0 baseline recorded as a gap.
+- [x] 6.2 Re-run the Phase 0 eval (`npm run jah:eval`) against the
       grounded prompt and compare with the committed baseline
       (`scripts/jah-eval/baseline.json`) — the whole point of Phase 0
       existing. Needs the developer's go-ahead before spending money,
       per established policy. Record the result; update the baseline only
-      if the developer asks.
+      if the developer asks. The harness itself had no retrieval step
+      yet — extended `scripts/jah-eval/lib/model.mjs`'s `createModelCaller`
+      with a `grounded` option (real `retrieveContext` per case, mirroring
+      `handleJahMention` exactly) and `run.mjs` with a `--grounded` flag
+      (developer-approved addition, not in the original task breakdown).
+      Result 2026-09-25 (`--grounded --compare`, 3 samples, same case set):
+      overall 86% → 87% (docs 90%→90%, fix 90%→90%, compose 73%→77%).
+      `euclidean-rhythms` (the documented gap 6.1 also checked) went
+      0%→100%, `reverb-pad` 0%→100% — but `chord-progression` 100%→0%,
+      `filtered-bass` 100%→33%, `panning-drums` 33%→0%, `reverse-melody`
+      100%→67%. Net roughly flat/slightly up, but a real, mixed result,
+      not a clean win — full report not committed (baseline.json
+      untouched, per instructions); path was printed at run time.
 - [x] 6.3 `npm test` and `npm run typecheck` are green.
 - [x] 6.4 `openspec validate add-jah-knowledge-retrieval --strict`.
 - [ ] 6.5 After the developer's review: sync `jah-grounding` (new) and

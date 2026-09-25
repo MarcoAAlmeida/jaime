@@ -14,23 +14,35 @@ import { generateText } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
 import { renderMessage } from './cases.mjs'
 // A .ts import; Node's type stripping handles it (see jah-prompt-eval.mjs).
-import { JAH_SYSTEM_PROMPT } from '../../../server/jah/prompt.ts'
+import { JAH_SYSTEM_PROMPT, buildSystemPrompt } from '../../../server/jah/prompt.ts'
+import { realRetrievalDeps, retrieveContext } from '../../../server/jah/retrieval.ts'
 
 /** Must match the model id server/jah/reply.ts calls — see model-drift.test.mjs. */
 export const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
 /**
  * Wraps the real Workers AI binding (`env.AI`, from `getPlatformProxy`) into
- * a `(message) => Promise<string>` caller — @jah's real system prompt, one
- * user message, no AI Gateway (a measurement should not pollute production
- * logs).
+ * a `(message) => Promise<string>` caller — one user message, no AI
+ * Gateway (a measurement should not pollute production logs).
+ *
+ * `grounded` (add-jah-knowledge-retrieval task 6.2): when true, each call
+ * first runs the real `retrieveContext` (needs `env.PATTERNS_DB`/
+ * `env.VECTORIZE` too — see jah-prompt-eval.wrangler.jsonc) the same way
+ * `handleJahMention` does, and grounds the system prompt in what it
+ * finds — the exact call shape a real, live `@jah` mention makes. When
+ * false (the default, and what baseline.json was recorded against),
+ * `JAH_SYSTEM_PROMPT` is used as-is, matching `buildSystemPrompt()` with
+ * no context blocks byte-for-byte.
  */
-export function createModelCaller(env) {
+export function createModelCaller(env, { grounded = false } = {}) {
   const workersai = createWorkersAI({ binding: env.AI })
   return async function call(message) {
+    const system = grounded
+      ? buildSystemPrompt((await retrieveContext(realRetrievalDeps(env), message)).contextBlocks)
+      : JAH_SYSTEM_PROMPT
     const { text } = await generateText({
       model: workersai(MODEL),
-      system: JAH_SYSTEM_PROMPT,
+      system,
       messages: [{ role: 'user', content: message }],
     })
     return text

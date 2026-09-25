@@ -5,8 +5,14 @@
 //
 //   npx wrangler login                     # once; Workers AI is a remote binding
 //   node scripts/jah-eval/run.mjs [--samples 3] [--kinds docs,fix] [--case id1,id2]
-//                                  [--out <file>] [--save-baseline] [--compare]
+//                                  [--out <file>] [--save-baseline] [--compare] [--grounded]
 //   node scripts/jah-eval/run.mjs --validate   # no model call; checks the case set itself
+//
+// --grounded (add-jah-knowledge-retrieval task 6.2) runs each case through
+// the real retrieveContext first, the same call shape a live @jah mention
+// makes — compare its report against baseline.json (recorded ungrounded)
+// to see what grounding changed. Never saved as the baseline itself
+// (--save-baseline is for the ungrounded, Phase 0 measurement).
 //
 // See docs/04-roadmap/jah-intelligence/phase-0-foundations.md and
 // openspec/changes/add-jah-eval-harness/design.md for what this measures and why.
@@ -96,7 +102,8 @@ async function main() {
   }
 
   const samples = Number(arg('samples', 3))
-  console.log(`About to make ${cases.length} case(s) × ${samples} sample(s) = ${cases.length * samples} model call(s) against ${MODEL}.`)
+  const grounded = flag('grounded')
+  console.log(`About to make ${cases.length} case(s) × ${samples} sample(s) = ${cases.length * samples} model call(s) against ${MODEL}${grounded ? ' (grounded — retrieveContext runs first)' : ''}.`)
 
   let env, dispose
   try {
@@ -104,6 +111,7 @@ async function main() {
       configPath: fileURLToPath(new URL('../jah-prompt-eval.wrangler.jsonc', import.meta.url)),
     }))
     if (!env.AI) throw new Error('no AI binding')
+    if (grounded && (!env.PATTERNS_DB || !env.VECTORIZE)) throw new Error('no PATTERNS_DB/VECTORIZE binding (needed for --grounded)')
   }
   catch (err) {
     console.error(`Workers AI is not available (${err.message}). Run "npx wrangler login" and try again.`)
@@ -112,7 +120,7 @@ async function main() {
   }
 
   try {
-    const call = createModelCaller(env)
+    const call = createModelCaller(env, { grounded })
     const raw = await runSamples(cases, { samples, call, concurrency: 4 })
 
     const casesById = new Map(cases.map(c => [c.id, c]))
@@ -135,7 +143,11 @@ async function main() {
     const report = buildReport({
       ranAt: new Date().toISOString(),
       model: MODEL,
-      systemPrompt: JAH_SYSTEM_PROMPT,
+      // Grounded: the prompt differs per case (retrieved context), so
+      // there's no one fingerprint to record — this sentinel makes a
+      // grounded report visibly distinct from an ungrounded one at a
+      // glance, rather than falsely claiming the plain prompt was used.
+      systemPrompt: grounded ? 'grounded (dynamic per case — see retrieveContext)' : JAH_SYSTEM_PROMPT,
       caseSetFingerprint: fingerprint,
       samples,
       revision: getRevision(),

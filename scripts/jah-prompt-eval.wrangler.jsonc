@@ -1,9 +1,25 @@
 {
-  // Minimal config for scripts/jah-prompt-eval.mjs: only the Workers AI
-  // binding. Loading the app's own wrangler.jsonc would drag in its Durable
-  // Object, D1 and assets bindings — noisy warnings, and it locks
-  // .output/public so a build can't run at the same time.
+  // Config for scripts/jah-prompt-eval.mjs and scripts/jah-eval/run.mjs.
+  // Loading the app's own wrangler.jsonc would drag in its Durable Object,
+  // D1 and assets bindings — noisy warnings, and it locks .output/public
+  // so a build can't run at the same time.
   "name": "jah-prompt-eval",
   "compatibility_date": "2025-07-15",
-  "ai": { "binding": "AI" }
+  "ai": { "binding": "AI", "remote": true },
+  // For --grounded (add-jah-knowledge-retrieval task 6.2): the same
+  // retrieval realRetrievalDeps(env) needs. Neither has a local
+  // simulation, so getPlatformProxy needs `remote: true` on the binding
+  // itself (see scripts/knowledge-search.wrangler.jsonc's comment, and
+  // CI build 3a5929fc where omitting it broke the real deploy).
+  "vectorize": [
+    { "binding": "VECTORIZE", "index_name": "jaime-knowledge", "remote": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "PATTERNS_DB",
+      "database_name": "jaime-patterns",
+      "database_id": "81156163-fc4b-4828-96b5-7f954678ac19",
+      "remote": true
+    }
+  ]
 }

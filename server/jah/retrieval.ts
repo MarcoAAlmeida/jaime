@@ -4,8 +4,12 @@
 // search over the mention's own text, merged and bounded. See design.md
 // decisions 2-3.
 
-import type { KnowledgeChunk } from '../catalog/knowledge'
-import { findChunkByName, searchChunks } from '../catalog/knowledge'
+// Explicit `.ts` extension (allowImportingTsExtensions): this module is
+// also imported straight by Node from scripts/jah-eval/lib/model.mjs
+// (add-jah-knowledge-retrieval task 6.2's --grounded mode), which has no
+// bundler to resolve an extensionless specifier.
+import type { KnowledgeChunk } from '../catalog/knowledge.ts'
+import { findChunkByName, searchChunks } from '../catalog/knowledge.ts'
 
 export interface RetrievedSource {
   id: string
