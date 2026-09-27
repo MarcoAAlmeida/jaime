@@ -97,18 +97,28 @@
       with a `grounded` option (real `retrieveContext` per case, mirroring
       `handleJahMention` exactly) and `run.mjs` with a `--grounded` flag
       (developer-approved addition, not in the original task breakdown).
-      Result 2026-09-25 (`--grounded --compare`, 3 samples, same case set):
-      overall 86% → 87% (docs 90%→90%, fix 90%→90%, compose 73%→77%).
-      `euclidean-rhythms` (the documented gap 6.1 also checked) went
-      0%→100%, `reverb-pad` 0%→100% — but `chord-progression` 100%→0%,
-      `filtered-bass` 100%→33%, `panning-drums` 33%→0%, `reverse-melody`
-      100%→67%. Net roughly flat/slightly up, but a real, mixed result,
-      not a clean win — full report not committed (baseline.json
-      untouched, per instructions); path was printed at run time.
+      First result 2026-09-25 (`--grounded --compare`, 3 samples, same case
+      set): overall 86% → 87%, but two of the four regressions
+      (`chord-progression`, `filtered-bass`) turned out to be outdated eval
+      checks — grounding surfaced a genuinely correct alternative (`chord`+
+      `voicing`; `cutoff`, a real `lpf` synonym) that a single-name
+      `expect`/`mustUse` check then failed. Fixed those two checks to accept
+      either name (score.mjs alternatives-group support) and re-ran: overall
+      86% → **91%** (docs 90%→95%, fix 90%→93%, compose 73%→80%).
+      `euclidean-rhythms`/`reverb-pad` (documented gaps) 0%→100%.
+      Two real findings remain, neither a retrieval defect: `panning-drums`
+      (33%→0%, consistent) — the model over-generalizes the corpus's real
+      `.jux(namedFn)` examples into invalid `.jux(.pan(1))` syntax, a model
+      code-gen limit the roadmap's later debugger phase is meant to catch;
+      `reverse-melody` — some samples substitute `n()` for `note()`, minor
+      and inconsistent across runs. baseline.json intentionally left
+      untouched (it's the ungrounded Phase 0 reference point); full reports
+      not committed, paths were printed at run time.
 - [x] 6.3 `npm test` and `npm run typecheck` are green.
 - [x] 6.4 `openspec validate add-jah-knowledge-retrieval --strict`.
-- [ ] 6.5 After the developer's review: sync `jah-grounding` (new) and
+- [x] 6.5 After the developer's review: sync `jah-grounding` (new) and
       `jah-chat` (modified) into `openspec/specs/`; archive. This closes
       Phase 1 of the `@jah` intelligence roadmap — update
       `docs/04-roadmap/jah-intelligence/README.md`/`index.md` to reflect
-      it, per the developer's direction at that time.
+      it, per the developer's direction at that time. Synced and archived
+      2026-09-27 (`openspec validate --specs --strict`: 26/26 pass).

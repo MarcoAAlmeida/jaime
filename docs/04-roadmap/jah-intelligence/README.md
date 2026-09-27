@@ -1,9 +1,23 @@
 # `@jah` intelligence — handover
 
-Status: **planned, nothing implemented.** Written 2026-09-21 after a design
-discussion with the developer. Read this file first, then the phase brief
-you are working on. Each phase brief lists its OpenSpec changes; propose
-and build **one change at a time** (see *Ground rules*).
+Status: **Phase 0 and Phase 1 done (2026-09-27).** Written 2026-09-21 after
+a design discussion with the developer. Read this file first, then the
+phase brief you are working on. Each phase brief lists its OpenSpec
+changes; propose and build **one change at a time** (see *Ground rules*).
+
+**Progress:**
+- **Phase 0** (`add-jah-eval-harness`) — real eval harness against the
+  live model, committed baseline (`scripts/jah-eval/baseline.json`, 86%).
+  Archived `2026-09-22`.
+- **Phase 1** (`add-strudel-knowledge-corpus`, `add-knowledge-store`,
+  `add-knowledge-search`, `add-jah-knowledge-retrieval`) — `@jah` now
+  answers from the real Strudel documentation (submodule-derived corpus,
+  ~1,400 chunks) with exact-name and semantic (Vectorize) retrieval, and
+  shows its sources in chat. Grounded eval: 86% → 91% overall (see
+  `add-jah-knowledge-retrieval`'s archived `tasks.md` for the full
+  breakdown, including two known model-level limitations unrelated to
+  retrieval). Archived `2026-09-27`.
+- **Phase 2 onward**: not started.
 
 ## Why
 
