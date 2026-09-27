@@ -74,11 +74,6 @@ const editorEl = ref<HTMLDivElement>()
 const canvasEl = ref<HTMLCanvasElement>()
 const colorMode = useColorMode()
 
-const audioUnlocked = ref(false)
-// Manual dismiss, alongside the automatic hide once audio actually
-// unlocks — belt-and-suspenders if a browser never fires the gesture
-// this page expects.
-const audioBannerDismissed = ref(false)
 // Roster is a floating overlay (a modal), not inline — kept closed by
 // default so it doesn't eat mobile screen space, and a modal's own
 // backdrop/focus-trap means it must be dismissed before the chat input
@@ -555,8 +550,11 @@ async function start() {
 
   // Don't block editor mount on this — browsers only resume the
   // AudioContext on a genuine gesture, so it may not settle until the
-  // user clicks something (the unlock banner covers that wait).
-  void primeAudio().then(() => { audioUnlocked.value = true })
+  // user clicks something. No visible prompt for that wait (removed
+  // per developer feedback, 2026-09-27): the room's own interactions
+  // (submitting a display name, pressing Play, opening chat) already
+  // provide that gesture in practice.
+  void primeAudio()
 
   // scope() / spectrum() / pitchwheel() / spiral() bypass StrudelMirror's
   // drawContext and call @strudel/draw's getDrawContext(), which
@@ -757,6 +755,44 @@ onBeforeUnmount(() => {
         <Logo size="sm" />
       </NuxtLink>
       <div class="flex flex-wrap items-center gap-2">
+        <!-- Roster lives here — an always-visible badge shared with the
+             other status chips, not a dedicated row inside the Chat tab
+             (that cost real vertical space for no benefit, developer
+             feedback 2026-09-27). Opens as a floating overlay; its own
+             focus trap means it must be dismissed before the chat input
+             behind it is reachable again. -->
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="subtle"
+          icon="i-lucide-users"
+          data-testid="roster-toggle"
+          @click="showRoster = true"
+        >
+          {{ participants.length }}
+        </UButton>
+        <UModal v-model:open="showRoster" title="In the room">
+          <template #body>
+            <div class="flex flex-col gap-2" data-testid="participants">
+              <div
+                v-for="p in participants"
+                :key="p.clientId"
+                class="flex items-center gap-2 text-sm"
+                data-testid="participant"
+              >
+                <UserAvatar :name="p.name" :src="p.avatarUrl" />
+                <span class="min-w-0 flex-1 truncate">{{ p.name }}</span>
+                <UBadge
+                  size="xs"
+                  :color="p.role === 'editor' ? 'primary' : 'neutral'"
+                  variant="subtle"
+                >
+                  {{ p.role }}
+                </UBadge>
+              </div>
+            </div>
+          </template>
+        </UModal>
         <UBadge
           :color="connected ? 'success' : 'neutral'"
           variant="subtle"
@@ -919,15 +955,6 @@ onBeforeUnmount(() => {
     </div>
 
     <UAlert
-      v-if="!audioUnlocked && !audioBannerDismissed"
-      data-testid="audio-unlock-banner"
-      color="warning"
-      variant="soft"
-      icon="i-lucide-volume-x"
-      title="Tap anywhere to enable audio"
-      :close="{ onClick: () => (audioBannerDismissed = true) }"
-    />
-    <UAlert
       v-if="error"
       color="error"
       title="Pattern error"
@@ -956,43 +983,6 @@ onBeforeUnmount(() => {
         class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-md p-3"
         data-testid="chat-panel"
       >
-        <UButton
-          size="xs"
-          color="neutral"
-          variant="subtle"
-          icon="i-lucide-users"
-          class="self-start"
-          data-testid="roster-toggle"
-          @click="showRoster = true"
-        >
-          {{ participants.length }}
-        </UButton>
-
-        <!-- Content teleports to <body> (Nuxt UI's Modal has no local
-             root when it isn't given a #default trigger slot), so any
-             testid belongs on content inside the slots below instead. -->
-        <UModal v-model:open="showRoster" title="In the room">
-          <template #body>
-            <div class="flex flex-col gap-2" data-testid="participants">
-              <div
-                v-for="p in participants"
-                :key="p.clientId"
-                class="flex items-center gap-2 text-sm"
-                data-testid="participant"
-              >
-                <UserAvatar :name="p.name" :src="p.avatarUrl" />
-                <span class="min-w-0 flex-1 truncate">{{ p.name }}</span>
-                <UBadge
-                  size="xs"
-                  :color="p.role === 'editor' ? 'primary' : 'neutral'"
-                  variant="subtle"
-                >
-                  {{ p.role }}
-                </UBadge>
-              </div>
-            </div>
-          </template>
-        </UModal>
 
         <div class="flex min-h-0 flex-1 flex-col gap-1.5" data-testid="chat">
           <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
