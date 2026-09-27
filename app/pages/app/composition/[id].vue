@@ -68,6 +68,21 @@ const SWAP_INTERVAL_MAX = 64
 const DEFAULT_SWAP_INTERVAL = 4
 
 const rootEl = ref<HTMLDivElement>()
+// Measures the sticky header's own real height (it varies: badges wrap on
+// a narrow header, the context toolbar appears/disappears per tab) so the
+// content area below it can be given an actual, definite height —
+// `calc(100dvh - headerHeightPx)`. A definite height (not just `min-`) is
+// what lets Composition/ASCII keep their fixed pane and lets Chat's
+// message log bound itself and scroll internally in the normal case,
+// while still growing past it (page scroll) when chat-log's own min-h-40
+// genuinely doesn't fit (developer feedback, 2026-09-27) — flex-grow
+// alone doesn't do this against a merely-`min-height` ancestor; once any
+// content wants more room, everything just grows to fit it instead of
+// clipping/scrolling. ResizeObserver (not a one-off snapshot) keeps this
+// live and accurate.
+const headerEl = ref<HTMLDivElement>()
+const headerHeightPx = ref<number | null>(null)
+let headerResizeObserver: ResizeObserver | undefined
 const editorEl = ref<HTMLDivElement>()
 // Backdrop canvas — @strudel/draw visuals render behind the transparent
 // editor text, the way strudel.cc shows them.
@@ -683,6 +698,18 @@ async function start() {
   }
 }
 
+// headerEl only exists once the name gate clears (v-else branch) — watch
+// rather than assume onMounted timing, and re-observe if it's ever torn
+// down and recreated.
+watch(headerEl, (el) => {
+  headerResizeObserver?.disconnect()
+  if (!el) return
+  headerResizeObserver = new ResizeObserver(() => {
+    headerHeightPx.value = el.getBoundingClientRect().height
+  })
+  headerResizeObserver.observe(el)
+})
+
 onMounted(() => {
   if (!authUser.value) void refreshAuth()
   swapInterval.value = loadStoredSwapInterval()
@@ -695,6 +722,7 @@ watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
+  headerResizeObserver?.disconnect()
   resizeObserver?.disconnect()
   asciiResizeObserver?.disconnect()
   stopAsciiSwapLoop()
@@ -740,7 +768,7 @@ onBeforeUnmount(() => {
          Chat tab's message log to almost nothing under the old "everything
          must fit in exactly one screen" layout; letting the page scroll,
          with the controls pinned, removes that failure mode entirely). -->
-    <div class="bg-default sticky top-0 z-30 flex flex-col gap-3 pb-3" data-testid="room-header">
+    <div ref="headerEl" class="bg-default sticky top-0 z-30 flex flex-col gap-3 pb-3" data-testid="room-header">
     <!-- Zone 1 — global identity & status: logo, connection/playback
          state, Play/Stop, Share. Always visible, constant across tabs. -->
     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -957,7 +985,16 @@ onBeforeUnmount(() => {
       :close="{ onClick: () => (error = null) }"
     />
 
-    <div class="relative flex flex-1 gap-3">
+    <!-- flex-auto (`flex: 1 1 auto`), not flex-1 (`flex: 1 1 0%`): with a
+         percentage flex-basis, an *indefinite* ancestor (root is
+         min-h-dvh, not h-dvh) makes the basis resolve as `content` per
+         spec, silently discarding the explicit height below — flex-auto's
+         `auto` basis defers to it correctly instead. Confirmed in
+         isolation; cost real time to track down (2026-09-27). -->
+    <div
+      class="relative flex min-h-0 flex-auto gap-3"
+      :style="headerHeightPx ? { height: `calc(100dvh - ${headerHeightPx}px)` } : undefined"
+    >
       <div
         v-show="activeTab === 'composition'"
         ref="rootEl"
@@ -973,25 +1010,37 @@ onBeforeUnmount(() => {
         <div ref="editorEl" class="relative z-10 min-h-0 flex-1 overflow-hidden" />
       </div>
 
+      <!-- overflow-x-hidden here (not just on chat-log below) so the
+           ancestor chain's own width doesn't grow to fit an unwrapped
+           code block's natural width before chat-log ever gets a chance
+           to clip it — CSS auto-upgrades this element's overflow-y to
+           `auto` too (mixing `hidden` with the default `visible` on the
+           other axis isn't representable), but that's inert now that the
+           flex-basis fix above makes this box's own height genuinely
+           bounded — its one child already fits without ever needing to
+           actually scroll. -->
       <div
         v-show="activeTab === 'chat'"
-        class="bg-elevated relative flex flex-1 flex-col gap-3 overflow-x-hidden rounded-md p-3"
+        class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden rounded-md p-3"
         data-testid="chat-panel"
       >
 
-        <div class="flex flex-1 flex-col gap-1.5" data-testid="chat">
+        <div class="flex min-h-0 flex-1 flex-col gap-1.5" data-testid="chat">
           <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
             Chat
           </h2>
-          <!-- A real floor, not min-h-0: `overflow-y-auto` already makes
-               this box's own automatic minimum size 0, so without an
-               explicit floor a tight viewport (e.g. short landscape) can
-               flex-shrink it to a sliver instead of growing the page —
-               see the sticky-header comment above (developer feedback,
-               2026-09-27). -->
+          <!-- Scrolls internally in the normal case (bounded between the
+               sticky header above and the sticky input below — hence
+               min-h-0 restored on this and its ancestors) — the log's own
+               scrollTop, not the page, is what keeps the newest message in
+               view (scrollChatToBottom()). `min-h-40` is only a floor for
+               a tight viewport (short landscape): if header + input +
+               that floor don't all fit, min-height wins and the page
+               grows/scrolls instead of crushing the log (developer
+               feedback, 2026-09-27). -->
           <div
             ref="chatLog"
-            class="border-default bg-default min-h-40 flex-1 overflow-y-auto rounded-md border py-2 text-sm"
+            class="border-default bg-default min-h-40 flex-1 overflow-x-hidden overflow-y-auto rounded-md border py-2 text-sm"
             data-testid="chat-log"
           >
             <p v-if="!chat.length" class="text-muted px-3 text-xs">
@@ -1032,41 +1081,47 @@ onBeforeUnmount(() => {
               </template>
             </UChatMessages>
           </div>
-          <UChatPrompt
-            v-model="chatInput"
-            :autofocus="false"
-            :maxrows="5"
-            variant="subtle"
-            placeholder="Message — Markdown works; put code in `backticks`"
-            data-testid="chat-input"
-            @submit="sendChat"
-          >
-            <UChatPromptSubmit status="ready" color="neutral" size="xs" data-testid="chat-send" />
-            <template #footer>
-              <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <UButton
-                  size="xs"
-                  color="neutral"
-                  variant="ghost"
-                  trailing-icon="i-lucide-chevron-down"
-                  data-testid="model-selector"
-                  @click="modelNotImplemented"
-                >
-                  @jah default
-                </UButton>
-                <USwitch
-                  v-model="toJah"
-                  size="xs"
-                  label="to @jah"
-                  :disabled="jahAvailability !== 'available'"
-                  data-testid="jah-switch"
-                />
-              </div>
-            </template>
-          </UChatPrompt>
-          <p v-if="jahHint" class="text-muted text-xs" data-testid="jah-switch-hint">
-            {{ jahHint }}
-          </p>
+          <!-- Sticky at the bottom of the viewport, not just the last
+               thing on a page that might now scroll — reachable without
+               scrolling past the whole message history (developer
+               feedback, 2026-09-27). -->
+          <div class="bg-elevated sticky bottom-0 flex flex-col gap-1.5">
+            <UChatPrompt
+              v-model="chatInput"
+              :autofocus="false"
+              :maxrows="5"
+              variant="subtle"
+              placeholder="Message — Markdown works; put code in `backticks`"
+              data-testid="chat-input"
+              @submit="sendChat"
+            >
+              <UChatPromptSubmit status="ready" color="neutral" size="xs" data-testid="chat-send" />
+              <template #footer>
+                <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  <UButton
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    trailing-icon="i-lucide-chevron-down"
+                    data-testid="model-selector"
+                    @click="modelNotImplemented"
+                  >
+                    @jah default
+                  </UButton>
+                  <USwitch
+                    v-model="toJah"
+                    size="xs"
+                    label="to @jah"
+                    :disabled="jahAvailability !== 'available'"
+                    data-testid="jah-switch"
+                  />
+                </div>
+              </template>
+            </UChatPrompt>
+            <p v-if="jahHint" class="text-muted text-xs" data-testid="jah-switch-hint">
+              {{ jahHint }}
+            </p>
+          </div>
         </div>
       </div>
 
