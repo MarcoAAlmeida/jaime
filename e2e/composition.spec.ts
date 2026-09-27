@@ -223,13 +223,18 @@ test('the roster shows every participant and their role, and updates on leave', 
   const pageB = await joinRoom(context, roomId, 'Bob', 'viewer')
 
   for (const page of [pageA, pageB]) {
+    await openTab(page, 'chat')
+    await page.getByTestId('roster-toggle').click()
     const rows = page.locator('[data-testid="participant"]')
     await expect(rows).toHaveCount(2)
     await expect(rows.filter({ hasText: 'Alice' })).toContainText('editor')
     await expect(rows.filter({ hasText: 'Bob' })).toContainText('viewer')
+    await page.keyboard.press('Escape')
   }
 
   await pageB.close()
+  await openTab(pageA, 'chat')
+  await pageA.getByTestId('roster-toggle').click()
   await expect(pageA.locator('[data-testid="participant"]')).toHaveCount(1)
   await expect(pageA.locator('[data-testid="participant"]')).toContainText('Alice')
 
@@ -427,7 +432,11 @@ test('three separate clients — two editors + a viewer — edit, cursor, hear, 
 
   // Everyone sees the full roster with roles.
   for (const page of [pageA, pageB, pageV]) {
+    await openTab(page, 'chat')
+    await page.getByTestId('roster-toggle').click()
     await expect(page.locator('[data-testid="participant"]')).toHaveCount(3, { timeout: 15_000 })
+    await page.keyboard.press('Escape')
+    await openTab(page, 'composition')
   }
 
   // Two editors type concurrently; all three converge.

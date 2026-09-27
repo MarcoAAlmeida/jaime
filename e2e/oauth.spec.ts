@@ -75,10 +75,12 @@ test('a signed-in GitHub user joins rooms with no name prompt, avatar shown', as
 
   // The signed-in user's roster entry (seen by the anon) has a real
   // avatar image; the anon's own entry falls back to an initial.
+  await anon.getByTestId('roster-toggle').click()
   const signedInRow = anon.locator('[data-testid="participant"]').filter({ hasText: 'Avatar User' })
   await expect(signedInRow.locator('img')).toHaveAttribute('src', /avatars\.githubusercontent\.com/, { timeout: 15_000 })
   const anonRow = anon.locator('[data-testid="participant"]').filter({ hasText: 'Nobody' })
   await expect(anonRow.locator('img')).toHaveCount(0)
+  await anon.keyboard.press('Escape')
 
   // And in chat — already the active tab for both, by default.
   await page.getByTestId('chat-input').fill('hi from github')

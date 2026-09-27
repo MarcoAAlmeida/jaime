@@ -102,6 +102,47 @@ test('Composition Room: header collapses to a menu, code wraps, share reachable'
   expect(await noSidewaysScroll(page)).toBe(true)
 })
 
+test('Composition Room: roster is a closed-by-default overlay, not inline, on mobile', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.goto(`/app/composition/mob-roster-${Date.now()}`)
+  await page.locator('[data-testid="display-name-input"]').fill('Mo')
+  await page.locator('[data-testid="submit-name-button"]').click()
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
+
+  // Chat is the landing tab — the roster trigger is visible, but the
+  // participant list itself is not, until the trigger is clicked.
+  await expect(page.locator('[data-testid="roster-toggle"]')).toBeVisible()
+  await expect(page.locator('[data-testid="participants"]')).toHaveCount(0)
+
+  await page.locator('[data-testid="roster-toggle"]').click()
+  // A modal dialog traps focus/interaction behind it until dismissed —
+  // the chat input is not reachable while the roster is open.
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator('[data-testid="participant"]')).toHaveCount(1)
+
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+  await expect(page.locator('[data-testid="chat-input"]')).toBeVisible()
+})
+
+test('Composition Room: no dead space between the chat panel and the mobile tab bar', async ({ page }) => {
+  test.setTimeout(90_000)
+  await page.goto(`/app/composition/mob-gap-${Date.now()}`)
+  await page.locator('[data-testid="display-name-input"]').fill('Mo')
+  await page.locator('[data-testid="submit-name-button"]').click()
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
+
+  const gap = await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="chat-panel"]')!.getBoundingClientRect()
+    const nav = document.querySelector('[data-testid="tab-switcher-mobile"]')!.getBoundingClientRect()
+    return nav.top - panel.bottom
+  })
+  // A little slack (the row's own flex gap) is fine; a whole extra
+  // padding band stacked on top of it is the bug being fixed here.
+  expect(gap).toBeLessThan(16)
+})
+
 test('Composition Room: usable on a short landscape viewport', async ({ page }) => {
   test.setTimeout(90_000)
   await page.setViewportSize({ width: 667, height: 375 }) // phone rotated

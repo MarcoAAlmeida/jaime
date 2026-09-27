@@ -75,6 +75,15 @@ const canvasEl = ref<HTMLCanvasElement>()
 const colorMode = useColorMode()
 
 const audioUnlocked = ref(false)
+// Manual dismiss, alongside the automatic hide once audio actually
+// unlocks — belt-and-suspenders if a browser never fires the gesture
+// this page expects.
+const audioBannerDismissed = ref(false)
+// Roster is a floating overlay (a modal), not inline — kept closed by
+// default so it doesn't eat mobile screen space, and a modal's own
+// backdrop/focus-trap means it must be dismissed before the chat input
+// underneath is reachable again.
+const showRoster = ref(false)
 const connected = ref(false)
 const playing = ref(false)
 const error = ref<string | null>(null)
@@ -676,10 +685,22 @@ async function start() {
   }
 }
 
+// Fallback for browsers that don't yet honor `interactive-widget=resizes-
+// content` (nuxt.config.ts): `visualViewport.height` already shrinks when
+// the on-screen keyboard opens on both Chrome and Safari, so mirroring it
+// into the room's own height keeps the fixed mobile tab bar and the chat
+// input above the keyboard even where the meta tag alone doesn't do it.
+const viewportHeightPx = ref<number | null>(null)
+function updateViewportHeight() {
+  viewportHeightPx.value = window.visualViewport?.height ?? null
+}
+
 onMounted(() => {
   if (!authUser.value) void refreshAuth()
   swapInterval.value = loadStoredSwapInterval()
   window.addEventListener('keydown', onKeydown)
+  window.visualViewport?.addEventListener('resize', updateViewportHeight)
+  updateViewportHeight()
   void loadFavoritePatterns()
   chooseRole(route.query.role === 'viewer' ? 'viewer' : 'editor')
   void start()
@@ -688,6 +709,7 @@ watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
+  window.visualViewport?.removeEventListener('resize', updateViewportHeight)
   resizeObserver?.disconnect()
   asciiResizeObserver?.disconnect()
   stopAsciiSwapLoop()
@@ -700,7 +722,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="!displayName" class="flex h-dvh flex-col items-center justify-center gap-4 p-4">
+  <div
+    v-if="!displayName"
+    class="flex h-dvh flex-col items-center justify-center gap-4 p-4"
+    :style="viewportHeightPx ? { height: `${viewportHeightPx}px` } : undefined"
+  >
     <h1 class="text-xl font-semibold">
       What should we call you?
     </h1>
@@ -719,7 +745,11 @@ onBeforeUnmount(() => {
     </div>
   </div>
 
-  <div v-else class="flex h-dvh flex-col gap-3 p-4">
+  <div
+    v-else
+    class="flex h-dvh flex-col gap-3 p-4 pb-0 md:pb-4"
+    :style="viewportHeightPx ? { height: `${viewportHeightPx}px` } : undefined"
+  >
     <!-- Zone 1 — global identity & status: logo, connection/playback
          state, Play/Stop, Share. Always visible, constant across tabs. -->
     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -889,12 +919,13 @@ onBeforeUnmount(() => {
     </div>
 
     <UAlert
-      v-if="!audioUnlocked"
+      v-if="!audioUnlocked && !audioBannerDismissed"
       data-testid="audio-unlock-banner"
       color="warning"
-      variant="subtle"
+      variant="soft"
+      icon="i-lucide-volume-x"
       title="Tap anywhere to enable audio"
-      description="Your browser blocks sound until you interact with the page."
+      :close="{ onClick: () => (audioBannerDismissed = true) }"
     />
     <UAlert
       v-if="error"
@@ -925,27 +956,43 @@ onBeforeUnmount(() => {
         class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-md p-3"
         data-testid="chat-panel"
       >
-        <div class="flex flex-col gap-1.5" data-testid="participants">
-          <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
-            In the room ({{ participants.length }})
-          </h2>
-          <div
-            v-for="p in participants"
-            :key="p.clientId"
-            class="flex items-center gap-2 text-sm"
-            data-testid="participant"
-          >
-            <UserAvatar :name="p.name" :src="p.avatarUrl" />
-            <span class="min-w-0 flex-1 truncate">{{ p.name }}</span>
-            <UBadge
-              size="xs"
-              :color="p.role === 'editor' ? 'primary' : 'neutral'"
-              variant="subtle"
-            >
-              {{ p.role }}
-            </UBadge>
-          </div>
-        </div>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="subtle"
+          icon="i-lucide-users"
+          class="self-start"
+          data-testid="roster-toggle"
+          @click="showRoster = true"
+        >
+          {{ participants.length }}
+        </UButton>
+
+        <!-- Content teleports to <body> (Nuxt UI's Modal has no local
+             root when it isn't given a #default trigger slot), so any
+             testid belongs on content inside the slots below instead. -->
+        <UModal v-model:open="showRoster" title="In the room">
+          <template #body>
+            <div class="flex flex-col gap-2" data-testid="participants">
+              <div
+                v-for="p in participants"
+                :key="p.clientId"
+                class="flex items-center gap-2 text-sm"
+                data-testid="participant"
+              >
+                <UserAvatar :name="p.name" :src="p.avatarUrl" />
+                <span class="min-w-0 flex-1 truncate">{{ p.name }}</span>
+                <UBadge
+                  size="xs"
+                  :color="p.role === 'editor' ? 'primary' : 'neutral'"
+                  variant="subtle"
+                >
+                  {{ p.role }}
+                </UBadge>
+              </div>
+            </div>
+          </template>
+        </UModal>
 
         <div class="flex min-h-0 flex-1 flex-col gap-1.5" data-testid="chat">
           <h2 class="text-muted text-xs font-medium uppercase tracking-wide">

@@ -1,7 +1,12 @@
 /* Font files for jaime's type stack (the stack itself is defined in
    design/tokens/fonts.css). CSS requires @import before all other rules,
    so these lead the file. */
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap");
+/* Cabin — a humanist sans explicitly designed with Edward Johnston's
+   and Eric Gill's typefaces as its reference points (Google Fonts
+   specimen), the closest openly-licensed (SIL OFL) relative of the
+   Johnston/TfL Underground letterforms; that font itself is Transport
+   for London's proprietary, commercially-licensed typeface. */
+@import url("https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
 
@@ -51,6 +56,6 @@
 
 @layer base {
   body {
-    font-family: "DM Sans", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: "Cabin", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
 }

@@ -1,8 +1,12 @@
-/* JAiMe type stack — DM Sans (UI), Inter (dense UI labels), DM Mono (patterns/code).
-   The .fig references these families by name but ships no binaries. The actual
-   font files are loaded by the consuming app: the Nuxt app hoists the Google
-   Fonts @import to the top of app/assets/css/main.css (CSS requires @import
-   before other rules, and this file is imported after @nuxt/ui's rules). A
-   standalone consumer of design/styles.css needs to load these three families
-   itself. */
-:root{--font-sans:"DM Sans","DM Sans Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-ui:"Inter","DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-mono:"DM Mono","SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+/* JAiMe type stack — Cabin (UI), Inter (dense UI labels), DM Mono (patterns/code).
+   Cabin (SIL OFL, Google Fonts) was chosen as the openly-licensed relative
+   closest to Johnston/TfL's Underground typeface — its own specimen cites
+   Edward Johnston's and Eric Gill's typefaces as direct references; Johnston
+   itself is TfL's proprietary, commercially-licensed typeface, not something
+   this project can embed. The .fig references these families by name but
+   ships no binaries. The actual font files are loaded by the consuming app:
+   the Nuxt app hoists the Google Fonts @import to the top of
+   app/assets/css/main.css (CSS requires @import before other rules, and this
+   file is imported after @nuxt/ui's rules). A standalone consumer of
+   design/styles.css needs to load these three families itself. */
+:root{--font-sans:"Cabin","Cabin Fallback",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-ui:"Inter","Cabin",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--font-mono:"DM Mono","SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace}

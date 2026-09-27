@@ -52,6 +52,13 @@ export default defineNuxtConfig({
         { rel: 'manifest', href: '/manifest.json' }
       ],
       meta: [
+        // `interactive-widget=resizes-content` makes the visual viewport
+        // (and CSS `dvh`) actually shrink when the on-screen keyboard
+        // opens on supporting browsers (Chrome 108+, Safari 17.4+) —
+        // without it, a fixed bottom bar and the chat input can end up
+        // hidden underneath the keyboard (reported on the Composition
+        // Room's mobile chat tab, 2026-09-27).
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, interactive-widget=resizes-content' },
         { name: 'msapplication-TileColor', content: '#f1f4ec' },
         { name: 'msapplication-TileImage', content: '/ms-icon-144x144.png' },
         // Match the app surface (green-tinted paper light / graphite dark)
