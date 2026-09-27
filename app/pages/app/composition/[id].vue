@@ -683,22 +683,10 @@ async function start() {
   }
 }
 
-// Fallback for browsers that don't yet honor `interactive-widget=resizes-
-// content` (nuxt.config.ts): `visualViewport.height` already shrinks when
-// the on-screen keyboard opens on both Chrome and Safari, so mirroring it
-// into the room's own height keeps the fixed mobile tab bar and the chat
-// input above the keyboard even where the meta tag alone doesn't do it.
-const viewportHeightPx = ref<number | null>(null)
-function updateViewportHeight() {
-  viewportHeightPx.value = window.visualViewport?.height ?? null
-}
-
 onMounted(() => {
   if (!authUser.value) void refreshAuth()
   swapInterval.value = loadStoredSwapInterval()
   window.addEventListener('keydown', onKeydown)
-  window.visualViewport?.addEventListener('resize', updateViewportHeight)
-  updateViewportHeight()
   void loadFavoritePatterns()
   chooseRole(route.query.role === 'viewer' ? 'viewer' : 'editor')
   void start()
@@ -707,7 +695,6 @@ watch([displayName, role], () => { void start() })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
-  window.visualViewport?.removeEventListener('resize', updateViewportHeight)
   resizeObserver?.disconnect()
   asciiResizeObserver?.disconnect()
   stopAsciiSwapLoop()
@@ -723,7 +710,6 @@ onBeforeUnmount(() => {
   <div
     v-if="!displayName"
     class="flex h-dvh flex-col items-center justify-center gap-4 p-4"
-    :style="viewportHeightPx ? { height: `${viewportHeightPx}px` } : undefined"
   >
     <h1 class="text-xl font-semibold">
       What should we call you?
@@ -745,9 +731,16 @@ onBeforeUnmount(() => {
 
   <div
     v-else
-    class="flex h-dvh flex-col gap-3 p-4 pb-0 md:pb-4"
-    :style="viewportHeightPx ? { height: `${viewportHeightPx}px` } : undefined"
+    class="flex min-h-dvh flex-col gap-3 p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))]"
   >
+    <!-- One sticky header (logo/status, tabs, context toolbar) instead of
+         a top bar on desktop and a separate fixed bottom bar on mobile —
+         always reachable while scrolling, on every screen size (developer
+         feedback 2026-09-27: a short landscape view could squeeze the
+         Chat tab's message log to almost nothing under the old "everything
+         must fit in exactly one screen" layout; letting the page scroll,
+         with the controls pinned, removes that failure mode entirely). -->
+    <div class="bg-default sticky top-0 z-30 flex flex-col gap-3 pb-3" data-testid="room-header">
     <!-- Zone 1 — global identity & status: logo, connection/playback
          state, Play/Stop, Share. Always visible, constant across tabs. -->
     <div class="flex flex-wrap items-center justify-between gap-2">
@@ -796,6 +789,7 @@ onBeforeUnmount(() => {
         <UBadge
           :color="connected ? 'success' : 'neutral'"
           variant="subtle"
+          class="hidden sm:inline-flex"
           data-testid="connection-status"
         >
           {{ connected ? 'Connected' : 'Connecting…' }}
@@ -868,10 +862,10 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Zone 2 — tab bar: header placement at md+; a bottom bar takes
-         over below md (see the <nav> at the end of the template).
-         overflow-x-auto so it scales past 3 tabs without wrapping. -->
-    <div class="border-default hidden items-center gap-0.5 overflow-x-auto rounded-md border p-0.5 md:flex" role="tablist" data-testid="tab-switcher">
+    <!-- Zone 2 — tab bar: one switcher, every screen size, inside the
+         sticky header. overflow-x-auto so it scales past 3 tabs without
+         wrapping on a narrow phone. -->
+    <div class="border-default flex items-center gap-0.5 overflow-x-auto rounded-md border p-0.5" role="tablist" data-testid="tab-switcher">
       <UButton
         v-for="tab in TAB_DEFS"
         :key="tab.id"
@@ -953,6 +947,7 @@ onBeforeUnmount(() => {
         Shuffle
       </UButton>
     </div>
+    </div>
 
     <UAlert
       v-if="error"
@@ -962,7 +957,7 @@ onBeforeUnmount(() => {
       :close="{ onClick: () => (error = null) }"
     />
 
-    <div class="relative flex min-h-0 flex-1 gap-3 pb-[calc(3.5rem_+_env(safe-area-inset-bottom))] md:pb-0">
+    <div class="relative flex flex-1 gap-3">
       <div
         v-show="activeTab === 'composition'"
         ref="rootEl"
@@ -980,17 +975,23 @@ onBeforeUnmount(() => {
 
       <div
         v-show="activeTab === 'chat'"
-        class="bg-elevated relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-md p-3"
+        class="bg-elevated relative flex flex-1 flex-col gap-3 overflow-x-hidden rounded-md p-3"
         data-testid="chat-panel"
       >
 
-        <div class="flex min-h-0 flex-1 flex-col gap-1.5" data-testid="chat">
+        <div class="flex flex-1 flex-col gap-1.5" data-testid="chat">
           <h2 class="text-muted text-xs font-medium uppercase tracking-wide">
             Chat
           </h2>
+          <!-- A real floor, not min-h-0: `overflow-y-auto` already makes
+               this box's own automatic minimum size 0, so without an
+               explicit floor a tight viewport (e.g. short landscape) can
+               flex-shrink it to a sliver instead of growing the page —
+               see the sticky-header comment above (developer feedback,
+               2026-09-27). -->
           <div
             ref="chatLog"
-            class="border-default bg-default min-h-0 flex-1 overflow-y-auto rounded-md border py-2 text-sm"
+            class="border-default bg-default min-h-40 flex-1 overflow-y-auto rounded-md border py-2 text-sm"
             data-testid="chat-log"
           >
             <p v-if="!chat.length" class="text-muted px-3 text-xs">
@@ -1132,35 +1133,6 @@ onBeforeUnmount(() => {
         </a>
       </div>
     </div>
-
-    <!-- Tab switcher — bottom-bar placement below md, thumb-reachable. -->
-    <nav
-      class="bg-elevated border-default fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t px-2 pt-1 pb-[env(safe-area-inset-bottom)] md:hidden"
-      role="tablist"
-      data-testid="tab-switcher-mobile"
-    >
-      <button
-        v-for="tab in TAB_DEFS"
-        :key="tab.id"
-        type="button"
-        class="relative flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-xs"
-        :class="activeTab === tab.id ? 'text-primary' : 'text-muted'"
-        role="tab"
-        :aria-selected="activeTab === tab.id"
-        :data-testid="`tab-mobile-${tab.id}`"
-        @click="setActiveTab(tab.id)"
-      >
-        <UIcon :name="tab.icon" class="size-5" />
-        {{ tab.label }}
-        <UBadge v-if="tab.id === 'chat' && chatUnread" size="xs" color="primary" variant="solid" class="absolute top-0 right-3">
-          {{ chatUnread }}
-        </UBadge>
-        <span
-          v-else-if="tab.id === 'composition' && compositionActivity"
-          class="bg-primary absolute top-0.5 right-4 size-1.5 rounded-full"
-        />
-      </button>
-    </nav>
   </div>
 </template>
 

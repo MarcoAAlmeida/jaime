@@ -67,13 +67,18 @@ test('Composition Room: header collapses to a menu, code wraps, share reachable'
   await page.locator('[data-testid="submit-name-button"]').click()
   await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
 
-  // The tab switcher moves to the bottom bar below `md`, not the header.
-  await expect(page.locator('[data-testid="tab-switcher-mobile"]')).toBeVisible()
-  await expect(page.locator('[data-testid="tab-switcher"]')).toBeHidden()
+  // One tab switcher, every screen size, inside the sticky header
+  // (developer feedback, 2026-09-27 — no more separate bottom bar).
+  await expect(page.locator('[data-testid="tab-switcher"]')).toBeVisible()
+
+  // The connection pill is desktop-only noise on a narrow header
+  // (developer feedback, 2026-09-27) — Connected/Playing status is
+  // still readable from the Play/Stop button's own state.
+  await expect(page.locator('[data-testid="connection-status"]')).toBeHidden()
 
   // Chat is the default landing tab (add-jah-chat) — switch to
   // Composition for the rest of this test.
-  await page.locator('[data-testid="tab-mobile-composition"]').click()
+  await page.locator('[data-testid="tab-composition"]').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
@@ -126,21 +131,44 @@ test('Composition Room: roster is a closed-by-default overlay, not inline, on mo
   await expect(page.locator('[data-testid="chat-input"]')).toBeVisible()
 })
 
-test('Composition Room: no dead space between the chat panel and the mobile tab bar', async ({ page }) => {
+test('Composition Room: the header (including the tab switcher) stays pinned while the page scrolls', async ({ page }) => {
   test.setTimeout(90_000)
-  await page.goto(`/app/composition/mob-gap-${Date.now()}`)
+  // Short enough that the page must scroll to reach the bottom of a
+  // reasonably-sized chat log — the sticky header is the whole point of
+  // this layout (developer feedback, 2026-09-27): controls stay reachable
+  // without the content being crushed to fit one screen.
+  await page.setViewportSize({ width: 375, height: 300 })
+  await page.goto(`/app/composition/mob-sticky-${Date.now()}`)
   await page.locator('[data-testid="display-name-input"]').fill('Mo')
   await page.locator('[data-testid="submit-name-button"]').click()
   await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
 
-  const gap = await page.evaluate(() => {
-    const panel = document.querySelector('[data-testid="chat-panel"]')!.getBoundingClientRect()
-    const nav = document.querySelector('[data-testid="tab-switcher-mobile"]')!.getBoundingClientRect()
-    return nav.top - panel.bottom
-  })
-  // A little slack (the row's own flex gap) is fine; a whole extra
-  // padding band stacked on top of it is the bug being fixed here.
-  expect(gap).toBeLessThan(16)
+  // The page genuinely doesn't fit in one screen at this height — the
+  // premise this test needs, not just something to assert on the side.
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+    .toBeGreaterThan(0)
+
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+  // The sticky wrapper itself, not the tab switcher inside it — the tab
+  // switcher sits below the logo/status row, so its own y is that row's
+  // height, not 0.
+  const top = (await page.locator('[data-testid="room-header"]').boundingBox())!.y
+  expect(top).toBeLessThanOrEqual(1) // pinned to the viewport's own top, not scrolled away
+  await expect(page.locator('[data-testid="tab-switcher"]')).toBeInViewport()
+})
+
+test('Composition Room: the chat log keeps a real minimum height instead of being crushed to a sliver', async ({ page }) => {
+  test.setTimeout(90_000)
+  // A short landscape phone (the exact case reported, 2026-09-27): header
+  // + tab switcher + chat input alone can eat most of the height.
+  await page.setViewportSize({ width: 700, height: 320 })
+  await page.goto(`/app/composition/mob-log-height-${Date.now()}`)
+  await page.locator('[data-testid="display-name-input"]').fill('Mo')
+  await page.locator('[data-testid="submit-name-button"]').click()
+  await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
+
+  const logHeight = (await page.locator('[data-testid="chat-log"]').boundingBox())!.height
+  expect(logHeight).toBeGreaterThanOrEqual(160) // min-h-40
 })
 
 test('Composition Room: usable on a short landscape viewport', async ({ page }) => {
@@ -152,7 +180,7 @@ test('Composition Room: usable on a short landscape viewport', async ({ page }) 
   await expect(page.locator('[data-testid="chat-panel"]')).toBeVisible({ timeout: 60_000 })
   // Chat is the default landing tab (add-jah-chat) — switch to
   // Composition for the rest of this test.
-  await page.locator('[data-testid="tab-mobile-composition"]').click()
+  await page.locator('[data-testid="tab-composition"]').click()
   await expect(page.locator('[data-testid="composition-editor"] .cm-content')).toBeVisible({ timeout: 60_000 })
 
   expect(await logoIsUncovered(page), 'logo not covered').toBe(true)
@@ -210,9 +238,10 @@ test('Composition Room: at a wide viewport lines are not force-wrapped', async (
   await expect(page.locator('[data-testid="copy-invite-button"]')).toBeVisible()
   await expect(page.locator('[data-testid="room-overflow-menu"]')).toBeHidden()
 
-  // The tab switcher lives in the header at this width, not the bottom bar.
   await expect(page.locator('[data-testid="tab-switcher"]')).toBeVisible()
-  await expect(page.locator('[data-testid="tab-switcher-mobile"]')).toBeHidden()
+
+  // The connection pill is back at this width — it's mobile-only noise.
+  await expect(page.locator('[data-testid="connection-status"]')).toBeVisible()
 
   // Chat is the default landing tab (add-jah-chat) — switch to
   // Composition for the rest of this test.

@@ -80,7 +80,7 @@ test('each starter pattern opens a fresh Composition Room with its code loaded',
     await page.getByTestId('starter-card').nth(i).getByTestId('starter-open').click()
     await expect(page).toHaveURL(/\/app\/composition\/[\w-]+\?load=[\w-]+$/)
     await enterName(page, `Starter${i}`)
-    await page.locator('[data-testid="tab-composition"]:visible, [data-testid="tab-mobile-composition"]:visible').click()
+    await page.locator('[data-testid="tab-composition"]').click()
     const editor = page.locator(CONTENT)
     await expect(editor).toBeVisible({ timeout: 60_000 })
     // A seeded room holds real pattern code, not an empty document.

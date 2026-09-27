@@ -64,10 +64,9 @@ async function clearDoc(page: Page): Promise<void> {
   await page.keyboard.press('Delete')
 }
 
-/** Switches tabs — matches whichever placement (header vs. mobile bottom
- *  bar) is visible at the current viewport (add-composition-tabs). */
+/** Switches tabs — one switcher, every viewport (add-composition-tabs). */
 async function openTab(page: Page, tab: 'composition' | 'chat' | 'ascii'): Promise<void> {
-  await page.locator(`[data-testid="tab-${tab}"]:visible, [data-testid="tab-mobile-${tab}"]:visible`).click()
+  await page.locator(`[data-testid="tab-${tab}"]`).click()
 }
 
 /**
@@ -517,9 +516,6 @@ test('scope() visuals stay inside the editor pane, not a full-viewport canvas', 
 
 test('Composition, Chat, and ASCII Art tabs are mutually exclusive on a narrow screen', async ({ browser }) => {
   test.setTimeout(180_000)
-  // `joinRoom` switches to the Composition tab via the desktop
-  // switcher, which is hidden below `md` — join at the default
-  // (desktop) viewport, then resize down for the narrow-screen checks.
   const context = await browser.newContext()
 
   const pageA = await joinRoom(context, `panel-${Date.now()}`, 'Alice', 'editor')
@@ -528,22 +524,20 @@ test('Composition, Chat, and ASCII Art tabs are mutually exclusive on a narrow s
   const editor = pageA.locator('[data-testid="composition-editor"]')
   const chatPanel = pageA.locator('[data-testid="chat-panel"]')
 
-  // Composition is where `joinRoom` left us; the header switcher is
-  // hidden at this width (`md:flex`) — the bottom bar is what's
-  // reachable.
+  // Composition is where `joinRoom` left us.
   await expect(editor).toBeVisible()
   await expect(chatPanel).toBeHidden()
 
-  await pageA.locator('[data-testid="tab-mobile-chat"]').click()
+  await pageA.locator('[data-testid="tab-chat"]').click()
   await expect(chatPanel).toBeVisible()
   await expect(pageA.locator('[data-testid="chat-input"]')).toBeVisible()
   await expect(editor).toBeHidden()
 
-  await pageA.locator('[data-testid="tab-mobile-composition"]').click()
+  await pageA.locator('[data-testid="tab-composition"]').click()
   await expect(editor).toBeVisible()
   await expect(chatPanel).toBeHidden()
 
-  await pageA.locator('[data-testid="tab-mobile-chat"]').click()
+  await pageA.locator('[data-testid="tab-chat"]').click()
   await expect(chatPanel).toBeVisible()
   await expect(editor).toBeHidden()
 
