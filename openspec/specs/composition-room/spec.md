@@ -214,9 +214,9 @@ Composition (the shared editor and its visual backdrop), and ASCII Art
 order, with exactly one visible at a time. Each participant's active
 tab is their own, unsynced choice: switching tabs SHALL NOT change what
 any other participant sees. The system SHALL provide a way to switch
-tabs by keyboard as well as by pointer. On a narrow viewport the tab
-switcher SHALL be reachable at the bottom of the screen; on a wider
-viewport it SHALL be reachable from the room's header.
+tabs by keyboard as well as by pointer. The tab switcher SHALL be
+reachable from the room's header, pinned to the top of the screen, on
+every viewport width.
 
 #### Scenario: Switching tabs shows only that view
 - **WHEN** a participant switches to a tab
@@ -235,8 +235,8 @@ viewport it SHALL be reachable from the room's header.
 
 #### Scenario: The tab switcher stays reachable on a narrow viewport
 - **WHEN** the room is open on a phone-width viewport
-- **THEN** the tab switcher is reachable at the bottom of the screen
-  and every tab can be activated
+- **THEN** the tab switcher is reachable in the header, pinned to the
+  top of the screen, and every tab can be activated
 
 ### Requirement: Chat Is The Default Tab On Room Entry
 The system SHALL show the Chat tab as the active tab from the moment a
@@ -287,20 +287,24 @@ switches to the corresponding tab.
   indicator until they switch to it
 
 ### Requirement: Three-zone header layout
-The Composition Room header SHALL consist of three distinct zones:
+The Composition Room header SHALL consist of three distinct zones,
+stacked in order (top to bottom) and pinned to the top of the screen —
+staying visible and reachable while the room's content scrolls beneath
+it — on every viewport width:
 
 - **Zone 1 (Global)**: Contains logo, connection status badge, playback status badge, Play/Stop button, and Share/Invite button. These controls are always visible and constant across all tabs.
 - **Zone 2 (Tabs)**: Full-width tab bar with scrollable overflow when tab count exceeds available space. Each tab displays its label and an icon. Active tab is visually distinct (highlighted). Unread indicators (e.g., chat message count, composition activity dot) appear on their respective tabs.
 - **Zone 3 (Context Toolbar)**: Tab-specific controls area. Contents change based on the active tab (e.g., "Load a starter" + "Clear" for Composition tab, "Shuffle" for ASCII Art tab). Height is dynamic—empty when a tab has no controls, or taller when controls are present.
 
-#### Scenario: Zones stack vertically on mobile
-- **WHEN** viewport width is below the md breakpoint (< 768px)
-- **THEN** Zone 1, Zone 2, and Zone 3 stack in order (top to bottom), each taking full available width
-- **AND** spacing and padding are consistent between stacked zones
+#### Scenario: Zones stack in order, on every viewport width
+- **WHEN** the room is open at any viewport width
+- **THEN** Zone 1, Zone 2, and Zone 3 stack in order (top to bottom), each taking full available width, with consistent spacing and padding between them
 
-#### Scenario: Zones layout horizontally on desktop
-- **WHEN** viewport width is md or above (≥ 768px)
-- **THEN** zones are arranged as rows: Zone 1 full-width at top, Zone 2 full-width below it, Zone 3 full-width below that
+#### Scenario: The header stays pinned while content scrolls
+- **WHEN** a tab's content is taller than the visible screen and the
+  participant scrolls it
+- **THEN** the header (all three zones) remains visible, pinned to the
+  top of the screen, throughout the scroll
 
 #### Scenario: Context toolbar is dynamic
 - **WHEN** a tab has no specific controls to display
