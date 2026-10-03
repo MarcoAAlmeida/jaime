@@ -1,6 +1,7 @@
 import type { ModelMessage } from 'ai'
 import { generateText } from 'ai'
 import { createWorkersAI } from 'workers-ai-provider'
+import type { ScriptContext } from './prompt'
 import { buildSystemPrompt } from './prompt'
 
 // The model call seam (add-jah-chat design decision 5) — the only
@@ -43,8 +44,10 @@ export interface JahReply {
  * @param contextBlocks retrieved knowledge to ground the reply in
  *   (add-jah-knowledge-retrieval) — see `server/jah/retrieval.ts`. With
  *   none, the system prompt is exactly what it has always been.
+ * @param scriptContext the room's script and the asker's own selection
+ *   (add-jah-script-context) — see `server/jah/scriptContext.ts`.
  */
-export async function generateJahReply(env: Env, messages: ModelMessage[], contextBlocks: string[] = []): Promise<JahReply> {
+export async function generateJahReply(env: Env, messages: ModelMessage[], contextBlocks: string[] = [], scriptContext?: ScriptContext): Promise<JahReply> {
   if (env.JAH_E2E) {
     await new Promise(resolve => setTimeout(resolve, CANNED_E2E_DELAY_MS))
     return { text: CANNED_E2E_REPLY, model: MODEL, promptTokens: 0, completionTokens: 0, costEstimateUsd: 0 }
@@ -57,7 +60,7 @@ export async function generateJahReply(env: Env, messages: ModelMessage[], conte
 
   const result = await generateText({
     model: workersai(MODEL),
-    system: buildSystemPrompt(contextBlocks),
+    system: buildSystemPrompt(contextBlocks, scriptContext),
     messages,
   })
 

@@ -49,7 +49,12 @@ export type CompositionClientMessage =
   // Evaluate the shared document across the room, aligned to `atCycle`.
   | { t: 'eval', atCycle: number }
   | { t: 'stop' }
-  | { t: 'chat', text: string }
+  // `selection` is the sender's own current editor selection, if any
+  // (add-jah-script-context) — text only, no position. Only used when
+  // the message is addressed to `@jah` from a sender who can reach it;
+  // ignored (never relayed to anyone) otherwise. Omit or leave undefined
+  // for no selection — never an empty string.
+  | { t: 'chat', text: string, selection?: { text: string } }
   | { t: 'clock_ping', clientSendTime: number }
 
 // --- server -> client ---

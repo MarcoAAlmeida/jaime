@@ -68,7 +68,7 @@ export interface CompositionProvider {
   on: <K extends keyof Events>(event: K, cb: Events[K]) => void
   sendEval: (atCycle: number) => void
   sendStop: () => void
-  sendChat: (text: string) => void
+  sendChat: (text: string, selection?: { text: string }) => void
   destroy: () => void
 }
 
@@ -250,9 +250,9 @@ export function createCompositionProvider(opts: CompositionProviderOptions): Com
     sendStop() {
       sendRaw({ t: 'stop' })
     },
-    sendChat(text) {
+    sendChat(text, selection) {
       const t = text.trim()
-      if (t) sendRaw({ t: 'chat', text: t })
+      if (t) sendRaw({ t: 'chat', text: t, ...(selection ? { selection } : {}) })
     },
     destroy() {
       closed = true

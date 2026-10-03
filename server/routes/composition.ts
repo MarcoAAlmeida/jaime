@@ -18,6 +18,7 @@ import { underCaps } from '../jah/caps'
 import { generateJahReply } from '../jah/reply'
 import { realRetrievalDeps, retrieveContext } from '../jah/retrieval'
 import { classifyMention, isJahEnabled, jahAvailability } from '../jah/route'
+import { buildScriptContext } from '../jah/scriptContext'
 import { getDurableEnv } from '../utils/durableStorage'
 
 const DEFAULT_BPM = 120
@@ -274,6 +275,7 @@ async function handleJahMention(
   room: CompositionRoom,
   sender: { userId?: string, aiAccess?: boolean, githubLogin?: string },
   mention: ReturnType<typeof classifyMention>,
+  selectionText?: string,
 ): Promise<void> {
   const env = getDurableEnv()
   if (!env) return // no bindings in this context — never crash the room over it
@@ -302,10 +304,12 @@ async function handleJahMention(
   try {
     // JAH_E2E's canned reply never touches the model or the corpus, so
     // there's nothing for retrieval to ground — and no seeded knowledge
-    // store to expect in that environment.
+    // store to expect in that environment. Same reasoning for the
+    // script: it never reaches the (never-called) model either.
     const retrieval = env.JAH_E2E ? { contextBlocks: [], sources: [] } : await retrieveContext(realRetrievalDeps(env), mention.rest || 'Hello!')
+    const scriptContext = env.JAH_E2E ? undefined : buildScriptContext(room.ydoc.getText(DOC_TEXT).toString(), selectionText)
     const userMessage: ModelMessage = { role: 'user', content: mention.rest || 'Hello!' }
-    const reply = await generateJahReply(env, [userMessage], retrieval.contextBlocks)
+    const reply = await generateJahReply(env, [userMessage], retrieval.contextBlocks, scriptContext)
     postChatMessage(peer, roomId, room, jahChatMessage(reply.text, retrieval.sources.length > 0 ? retrieval.sources : undefined))
     await recordUsage(db, {
       userId: sender.userId,
@@ -318,6 +322,7 @@ async function handleJahMention(
       retrievalChunksUsed: retrieval.sources.length,
       // Workers AI's embedding output carries no token-count field — see migration 0011's comment.
       embeddingTokens: 0,
+      scriptCharsSent: scriptContext?.script.length ?? 0,
     })
   }
   finally {
@@ -441,7 +446,11 @@ export default defineWebSocketHandler({
       postChatMessage(peer, roomId, room, msg)
 
       const mention = classifyMention(text)
-      if (mention.addressed) void handleJahMention(peer, roomId, room, me, mention)
+      // Only ever read for a message addressed to @jah (below) — never
+      // copied into `msg` above, so it's never relayed to anyone else
+      // (add-jah-script-context design.md decision 5).
+      const selectionText = typeof data.selection?.text === 'string' ? data.selection.text : undefined
+      if (mention.addressed) void handleJahMention(peer, roomId, room, me, mention, selectionText)
       return
     }
 

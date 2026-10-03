@@ -102,6 +102,11 @@ const participants = ref<CompositionPresenceEntry[]>([])
 const chat = ref<ChatMessage[]>([])
 const chatInput = ref('')
 const chatLog = ref<HTMLDivElement>()
+// Whether the editor currently has a non-empty selection
+// (add-jah-script-context) — drives the "selection attached" label next
+// to the chat input; updated live by the editor's onSelectionChange, so
+// it stays correct even after focus moves away from the editor.
+const hasSelection = ref(false)
 // @jah is generating a reply (add-jah-chat) — cleared once the reply
 // (or a decline) lands, or immediately by the next 'jah_typing: false'.
 const jahTyping = ref(false)
@@ -316,10 +321,24 @@ watch(playing, (isPlaying) => {
   else stopAsciiSwapLoop()
 })
 
+/**
+ * The current selection's text, read fresh at send time (never cached
+ * from the `hasSelection` label's own state) — `undefined` for no
+ * selection, never an empty string (add-jah-script-context).
+ */
+function currentSelection(): { text: string } | undefined {
+  const sel = editor?.view.state.selection.main
+  if (!sel || sel.empty) return undefined
+  return { text: editor!.view.state.sliceDoc(sel.from, sel.to) }
+}
+
 function sendChat() {
   const text = chatInput.value.trim()
   if (!text) return
-  provider?.sendChat(toJah.value && jahAvailability.value === 'available' ? withJahMention(text) : text)
+  provider?.sendChat(
+    toJah.value && jahAvailability.value === 'available' ? withJahMention(text) : text,
+    currentSelection(),
+  )
   chatInput.value = ''
 }
 
@@ -662,6 +681,7 @@ async function start() {
     onError: (e) => { error.value = e },
     onRequestPlay: requestEval,
     onRequestStop: requestStop,
+    onSelectionChange: (has) => { hasSelection.value = has },
   })
   wrapping = (rootEl.value?.clientWidth ?? WRAP_BELOW) < WRAP_BELOW
   editor.setLineWrapping(wrapping)
@@ -1115,6 +1135,20 @@ onBeforeUnmount(() => {
                     :disabled="jahAvailability !== 'available'"
                     data-testid="jah-switch"
                   />
+                  <!-- Confirmed UX (2026-09-29): a plain label, not a
+                       richer preview. Read fresh from the editor at send
+                       time regardless — this only tells the asker one
+                       is attached. -->
+                  <UBadge
+                    v-if="hasSelection"
+                    size="xs"
+                    color="neutral"
+                    variant="subtle"
+                    icon="i-lucide-text-cursor-input"
+                    data-testid="selection-attached"
+                  >
+                    Selection attached
+                  </UBadge>
                 </div>
               </template>
             </UChatPrompt>

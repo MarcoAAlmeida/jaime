@@ -61,6 +61,7 @@ describe('recordUsage', () => {
       costEstimateUsd: 0.001,
       retrievalChunksUsed: 3,
       embeddingTokens: 0,
+      scriptCharsSent: 42,
     })
     const rows = await listRecentUsage(db)
     expect(rows).toHaveLength(1)
@@ -73,6 +74,7 @@ describe('recordUsage', () => {
       completionTokens: 7,
       retrievalChunksUsed: 3,
       embeddingTokens: 0,
+      scriptCharsSent: 42,
     })
   })
 })

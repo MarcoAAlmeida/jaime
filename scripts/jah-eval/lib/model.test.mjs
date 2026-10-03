@@ -47,3 +47,10 @@ test('a fix case\'s message includes its error, via renderMessage', async () => 
   await runSamples([fixCase], { samples: 1, call })
   assert.match(seen, /lpd is not a function/)
 })
+
+test('the call also receives the case itself, so it can use a case\'s script', async () => {
+  const withScript = { ...docsCase, script: 's("bd").fast(2)', selection: '.fast(2)' }
+  const seen = []
+  await runSamples([withScript], { samples: 1, call: async (message, c) => { seen.push(c); return 'ok' } })
+  assert.equal(seen[0], withScript)
+})

@@ -43,6 +43,14 @@ export interface StrudelEditorOptions {
   /** The last-evaluated pattern requests a visualiser (or not). */
   onVisualsChange?: (hasVisuals: boolean) => void
   /**
+   * Fired whenever the editor's selection becomes non-empty or becomes
+   * empty (add-jah-script-context) — read the actual text via `view`
+   * (`view.state.selection.main`, `view.state.sliceDoc(from, to)`) when
+   * it's needed; this is only the "is there one right now" signal for a
+   * reactive UI indicator.
+   */
+  onSelectionChange?: (hasSelection: boolean) => void
+  /**
    * Called before the scheduler starts — align to the shared cycle
    * boundary here. Defaults to JAM's `waitForSynchronizedStart`; the
    * Composition Room passes a closure over its own clock.
@@ -81,6 +89,7 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
   let error: string | null = null
   let applyingExternal = false
   let hasVisuals = false
+  let hasSelection = false
 
   // The @strudel/draw painters repaint the whole backdrop every frame,
   // so once a visual stops there's a stale full-canvas frame to wipe.
@@ -163,6 +172,13 @@ export async function createStrudelEditor(opts: StrudelEditorOptions): Promise<S
       EV.updateListener.of((u) => {
         if (u.docChanged && !applyingExternal) {
           opts.onCodeChange?.(u.state.doc.toString())
+        }
+        if (u.selectionSet) {
+          const next = !u.state.selection.main.empty
+          if (next !== hasSelection) {
+            hasSelection = next
+            opts.onSelectionChange?.(hasSelection)
+          }
         }
       }),
     ]),

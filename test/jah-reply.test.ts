@@ -62,4 +62,32 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('Strudel core-function reference')
     expect(prompt).toMatch(/playing example is always welcome/i)
   })
+
+  it('with no scriptContext, is still byte-identical to JAH_SYSTEM_PROMPT (add-jah-script-context)', () => {
+    expect(buildSystemPrompt([])).toBe(JAH_SYSTEM_PROMPT)
+    expect(buildSystemPrompt([], undefined)).toBe(JAH_SYSTEM_PROMPT)
+  })
+
+  it('a scriptContext includes the script and says nothing is selected when there is no selection', () => {
+    const prompt = buildSystemPrompt([], { script: 's("bd sd")', truncated: false })
+    expect(prompt).toContain('s("bd sd")')
+    expect(prompt).toMatch(/nothing is currently selected/i)
+  })
+
+  it('a scriptContext with a selection includes both, distinctly', () => {
+    const prompt = buildSystemPrompt([], { script: 's("bd sd").fast(2)', selection: '.fast(2)', truncated: false })
+    expect(prompt).toContain('s("bd sd").fast(2)')
+    expect(prompt).toMatch(/has this part selected[\s\S]*\.fast\(2\)/i)
+  })
+
+  it('a truncated scriptContext tells @jah the full script did not fit', () => {
+    const prompt = buildSystemPrompt([], { script: 's("bd")', truncated: true })
+    expect(prompt).toMatch(/too large to include in full/i)
+  })
+
+  it('scriptContext and reference material coexist', () => {
+    const prompt = buildSystemPrompt(['some retrieved text'], { script: 's("bd")', truncated: false })
+    expect(prompt).toContain('s("bd")')
+    expect(prompt).toContain('some retrieved text')
+  })
 })

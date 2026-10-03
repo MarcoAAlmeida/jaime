@@ -27,6 +27,14 @@ export function validateCaseSet(set) {
     // renderMessage() supplies a default — everything else must have one.
     if (c.message !== undefined && (typeof c.message !== 'string' || !c.message.trim())) problems.push(`${where}: "message" must be a non-empty string when present`)
     if (c.kind !== 'fix' && (typeof c.message !== 'string' || !c.message.trim())) problems.push(`${where}: missing "message"`)
+    // `script`/`selection` (add-jah-script-context): the room's script and
+    // the asker's selection in it. A selection only exists inside a script.
+    if (c.script !== undefined && (typeof c.script !== 'string' || !c.script.trim())) problems.push(`${where}: "script" must be a non-empty string when present`)
+    if (c.selection !== undefined) {
+      if (typeof c.selection !== 'string' || !c.selection.trim()) problems.push(`${where}: "selection" must be a non-empty string when present`)
+      else if (typeof c.script !== 'string') problems.push(`${where}: "selection" needs a "script" to be selected from`)
+      else if (!c.script.includes(c.selection)) problems.push(`${where}: "selection" does not appear in "script"`)
+    }
     if (!KINDS.includes(c.kind)) { problems.push(`${where}: unknown kind "${c.kind}" (expected one of ${KINDS.join(', ')})`); continue }
 
     if (c.kind === 'docs') {

@@ -27,5 +27,7 @@ export interface AiUsageRecord {
   retrievalChunksUsed: number
   /** Reserved: always 0 today — see migration 0011's comment. */
   embeddingTokens: number
+  /** Characters of script actually included (add-jah-script-context); 0 for an ungrounded/JAH_E2E reply. */
+  scriptCharsSent: number
   createdAt: string
 }

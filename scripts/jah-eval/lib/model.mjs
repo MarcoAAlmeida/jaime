@@ -16,6 +16,7 @@ import { renderMessage } from './cases.mjs'
 // A .ts import; Node's type stripping handles it (see jah-prompt-eval.mjs).
 import { JAH_SYSTEM_PROMPT, buildSystemPrompt } from '../../../server/jah/prompt.ts'
 import { realRetrievalDeps, retrieveContext } from '../../../server/jah/retrieval.ts'
+import { buildScriptContext } from '../../../server/jah/scriptContext.ts'
 
 /** Must match the model id server/jah/reply.ts calls — see model-drift.test.mjs. */
 export const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
@@ -33,12 +34,20 @@ export const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
  * false (the default, and what baseline.json was recorded against),
  * `JAH_SYSTEM_PROMPT` is used as-is, matching `buildSystemPrompt()` with
  * no context blocks byte-for-byte.
+ *
+ * A case with a `script` (add-jah-script-context task 7.4) also gets the
+ * room's script — and its `selection`, when present — through the real
+ * `buildScriptContext`, the same bounding a live mention applies. A case
+ * without one gets no script section at all, so the pre-existing cases'
+ * prompts stay comparable to earlier runs.
  */
 export function createModelCaller(env, { grounded = false } = {}) {
   const workersai = createWorkersAI({ binding: env.AI })
-  return async function call(message) {
-    const system = grounded
-      ? buildSystemPrompt((await retrieveContext(realRetrievalDeps(env), message)).contextBlocks)
+  return async function call(message, c) {
+    const scriptContext = typeof c?.script === 'string' ? buildScriptContext(c.script, c.selection) : undefined
+    const contextBlocks = grounded ? (await retrieveContext(realRetrievalDeps(env), message)).contextBlocks : []
+    const system = contextBlocks.length > 0 || scriptContext
+      ? buildSystemPrompt(contextBlocks, scriptContext)
       : JAH_SYSTEM_PROMPT
     const { text } = await generateText({
       model: workersai(MODEL),
@@ -56,7 +65,7 @@ export function createModelCaller(env, { grounded = false } = {}) {
  * Order of the returned array matches `cases`, samples grouped per case.
  *
  * @param {object[]} cases
- * @param {{samples: number, call: (message: string) => Promise<string>, concurrency?: number}} options
+ * @param {{samples: number, call: (message: string, c: object) => Promise<string>, concurrency?: number}} options
  * @returns {Promise<Array<{caseId: string, sampleIndex: number, reply?: string, error?: string}>>}
  */
 export async function runSamples(cases, { samples, call, concurrency = 4 }) {
@@ -71,7 +80,7 @@ export async function runSamples(cases, { samples, call, concurrency = 4 }) {
       if (index >= jobs.length) return
       const { case: c, sampleIndex } = jobs[index]
       try {
-        const reply = await call(renderMessage(c))
+        const reply = await call(renderMessage(c), c)
         results[index] = { caseId: c.id, sampleIndex, reply }
       }
       catch (err) {

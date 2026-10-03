@@ -175,4 +175,22 @@ describe('composition room', () => {
     const chatOnB = await b.next()
     expect(chatOnB).toMatchObject({ t: 'chat', message: { name: 'Ada', text: 'yo' } })
   })
+
+  it('never relays a selection sent alongside an ordinary chat message (add-jah-script-context)', async () => {
+    const roomId = freshRoomId()
+    const a = await connect(roomId, 'Ada')
+    a.ws.send(JSON.stringify({ t: 'join', role: 'editor', name: 'Ada', color: '#0f0', sv: toBase64(Y.encodeStateVector(new Y.Doc())) }))
+    await a.next() // welcome
+    const b = await connect(roomId, 'Bo')
+    b.ws.send(JSON.stringify({ t: 'join', role: 'viewer', name: 'Bo', color: '#00f', sv: toBase64(Y.encodeStateVector(new Y.Doc())) }))
+    await b.next() // welcome
+    await a.next() // presence (Bo joined)
+
+    // Not addressed to @jah — a selection here has nothing to ground and
+    // must never reach the other participant either way.
+    a.ws.send(JSON.stringify({ t: 'chat', text: 'not for @jah', selection: { text: 'note("c e g")' } }))
+    const chatOnB = await b.next()
+    expect(chatOnB).toMatchObject({ t: 'chat', message: { name: 'Ada', text: 'not for @jah' } })
+    expect(chatOnB.message.selection).toBeUndefined()
+  })
 })

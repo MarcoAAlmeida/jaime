@@ -74,3 +74,14 @@ test('renderMessage() uses a fix case\'s own message when it has one', () => {
   const rendered = renderMessage({ ...fix, message: 'Please help, this is broken' })
   assert.match(rendered, /^Please help, this is broken/)
 })
+
+test('a case may carry a script and a selection from it', () => {
+  assert.deepEqual(validateCaseSet([{ ...docs, script: 's("bd").fast(2)', selection: '.fast(2)' }]), [])
+  assert.deepEqual(validateCaseSet([{ ...docs, script: 's("bd").fast(2)' }]), [])
+})
+
+test('a selection needs a script, and must appear in it', () => {
+  assert.ok(validateCaseSet([{ ...docs, selection: '.fast(2)' }]).some(p => p.includes('needs a "script"')))
+  assert.ok(validateCaseSet([{ ...docs, script: 's("bd")', selection: '.fast(2)' }]).some(p => p.includes('does not appear')))
+  assert.ok(validateCaseSet([{ ...docs, script: '  ' }]).some(p => p.includes('"script"')))
+})

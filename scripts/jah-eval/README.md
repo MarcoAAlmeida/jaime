@@ -59,6 +59,8 @@ Every case has:
 | `id` | always | kebab-case, unique across the whole set |
 | `kind` | always | `'docs'` \| `'fix'` \| `'compose'` |
 | `message` | `docs`/`compose`; optional for `fix` | the text a user would type to `@jah` |
+| `script` | optional | the room's script, sent through the real `buildScriptContext` (same bounding as a live mention). Without it, the case's prompt has no script section at all |
+| `selection` | optional; needs `script` | the asker's selection — must appear verbatim in `script` |
 
 **`docs`** (a question about Strudel):
 

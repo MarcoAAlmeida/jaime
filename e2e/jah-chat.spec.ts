@@ -61,6 +61,29 @@ test('an allowlisted signed-in user gets a real @jah reply, visible to everyone'
   await ctx.close()
 })
 
+test('a selection made in Composition survives switching to Chat, and is attached to a @jah mention (add-jah-script-context)', async ({ page }) => {
+  test.setTimeout(90_000)
+  await signInAllowlisted(page)
+
+  const roomId = `jah-selection-${Date.now()}`
+  await page.goto(`/app/composition/${roomId}`)
+  await expect(page.getByTestId('chat-panel')).toBeVisible({ timeout: 60_000 })
+
+  await page.getByTestId('tab-composition').click()
+  const content = page.locator('[data-testid="composition-editor"] .cm-content')
+  await expect(content).toBeVisible({ timeout: 60_000 })
+  await content.click()
+  await page.keyboard.press('ControlOrMeta+a') // select the whole (seeded, non-empty) script
+
+  // Switching tabs doesn't clear CodeMirror's own selection state.
+  await page.getByTestId('tab-chat').click()
+  await expect(page.getByTestId('selection-attached')).toBeVisible()
+
+  await sendChat(page, '@jah what does this do?')
+  await expect(jahRow(page).last()).toBeVisible({ timeout: 15_000 })
+  await expect(jahRow(page).last()).toContainText(/canned/i) // JAH_E2E's stub
+})
+
 test('a signed-in, non-allowlisted user is told @jah is invite-only', async ({ page }) => {
   test.setTimeout(90_000)
   await signInWithoutAccess(page)

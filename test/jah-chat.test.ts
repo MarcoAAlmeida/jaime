@@ -158,6 +158,29 @@ describe('@jah', () => {
     expect(await usageCount(userId)).toBe(1)
   })
 
+  it('never builds script context for the JAH_E2E canned path (add-jah-script-context)', async () => {
+    // Mirrors retrieval's own skip (add-jah-knowledge-retrieval): JAH_E2E
+    // never reaches the model, so there's nothing for a script to ground
+    // either — proving the skip is deliberate and observable, the same
+    // way retrieval_chunks_used already is. The script/selection actually
+    // reaching a *real* reply is proven by a real ad-hoc check instead
+    // (task 7.3) — this environment's JAH_E2E=1 (see this file's own
+    // header comment) makes that path structurally unreachable here.
+    const roomId = freshRoomId()
+    const { cookie, userId } = await signIn('script-context@example.com')
+    await setAiAccess(db, userId, true)
+    const { ws, next } = await join(roomId, 'Ally', cookie)
+
+    ws.send(JSON.stringify({ t: 'chat', text: '@jah what does this do?', selection: { text: 's("bd sd")' } }))
+    await next() // echo
+    await next() // typing on
+    await next() // reply
+    await next() // typing off
+
+    const row = await db.prepare('SELECT script_chars_sent FROM ai_usage WHERE user_id = ?').bind(userId).first<{ script_chars_sent: number }>()
+    expect(row?.script_chars_sent).toBe(0)
+  })
+
   it('declines a second request in the same room while one is in flight, without interleaving', async () => {
     const roomId = freshRoomId()
     const { cookie, userId } = await signIn('busy@example.com')

@@ -6,8 +6,9 @@
 const IDENTITY = `You are @jah, a Strudel live-coding assistant embedded in jaime's
 Composition Room chat. People mention you by typing "@jah" followed by
 a question. You answer for the whole room to see, in a text chat next
-to a shared code editor you cannot currently see or edit — you are
-discussion-only right now, so never claim to have read, fixed, or
+to a shared code editor. You can see the room's current script (and,
+when the person asking has one, their text selection) but cannot edit
+it — you are discussion-only right now, so never claim to have fixed or
 changed anyone's code.
 
 You have no memory between messages: each reply is generated from
@@ -21,9 +22,9 @@ const STYLE = `House style:
   don't recite unrelated background the person didn't ask for.
 - Don't dump whole patterns. Prefer a small, focused snippet (one
   function, one line) over a long composed example.
-- If a question depends on the actual state of the room's document —
-  which you cannot see — say so plainly rather than guessing at what
-  someone's code probably looks like.`
+- The room's script (below, when given) may not be the full script —
+  say so plainly if you weren't given enough of it to answer, rather
+  than guessing at a part you weren't shown.`
 
 const CHEATSHEET = `Strudel core-function reference:
 
@@ -79,18 +80,41 @@ the block. Never invent a sample pack or a github repo name.`
 export const JAH_BASE_PROMPT = `${IDENTITY}\n\n${STYLE}\n\n${CHEATSHEET}`
 
 /**
- * Builds the full system prompt, optionally with a reference section
- * built from retrieved knowledge (add-jah-knowledge-retrieval).
- * With no context blocks, the output is byte-identical to what
- * `JAH_SYSTEM_PROMPT` has always been — Phase 0's original guarantee for
- * this seam, so every existing test asserting on `JAH_SYSTEM_PROMPT`
- * keeps passing unmodified.
+ * The room's script (and, when the asker has one, their selection)
+ * given to a reply (add-jah-script-context). `script`/`selection` are
+ * already-bounded plain text (see `server/jah/scriptContext.ts`) —
+ * this module only formats them into prompt text.
  */
-export function buildSystemPrompt(contextBlocks: string[] = []): string {
+export interface ScriptContext {
+  script: string
+  selection?: string
+  truncated: boolean
+}
+
+function scriptSection(ctx?: ScriptContext): string {
+  if (!ctx) return ''
+  const truncatedNote = ctx.truncated
+    ? ' (This is not the full script — it was too large to include in full.)'
+    : ' (This is the complete script, exactly as it is in the editor right now — nothing is missing.)'
+  const selectionPart = ctx.selection
+    ? `\n\nThe person asking has this part selected — when they say "this" or "this part" without naming a specific function, they most likely mean the selection below, not the whole script:\n\n${ctx.selection}`
+    : '\n\nNothing is currently selected in the editor. A question about "my script", "the whole thing" or "the code" means the script above — explain it. Only if they say "this" or "this part" and it could mean several different things, ask what they mean rather than guessing.'
+  return `\n\nThe room's current script:${truncatedNote}\n\n${ctx.script}${selectionPart}`
+}
+
+/**
+ * Builds the full system prompt, optionally with the room's script
+ * (add-jah-script-context) and a reference section built from retrieved
+ * knowledge (add-jah-knowledge-retrieval). With neither, the output is
+ * byte-identical to what `JAH_SYSTEM_PROMPT` has always been — Phase 0's
+ * original guarantee for this seam, so every existing test asserting on
+ * `JAH_SYSTEM_PROMPT` keeps passing unmodified.
+ */
+export function buildSystemPrompt(contextBlocks: string[] = [], scriptContext?: ScriptContext): string {
   const reference = contextBlocks.length > 0
     ? `\n\nReference material — use this to ground your answer, and say so plainly if it doesn't cover the question:\n\n${contextBlocks.join('\n\n---\n\n')}`
     : ''
-  return `${JAH_BASE_PROMPT}${reference}\n\n${JAH_EXAMPLES}`
+  return `${JAH_BASE_PROMPT}${scriptSection(scriptContext)}${reference}\n\n${JAH_EXAMPLES}`
 }
 
 export const JAH_SYSTEM_PROMPT = buildSystemPrompt()
