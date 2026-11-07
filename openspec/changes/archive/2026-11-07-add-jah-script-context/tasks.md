@@ -148,7 +148,7 @@
       re-run of the six new cases: 18/18. Combined: 126/138 (91%).
 - [x] 7.5 `npm test` and `npm run typecheck` are green.
 - [x] 7.6 `openspec validate add-jah-script-context --strict`.
-- [ ] 7.7 After the developer's review: sync `jah-chat` (modified),
+- [x] 7.7 After the developer's review: sync `jah-chat` (modified),
       `composition-room` (modified), and `frontend-editor` (modified)
       into `openspec/specs/`; archive. This closes Phase 2 of the `@jah`
       intelligence roadmap — update

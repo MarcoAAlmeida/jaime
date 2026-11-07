@@ -1,6 +1,6 @@
 # `@jah` intelligence — handover
 
-Status: **Phase 0 and Phase 1 done (2026-09-27).** Written 2026-09-21 after
+Status: **Phases 0–2 done (2026-11-07).** Written 2026-09-21 after
 a design discussion with the developer. Read this file first, then the
 phase brief you are working on. Each phase brief lists its OpenSpec
 changes; propose and build **one change at a time** (see *Ground rules*).
@@ -17,7 +17,13 @@ changes; propose and build **one change at a time** (see *Ground rules*).
   `add-jah-knowledge-retrieval`'s archived `tasks.md` for the full
   breakdown, including two known model-level limitations unrelated to
   retrieval). Archived `2026-09-27`.
-- **Phase 2 onward**: not started.
+- **Phase 2** (`add-jah-script-context`) — every `@jah` mention is
+  answered with the room's current script (read server-side from the
+  shared document, size-capped — an oversized script falls back to the
+  selection and its surroundings, and `@jah` is told) and the asker's own
+  selection, which is never shown to anyone else. Grounded eval: 126/138
+  (91%), on par with Phase 1. Live 2026-10-03; archived `2026-11-07`.
+- **Phase 3 onward**: not started.
 
 ## Why
 
