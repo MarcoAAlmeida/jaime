@@ -47,7 +47,8 @@ calls at any depth (`note(...).s(...).lpf(...)`), and bare references
 (`sine` in `sine.range(200, 2000)`, `silence`). Each occurrence SHALL
 include its name, whether it is a free call, a method call or a bare
 reference, and its position. Names the script declares itself
-(variables, functions, parameters) and standard JavaScript built-ins
+(variables, functions, parameters, and pattern methods it defines with
+`register('name', …)`) and standard JavaScript built-ins
 (such as `Math` or `console`) SHALL NOT be listed as Strudel names.
 
 #### Scenario: A method chain lists every link
@@ -67,6 +68,11 @@ reference, and its position. Names the script declares itself
 - **WHEN** the source declares `const drums = s("bd sd")` and later
   uses `drums.fast(2)`
 - **THEN** `s` and `fast` are listed and `drums` is not
+
+#### Scenario: Methods the script registers are left out
+- **WHEN** the source defines `register('bassenv', (pat) => pat.lpf(200))`
+  and later uses `note("c1").bassenv()`
+- **THEN** `register`, `lpf` and `note` are listed and `bassenv` is not
 
 ### Requirement: Locates What Sits At A Text Position
 

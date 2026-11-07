@@ -132,7 +132,9 @@ A name occurrence is one of:
 
 Excluded: any name the script declares anywhere (`var`/`let`/`const`,
 function and class declarations, parameters including arrow
-parameters, destructuring targets), the `$` of `$:` and other labels,
+parameters, destructuring targets, and the name passed as a string to
+`register('name', fn)`, which defines a new pattern method; found by
+the smoke run over the library), the `$` of `$:` and other labels,
 object-literal keys, and a fixed list of JavaScript globals (`Math`,
 `console`, `JSON`, `Array`, `Object`, `Number`, `String`, `Date`,
 `Promise`, `globalThis`, `window`, `undefined`, `NaN`, `Infinity`, …).
