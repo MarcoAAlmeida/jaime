@@ -1,6 +1,6 @@
 # `@jah` intelligence — handover
 
-Status: **Phases 0–2 done (2026-11-07).** Written 2026-09-21 after
+Status: **Phases 0–2 done; Phase 3 in progress (2026-11-08).** Written 2026-09-21 after
 a design discussion with the developer. Read this file first, then the
 phase brief you are working on. Each phase brief lists its OpenSpec
 changes; propose and build **one change at a time** (see *Ground rules*).
@@ -23,7 +23,11 @@ changes; propose and build **one change at a time** (see *Ground rules*).
   selection and its surroundings, and `@jah` is told) and the asker's own
   selection, which is never shown to anyone else. Grounded eval: 126/138
   (91%), on par with Phase 1. Live 2026-10-03; archived `2026-11-07`.
-- **Phase 3 onward**: not started.
+- **Phase 3** — in progress. `add-strudel-code-analysis` (static
+  analysis in `shared/strudel/`: names used, locate by position,
+  mini-notation trees, positioned errors, docs-index check) archived
+  `2026-11-08`. Next: `add-pattern-musical-features`.
+- **Phase 4 onward**: not started.
 
 ## Why
 
@@ -93,7 +97,7 @@ composes new pieces. **It only ever proposes code; a human applies it.**
 |---|---|---|---|
 | 1 | How the committed chunk file reaches D1 (and the index): loaded on deploy when the file changed (like `content/patterns`), or loaded by `knowledge:refresh` itself | Phase 1 `add-knowledge-store` | Deploy-time keeps the live store in step with the file; refresh-time matches the "one-time setup" mental model. Ask the developer. |
 | 2 | Which retriever mix: lookup-only, D1 full-text, Vectorize, or hybrid; which embedding model | Phase 1 `add-jah-knowledge-retrieval` | Decide from the Phase 0 eval, not up front. Vectorize dimensions are immutable once created. |
-| 3 | Where pattern features are computed and stored (deploy reconcile vs. a refresh-style script) | Phase 3 | |
+| 3 | Where pattern features are computed and stored (deploy reconcile vs. a refresh-style script) | Phase 3 | **Decided 2026-11-08:** computed by the deploy, incrementally where possible (only patterns whose code changed). |
 | 4 | Size caps for the script and selection sent with a mention | Phase 2 | Prompt cost rises; revisit the daily caps (25 per user / 150 global). |
 | 5 | Which model for compose and debug | Phases 5–6 | Llama 3.3 70B today; a stronger model through the Gateway is likely. Eval-driven. |
 | 6 | **UX** — sources chips, the "selection attached" indicator, the Apply action, how errors surface | Phases 1, 2, 5 | **Discuss with the developer before designing UI.** Do not decide UI unilaterally. |

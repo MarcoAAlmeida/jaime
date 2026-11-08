@@ -93,5 +93,5 @@
       Also: `tsconfig.tests.json`'s `include` replaced the server
       project's and dropped `shared/**/*.d.ts`; added it back so the test
       typecheck sees the `krill-parser.js` declaration.
-- [ ] 5.4 After the developer's review: sync `strudel-code-analysis`
+- [x] 5.4 After the developer's review: sync `strudel-code-analysis`
       (new) into `openspec/specs/`; archive.
